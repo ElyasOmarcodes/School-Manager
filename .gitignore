@@ -1,13 +1,17 @@
-# Flutter / Dart
-desktop/build/
-desktop/.dart_tool/
-desktop/.flutter-plugins
-desktop/.flutter-plugins-dependencies
-desktop/*.iml
+# Flutter / Dart — د هرې پروژې لپاره
+**/build/
+**/.dart_tool/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/*.iml
 .packages
 
-# د تولید شوی کوډ ساتو (چې پرته له build_runner هم پروژه ولوستل شي)
-# desktop/lib/**/*.g.dart
+# Gradle / Android محلي
+**/.gradle/
+**/local.properties
+**/*.keystore
+**/*.jks
+**/key.properties
 
 # IDE
 .idea/

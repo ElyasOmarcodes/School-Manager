@@ -52,6 +52,16 @@ jobs:
           channel: stable
           cache: true
 
+
+      # د pub کېش. `flutter-action` یوازې د SDK کېش کوي، نه پیکجونه —
+      # هغه هر ځل له سره راښکل کېږي (~۱۵ ثانیې). دلته يې د
+      # `pubspec.lock` پر بنسټ کېشوو.
+      - uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: pub-${{ runner.os }}-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: pub-${{ runner.os }}-
+
       - name: Check whether the mobile app exists yet
         id: probe
         run: |
@@ -73,6 +83,18 @@ jobs:
       # مخې بېل کوډ تولیدوي — د ۳.۲۹ او ۳.۴۷ ترمنځ ۸,۶۶۹ کرښې توپیر و،
       # سره له دې چې سکیما هماغه وه. له `stable` کانال سره به هغه پرتله
       # هر ځل بې‌ځایه سره شوې وای. اوس یوازې تولیدوو.
+      # د `build_runner` د تولید کېش. پرته له دې هر ران ~۵۰ ثانیې
+      # د سکیما پر تحلیل لګوي، سره له دې چې سکیما نه وي بدله شوې.
+      # کلید د جدولونو له تعریفه راځي — چې د سکیما په بدلون سره
+      # کېش پخپله باطل شي.
+      - uses: actions/cache@v4
+        with:
+          path: ${{ env.DESKTOP_DIR }}/.dart_tool/build
+          key: >-
+            buildrunner-${{ runner.os }}-${{
+            hashFiles('desktop/lib/data/db/**/*.dart', 'desktop/pubspec.lock') }}
+          restore-keys: buildrunner-${{ runner.os }}-
+
       - name: Generate database code
         working-directory: ${{ env.DESKTOP_DIR }}
         run: dart run build_runner build
@@ -158,10 +180,10 @@ jobs:
           if-no-files-found: error
 
   # ---------------------------------------------------------------------------
-  # اندروید — د مدیر او والدینو اپ (څلورم پړاو)
+  # اندروید — د مدیر او والدینو اپ
   #
-  # دا دنده اوس **پرېښودل کېږي** ځکه چې د `mobile/` پروژه لا نه ده جوړه
-  # شوې. کله چې جوړه شي، پخپله پیلېږي — دلته څه بدلولو ته اړتیا نشته.
+  # `if` شرط ساتل کېږي: که څوک د `mobile/` پوښۍ لرې کړي، دنده پخپله
+  # پرېښودل کېږي نه چې سره شي.
   # ---------------------------------------------------------------------------
   android:
     needs: test
@@ -170,15 +192,40 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # `cache: gradle` د Gradle کېش پخپله اداره کوي. **دا هغه یو
+      # تنظیم دی چې د اندروید د build وخت ټاکي:** د Gradle لومړی
+      # ران ~۵۰۰MB انحصارات راښکي (۴–۶ دقیقې). له کېش سره، دویم
+      # ران يې له کېشه اخلي — څو ثانیې.
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "17"
+          cache: gradle
+          cache-dependency-path: |
+            mobile/android/*.gradle*
+            mobile/android/**/gradle-wrapper.properties
 
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
           cache: true
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: pub-${{ runner.os }}-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: pub-${{ runner.os }}-
+
+      # د Flutter د اندروید build ټوټې (اکثره د Gradle له لارې).
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.android/cache
+            ${{ env.MOBILE_DIR }}/.dart_tool
+          key: >-
+            android-${{ runner.os }}-${{
+            hashFiles('mobile/pubspec.lock', 'mobile/android/**') }}
+          restore-keys: android-${{ runner.os }}-
 
       - run: flutter pub get
         working-directory: ${{ env.MOBILE_DIR }}

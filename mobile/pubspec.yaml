@@ -1,0 +1,47 @@
+name: school_manager_mobile
+description: د ښوونځي مدیریت — د مدیر او والدینو اندروید اپ.
+publish_to: "none"
+version: 0.1.0
+
+environment:
+  sdk: ">=3.9.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # ── محلي ذخیره (بې‌انټرنټه) ─────────────────────────────
+  # اپ باید پرته له انټرنټه پرانیستل شي — د افغانستان په ډېرو
+  # سیمو کې ډیټا شتون نه لري. وروستي راټول شوي معلومات دلته پاتې
+  # کېږي او کله چې اړیکه بیا راشي، همغږي کېږي.
+  drift: ^2.20.0
+  sqlite3_flutter_libs: ^0.5.24
+  path_provider: ^2.1.4
+  path: ^1.9.0
+
+  # ── شبکه ────────────────────────────────────────────────
+  http: ^1.2.2
+
+  intl: ^0.19.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+
+  # هماغه فونټ چې ډیسکټاپ يې کاروي — له اپ سره بسته، نه له
+  # انټرنټه راښکل شوی.
+  fonts:
+    - family: Vazirmatn
+      fonts:
+        - asset: assets/fonts/Vazirmatn-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Vazirmatn-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Vazirmatn-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Vazirmatn-Bold.ttf
+          weight: 700
