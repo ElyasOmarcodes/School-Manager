@@ -53,7 +53,9 @@ void main() {
     });
 
     test('د شاګرد د داخلې نمبر نه تکرارېږي', () async {
-      await db.into(db.students).insert(
+      await db
+          .into(db.students)
+          .insert(
             StudentsCompanion.insert(
               admissionNo: 'S-001',
               firstName: 'احمد',
@@ -63,7 +65,9 @@ void main() {
           );
 
       expect(
-        () => db.into(db.students).insert(
+        () => db
+            .into(db.students)
+            .insert(
               StudentsCompanion.insert(
                 admissionNo: 'S-001',
                 firstName: 'بل څوک',
@@ -76,7 +80,9 @@ void main() {
     });
 
     test('د یوې ورځې لپاره د یوه شاګرد یوازې یوه حاضري ثبتېږي', () async {
-      final sid = await db.into(db.students).insert(
+      final sid = await db
+          .into(db.students)
+          .insert(
             StudentsCompanion.insert(
               admissionNo: 'S-002',
               firstName: 'کریم',
@@ -86,7 +92,9 @@ void main() {
           );
 
       final day = DateTime(2026, 3, 21);
-      await db.into(db.attendances).insert(
+      await db
+          .into(db.attendances)
+          .insert(
             AttendancesCompanion.insert(
               studentId: sid,
               date: day,
@@ -97,7 +105,9 @@ void main() {
       // دویم ځل ثبت باید ونه شي — دا هغه محافظ دی چې د دوه‌ځلي
       // سکین له امله حاضري خرابه نه شي.
       expect(
-        () => db.into(db.attendances).insert(
+        () => db
+            .into(db.attendances)
+            .insert(
               AttendancesCompanion.insert(
                 studentId: sid,
                 date: day,
@@ -110,7 +120,9 @@ void main() {
 
     test('د پردي کیلي (foreign key) قید فعال دی', () async {
       expect(
-        () => db.into(db.attendances).insert(
+        () => db
+            .into(db.attendances)
+            .insert(
               AttendancesCompanion.insert(
                 studentId: 9999, // شته نه دی
                 date: DateTime(2026, 3, 21),
@@ -163,9 +175,9 @@ void main() {
 
     test('بریالی ننوتل په لاګ کې ثبتېږي', () async {
       await auth.signIn('admin', 'strong-pass-99');
-      final logs = await (db.select(db.auditLogs)
-            ..where((l) => l.action.equals('login')))
-          .get();
+      final logs = await (db.select(
+        db.auditLogs,
+      )..where((l) => l.action.equals('login'))).get();
       expect(logs, hasLength(1));
       expect(logs.first.userName, 'admin');
     });

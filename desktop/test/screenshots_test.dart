@@ -17,8 +17,12 @@ import 'package:school_manager/features/auth/login_page.dart';
 import 'package:school_manager/features/dashboard/dashboard_page.dart';
 import 'package:school_manager/data/repositories/academic_repository.dart';
 import 'package:school_manager/data/repositories/student_repository.dart';
+import 'package:school_manager/data/repositories/teacher_repository.dart';
 import 'package:school_manager/features/setup/setup_wizard.dart';
 import 'package:school_manager/features/shell/app_shell.dart';
+import 'package:school_manager/features/classes/classes_page.dart';
+import 'package:school_manager/features/id_cards/id_cards_page.dart';
+import 'package:school_manager/features/teachers/teachers_page.dart';
 import 'package:school_manager/features/students/admission_wizard.dart';
 import 'package:school_manager/features/students/students_page.dart';
 
@@ -206,6 +210,60 @@ void main() {
     );
   });
 
+  testWidgets('12 — د آی‌ډي کارتونه', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await _seedSchool(db);
+
+    await _shoot(
+      tester,
+      name: '12-id-cards',
+      settle: const Duration(milliseconds: 600),
+      child: Scaffold(
+        body: IdCardsPage(
+          students: StudentRepository(db),
+          academic: AcademicRepository(db),
+          schoolName: 'د نور لیسه',
+        ),
+      ),
+    );
+  });
+
+  testWidgets('13 — استادان', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await _seedSchool(db);
+    await _seedTeachers(db);
+
+    await _shoot(
+      tester,
+      name: '13-teachers',
+      settle: const Duration(milliseconds: 500),
+      child: Scaffold(
+        body: TeachersPage(repo: TeacherRepository(db), session: _session),
+      ),
+    );
+  });
+
+  testWidgets('14 — ټولګي او بخشونه', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await _seedSchool(db);
+    await _seedTeachers(db);
+
+    await _shoot(
+      tester,
+      name: '14-classes',
+      settle: const Duration(milliseconds: 500),
+      child: Scaffold(
+        body: ClassesPage(
+          academic: AcademicRepository(db),
+          teachers: TeacherRepository(db),
+        ),
+      ),
+    );
+  });
+
   testWidgets('06 — ډاشبورډ په انګلیسي (LTR)', (tester) async {
     await _shoot(
       tester,
@@ -362,7 +420,9 @@ String? _findMaterialIcons() {
 
 /// نمونه ښوونځی — ټولګي، بخشونه او ۱۴ شاګردان.
 Future<void> _seedSchool(AppDatabase db) async {
-  final yearId = await db.into(db.academicYears).insert(
+  final yearId = await db
+      .into(db.academicYears)
+      .insert(
         AcademicYearsCompanion.insert(
           label: '۱۴۰۵',
           startsOn: DateTime(2026, 3, 21),
@@ -378,7 +438,9 @@ Future<void> _seedSchool(AppDatabase db) async {
         .insert(GradesCompanion.insert(name: name, level: level));
     for (final sec in ['الف', 'ب']) {
       sections.add(
-        await db.into(db.sections).insert(
+        await db
+            .into(db.sections)
+            .insert(
               SectionsCompanion.insert(
                 gradeId: gradeId,
                 academicYearId: yearId,
@@ -406,34 +468,79 @@ Future<void> _seedSchool(AppDatabase db) async {
     ('عایشه', 'حیدري', 'حیدر', 'female'),
   ];
 
+  // د `admit()` له لارې ثبتوو، نه مستقیم — چې د QR پټ کلی جوړ شي
+  // او کارتونه ریښتینی QR وښیي، نه تش چوکاټ.
+  final repo = StudentRepository(db);
   for (var i = 0; i < names.length; i++) {
     final (first, last, father, gender) = names[i];
-    final id = await db.into(db.students).insert(
-          StudentsCompanion.insert(
-            admissionNo: '1405-${(i + 1).toString().padLeft(4, '0')}',
-            firstName: first,
-            lastName: Value(last),
-            fatherName: father,
-            gender: gender,
-            phone: Value('070${(1234567 + i * 4321)}'),
-            status: Value(i == 12 ? 'suspended' : 'active'),
-          ),
-        );
-    await db.into(db.enrollments).insert(
-          EnrollmentsCompanion.insert(
-            studentId: id,
-            sectionId: sections[i % sections.length],
-            academicYearId: yearId,
-            rollNo: Value((i ~/ sections.length) + 1),
-          ),
-        );
+    await repo.admit(
+      student: StudentsCompanion.insert(
+        admissionNo: '1405-${(i + 1).toString().padLeft(4, '0')}',
+        firstName: first,
+        lastName: Value(last),
+        fatherName: father,
+        gender: gender,
+        phone: Value('070${(1234567 + i * 4321)}'),
+        status: Value(i == 12 ? 'suspended' : 'active'),
+      ),
+      guardians: [
+        GuardiansCompanion.insert(fullName: father, relation: 'father'),
+      ],
+      sectionId: sections[i % sections.length],
+      academicYearId: yearId,
+      rollNo: (i ~/ sections.length) + 1,
+      byUserId: 1,
+      byUserName: 'admin',
+    );
   }
 }
 
 Widget _wizard(AppDatabase db) => AdmissionWizard(
-      students: StudentRepository(db),
-      academic: AcademicRepository(db),
-      session: _session,
-      onAdmitted: (_, __) {},
-      onCancel: () {},
+  students: StudentRepository(db),
+  academic: AcademicRepository(db),
+  session: _session,
+  onAdmitted: (_, __) {},
+  onCancel: () {},
+);
+
+/// نمونه استادان — یو يې د لومړي بخش مشر.
+Future<void> _seedTeachers(AppDatabase db) async {
+  final repo = TeacherRepository(db);
+  const people = [
+    ('محمد نعیم صافي', 'ریاضي', 'male'),
+    ('زرغونه احمدي', 'بیولوژي', 'female'),
+    ('عبدالباري کریمي', 'فزیک', 'male'),
+    ('حبیبه نوري', 'پښتو', 'female'),
+    ('نصرالله زدران', 'کیمیا', 'male'),
+    ('مرسل حیدري', 'انګلیسي', 'female'),
+  ];
+
+  final ids = <int>[];
+  for (var i = 0; i < people.length; i++) {
+    final (name, spec, gender) = people[i];
+    ids.add(
+      await repo.add(
+        teacher: TeachersCompanion.insert(
+          employeeNo: await repo.nextEmployeeNo(),
+          fullName: name,
+          gender: gender,
+          specialization: Value(spec),
+          phone: Value('070${3216549 + i * 1111}'),
+          qualification: const Value('لیسانس'),
+          monthlySalary: Value(12000 + i * 500),
+        ),
+        byUserId: 1,
+        byUserName: 'admin',
+      ),
     );
+  }
+
+  // لومړیو دریو بخشونو ته مشر استادان وټاکه.
+  final sections = await AcademicRepository(db).sections();
+  for (var i = 0; i < 3 && i < sections.length; i++) {
+    await repo.assignHomeroom(
+      sectionId: sections[i].sectionId,
+      teacherId: ids[i],
+    );
+  }
+}

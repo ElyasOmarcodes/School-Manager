@@ -273,6 +273,34 @@ ORDER BY admission_no DESC LIMIT 1
     });
   }
 
+  /// هغو شاګردانو ته پټ کلي ورکوي چې نه يې لري.
+  ///
+  /// **دا ولې پکار ده؟** `admit()` پټ کلید پخپله جوړوي، خو ریکارډونه
+  /// له بلې لارې هم راتلای شي — د زاړه سیسټم واردول، یا هغه شاګردان
+  /// چې د دې خاصیت له راتګ مخکې ثبت شوي. پرته له کلي، د هغوی کارت
+  /// QR نه لري او سکینر يې نه پېژني.
+  ///
+  /// د بدل شویو ریکارډونو شمېر راګرځوي.
+  Future<int> backfillQrSecrets() async {
+    final missing =
+        await (db.select(db.students)
+              ..where((s) => s.qrSecret.isNull())
+              ..where((s) => s.deletedAt.isNull()))
+            .get();
+    if (missing.isEmpty) return 0;
+
+    await db.transaction(() async {
+      for (final s in missing) {
+        // هر شاګرد خپل کلید اخلي — نه یو ګډ. که ګډ وای، د یوه
+        // کارت له مخې به د ټولو جوړېدل ممکن وو.
+        await (db.update(db.students)..where((t) => t.id.equals(s.id))).write(
+          StudentsCompanion(qrSecret: Value(QrToken.newSchoolKey())),
+        );
+      }
+    });
+    return missing.length;
+  }
+
   /// د ورک شوي کارت باطلول — نسخه یو زیاتوي نو زوړ QR نور نه منل کېږي.
   Future<int> revokeCard(int studentId) async {
     return db.customUpdate(

@@ -171,9 +171,7 @@ void main() {
       await seedStudent('1405-0423', 'احمد', 'محمود');
 
       // کارن «۰۴۲۳» لیکي — ډیټابیس لاتیني ساتي.
-      final page = await repo.list(
-        filter: const StudentFilter(query: '۰۴۲۳'),
-      );
+      final page = await repo.list(filter: const StudentFilter(query: '۰۴۲۳'));
       expect(page.total, 1);
       expect(page.items.first.student.admissionNo, '1405-0423');
     });
@@ -181,12 +179,7 @@ void main() {
     test('د جنس او حالت سرغړاوی', () async {
       await seedStudent('1405-0001', 'احمد', 'محمود');
       await seedStudent('1405-0002', 'زرغونه', 'رحیم', gender: 'female');
-      await seedStudent(
-        '1405-0003',
-        'نور',
-        'ګل',
-        status: 'graduated',
-      );
+      await seedStudent('1405-0003', 'نور', 'ګل', status: 'graduated');
 
       expect(
         (await repo.list(filter: const StudentFilter(gender: 'female'))).total,
@@ -195,8 +188,9 @@ void main() {
       // تلواله سرغړاوی یوازې فعال ښیي — فارغ نه راځي.
       expect((await repo.list()).total, 2);
       expect(
-        (await repo.list(filter: const StudentFilter(status: 'graduated')))
-            .total,
+        (await repo.list(
+          filter: const StudentFilter(status: 'graduated'),
+        )).total,
         1,
       );
     });

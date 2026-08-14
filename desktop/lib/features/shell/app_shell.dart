@@ -5,10 +5,14 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_motion.dart';
 import '../../data/repositories/academic_repository.dart';
 import '../../data/repositories/student_repository.dart';
+import '../../data/repositories/teacher_repository.dart';
 import '../auth/auth_service.dart';
 import '../dashboard/dashboard_page.dart';
 import '../students/admission_wizard.dart';
+import '../classes/classes_page.dart';
+import '../id_cards/id_cards_page.dart';
 import '../students/students_page.dart';
+import '../teachers/teachers_page.dart';
 import 'nav_items.dart';
 import 'sidebar.dart';
 
@@ -22,6 +26,7 @@ class AppShell extends StatefulWidget {
   final ThemeMode themeMode;
   final StudentRepository? studentRepo;
   final AcademicRepository? academicRepo;
+  final TeacherRepository? teacherRepo;
 
   const AppShell({
     super.key,
@@ -33,6 +38,7 @@ class AppShell extends StatefulWidget {
     required this.themeMode,
     this.studentRepo,
     this.academicRepo,
+    this.teacherRepo,
   });
 
   @override
@@ -159,6 +165,24 @@ class _AppShellState extends State<AppShell> {
             : () => setState(() => _admitting = true),
       );
     }
+    final academic = widget.academicRepo;
+    final teachers = widget.teacherRepo;
+    final students = widget.studentRepo;
+
+    if (_route == '/id-cards' && students != null && academic != null) {
+      return IdCardsPage(
+        students: students,
+        academic: academic,
+        schoolName: widget.schoolName,
+      );
+    }
+    if (_route == '/teachers' && teachers != null) {
+      return TeachersPage(repo: teachers, session: widget.session);
+    }
+    if (_route == '/classes' && academic != null && teachers != null) {
+      return ClassesPage(academic: academic, teachers: teachers);
+    }
+
     // پاتې ماډلونه په راتلونکو پړاوونو کې جوړېږي — خو سایډبار
     // اوس هم ټول ښیي، چې د پرمختګ لار څرګنده وي.
     return _ComingSoon(item: _currentItem);

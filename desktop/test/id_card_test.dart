@@ -118,6 +118,66 @@ void main() {
     });
   });
 
+  group('د پټ کلي بیا-ډکول', () {
+    test('یوازې هغو ته ورکوي چې نه يې لري، او هر یو ته جلا', () async {
+      // د زاړه سیسټم د واردولو په څېر — مستقیم ثبت، پرته له کلي.
+      for (var i = 1; i <= 3; i++) {
+        await db
+            .into(db.students)
+            .insert(
+              StudentsCompanion.insert(
+                admissionNo: '1404-000$i',
+                firstName: 'زوړ$i',
+                fatherName: 'پلار',
+                gender: 'male',
+              ),
+            );
+      }
+      // یو نوی چې کلید لري.
+      final fresh = await admitOne();
+
+      final n = await repo.backfillQrSecrets();
+      expect(n, 3, reason: 'یوازې هغه درې چې کلید يې نه درلود');
+
+      final all = await db.select(db.students).get();
+      expect(all.every((s) => s.qrSecret != null), isTrue);
+
+      // د نوي کلید نه دی بدل شوی — که بدل شوی وای، چاپ شوی کارت
+      // به يې باطل شوی و.
+      final after = all.firstWhere((s) => s.id == fresh.id);
+      expect(after.qrSecret, fresh.qrSecret);
+
+      // هر شاګرد خپل کلید — نه یو ګډ.
+      final keys = all.map((s) => s.qrSecret).toSet();
+      expect(keys, hasLength(all.length));
+    });
+
+    test('که ټولو کلي ولري، هېڅ نه بدلوي', () async {
+      await admitOne();
+      expect(await repo.backfillQrSecrets(), 0);
+    });
+
+    test('پټ شوي شاګردان نه شاملېږي', () async {
+      final id = await db
+          .into(db.students)
+          .insert(
+            StudentsCompanion.insert(
+              admissionNo: '1404-0009',
+              firstName: 'پټ',
+              fatherName: 'پلار',
+              gender: 'male',
+              deletedAt: Value(DateTime(2026)),
+            ),
+          );
+      expect(await repo.backfillQrSecrets(), 0);
+
+      final s = await (db.select(
+        db.students,
+      )..where((t) => t.id.equals(id))).getSingle();
+      expect(s.qrSecret, isNull);
+    });
+  });
+
   group('د چاپ PDF', () {
     test('یوه پاڼه جوړوي او PDF بڼه لري', () async {
       final student = await admitOne();
@@ -128,10 +188,7 @@ void main() {
         yearLabel: '۱۴۰۵',
       );
 
-      final bytes = await IdCardPdf.build(
-        cards: [card],
-        locale: AppLocale.ps,
-      );
+      final bytes = await IdCardPdf.build(cards: [card], locale: AppLocale.ps);
 
       expect(bytes.length, greaterThan(1000));
       // د PDF لاسلیک: %PDF

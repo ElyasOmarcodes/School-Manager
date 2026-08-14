@@ -75,14 +75,16 @@ void main() {
 
   test('د یوه شاګرد کلنۍ حاضري — تر ۵۰ms', () async {
     final sw = Stopwatch()..start();
-    final rows = await (db.select(db.attendances)
-          ..where((a) => a.studentId.equals(423)))
-        .get();
+    final rows = await (db.select(
+      db.attendances,
+    )..where((a) => a.studentId.equals(423))).get();
     sw.stop();
 
     // ignore: avoid_print
-    print('د یوه شاګرد کلنۍ حاضري (${rows.length} کرښې): '
-        '${sw.elapsedMicroseconds}µs');
+    print(
+      'د یوه شاګرد کلنۍ حاضري (${rows.length} کرښې): '
+      '${sw.elapsedMicroseconds}µs',
+    );
 
     expect(rows, hasLength(schoolDays));
     expect(sw.elapsedMilliseconds, lessThan(50));
@@ -91,38 +93,46 @@ void main() {
   test('د یوې ورځې غیرحاضران — تر ۵۰ms', () async {
     final day = DateTime(2026, 1, 1).add(const Duration(days: 60));
     final sw = Stopwatch()..start();
-    final rows = await (db.select(db.attendances)
-          ..where((a) => a.date.equals(day) & a.status.equals('absent')))
-        .get();
+    final rows = await (db.select(
+      db.attendances,
+    )..where((a) => a.date.equals(day) & a.status.equals('absent'))).get();
     sw.stop();
 
     // ignore: avoid_print
-    print('د یوې ورځې غیرحاضران (${rows.length} تنه): '
-        '${sw.elapsedMicroseconds}µs');
+    print(
+      'د یوې ورځې غیرحاضران (${rows.length} تنه): '
+      '${sw.elapsedMicroseconds}µs',
+    );
 
     expect(sw.elapsedMilliseconds, lessThan(50));
   });
 
   test('د ټول کال د حاضرۍ سلنه — تر ۵۰۰ms', () async {
     final sw = Stopwatch()..start();
-    final r = await db.customSelect(
-      "SELECT status, COUNT(*) AS c FROM attendances GROUP BY status",
-    ).get();
+    final r = await db
+        .customSelect(
+          "SELECT status, COUNT(*) AS c FROM attendances GROUP BY status",
+        )
+        .get();
     sw.stop();
 
     // ignore: avoid_print
-    print('د ټول کال ټولټال ($totalRows کرښې): '
-        '${sw.elapsedMilliseconds}ms');
+    print(
+      'د ټول کال ټولټال ($totalRows کرښې): '
+      '${sw.elapsedMilliseconds}ms',
+    );
 
     expect(r, isNotEmpty);
     expect(sw.elapsedMilliseconds, lessThan(500));
   });
 
   test('index ریښتیا کارېږي — نه د ټول جدول لټون', () async {
-    final plan = await db.customSelect(
-      'EXPLAIN QUERY PLAN '
-      'SELECT * FROM attendances WHERE student_id = 423',
-    ).get();
+    final plan = await db
+        .customSelect(
+          'EXPLAIN QUERY PLAN '
+          'SELECT * FROM attendances WHERE student_id = 423',
+        )
+        .get();
 
     final text = plan.map((r) => r.data.values.join(' ')).join('\n');
     // ignore: avoid_print
