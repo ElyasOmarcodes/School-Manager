@@ -5,6 +5,7 @@ import '../../core/l10n/strings.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_motion.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/numerals.dart';
 
 /// د ډاشبورډ خلاصه — هغه څلور شمېرې چې مدیر سهار لومړی ګوري.
 class DashboardStats {
@@ -84,17 +85,135 @@ class DashboardPage extends StatelessWidget {
                   children: [chart, const SizedBox(height: 16), list],
                 );
               }
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Expanded(flex: 3, child: chart),
-                  const SizedBox(width: 16),
-                  Expanded(flex: 2, child: list),
-                ],
+              // `IntrinsicHeight` دواړه پینلونه یو لوړوالی ورکوي.
+              // پرته له دې، `CrossAxisAlignment.stretch` د سکرول پاڼې
+              // دننه بې‌پایه لوړوالی غواړي او رینډر ماتېږي.
+              return IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(flex: 3, child: chart),
+                    const SizedBox(width: 16),
+                    Expanded(flex: 2, child: list),
+                  ],
+                ),
               );
             },
           ),
+          const SizedBox(height: 16),
+          FadeSlideIn(
+            delay: AppMotion.staggerFor(6),
+            child: _QuickActions(s: s),
+          ),
         ],
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  ژر لاسرسی — هغه څلور کارونه چې مدیر ورځې څو ځله کوي
+// ═══════════════════════════════════════════════════════════
+
+class _QuickActions extends StatelessWidget {
+  final S s;
+  const _QuickActions({required this.s});
+
+  @override
+  Widget build(BuildContext context) {
+    final actions = <(String, IconData, Color)>[
+      (s.takeAttendance, Icons.fact_check_rounded, AppColors.modAttendance),
+      (s.addStudent, Icons.person_add_rounded, AppColors.modStudents),
+      (s.notifyParents, Icons.campaign_rounded, AppColors.modMessages),
+      (s.idCards, Icons.qr_code_2_rounded, AppColors.modIdCards),
+    ];
+
+    return _Panel(
+      title: s.quickActions,
+      child: LayoutBuilder(
+        builder: (context, c) {
+          final perRow = c.maxWidth < 620 ? 2 : 4;
+          const gap = 12.0;
+          final w = (c.maxWidth - gap * (perRow - 1)) / perRow;
+          return Wrap(
+            spacing: gap,
+            runSpacing: gap,
+            children: [
+              for (final (label, icon, color) in actions)
+                SizedBox(
+                  width: w,
+                  child: _ActionTile(label: label, icon: icon, color: color),
+                ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _ActionTile extends StatefulWidget {
+  final String label;
+  final IconData icon;
+  final Color color;
+
+  const _ActionTile({
+    required this.label,
+    required this.icon,
+    required this.color,
+  });
+
+  @override
+  State<_ActionTile> createState() => _ActionTileState();
+}
+
+class _ActionTileState extends State<_ActionTile> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: AnimatedContainer(
+        duration: AppMotion.fast,
+        curve: AppMotion.standard,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
+        decoration: BoxDecoration(
+          color: _hover ? widget.color.withValues(alpha: 0.09) : p.surfaceAlt,
+          borderRadius: BorderRadius.circular(AppTheme.radius),
+          border: Border.all(
+            color: _hover ? widget.color.withValues(alpha: 0.45) : p.line,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: widget.color.withValues(alpha: 0.14),
+                borderRadius: BorderRadius.circular(9),
+              ),
+              child: Icon(widget.icon, size: 17, color: widget.color),
+            ),
+            const SizedBox(width: 11),
+            Expanded(
+              child: Text(
+                widget.label,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
+                  color: p.inkSoft,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -111,10 +230,12 @@ class _KpiRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final locale = S.of(context).locale;
     final cards = <Widget>[
       _KpiCard(
         label: s.totalStudents,
         value: stats.totalStudents,
+        locale: locale,
         icon: Icons.school_rounded,
         gradient: AppColors.gradIndigo,
         index: 0,
@@ -122,8 +243,9 @@ class _KpiRow extends StatelessWidget {
       _KpiCard(
         label: s.presentToday,
         value: stats.presentToday,
+        locale: locale,
         suffix: stats.totalStudents > 0
-            ? '  (${stats.presentPercent.round()}%)'
+            ? '  (${locale.num(stats.presentPercent.round())}%)'
             : '',
         icon: Icons.check_circle_rounded,
         gradient: AppColors.gradEmerald,
@@ -132,6 +254,7 @@ class _KpiRow extends StatelessWidget {
       _KpiCard(
         label: s.absentToday,
         value: stats.absentToday,
+        locale: locale,
         icon: Icons.cancel_rounded,
         gradient: AppColors.gradRose,
         index: 2,
@@ -139,6 +262,7 @@ class _KpiRow extends StatelessWidget {
       _KpiCard(
         label: s.feesCollected,
         value: stats.feesCollectedPercent.round(),
+        locale: locale,
         suffix: '%',
         icon: Icons.payments_rounded,
         gradient: AppColors.gradAmber,
@@ -170,6 +294,7 @@ class _KpiCard extends StatefulWidget {
   final IconData icon;
   final List<Color> gradient;
   final int index;
+  final AppLocale locale;
 
   const _KpiCard({
     required this.label,
@@ -177,6 +302,7 @@ class _KpiCard extends StatefulWidget {
     required this.icon,
     required this.gradient,
     required this.index,
+    required this.locale,
     this.suffix = '',
   });
 
@@ -234,6 +360,7 @@ class _KpiCardState extends State<_KpiCard> {
             CountUpText(
               value: widget.value,
               suffix: widget.suffix,
+              format: (v) => widget.locale.num(v.round()),
               style: AppTheme.tabular(const TextStyle(
                 fontSize: 27,
                 fontWeight: FontWeight.w800,
@@ -301,7 +428,7 @@ class _ChartCard extends StatelessWidget {
                         interval: 25,
                         reservedSize: 36,
                         getTitlesWidget: (v, _) => Text(
-                          '${v.round()}%',
+                          '${S.of(context).locale.num(v.round())}%',
                           style: TextStyle(fontSize: 10, color: p.faint),
                         ),
                       ),
@@ -338,11 +465,13 @@ class _ChartCard extends StatelessWidget {
                               top: Radius.circular(6),
                             ),
                             gradient: LinearGradient(
+                              // رنګ معنا لري، نه ښکلا: شین = ښه (۹۰٪+)،
+                              // نارنجي = پاملرنه (۷۵–۸۹٪)، سور = ستونزه.
                               colors: stats.weeklyAttendance[i] >= 90
                                   ? AppColors.gradEmerald
                                   : stats.weeklyAttendance[i] >= 75
-                                      ? AppColors.gradIndigo
-                                      : AppColors.gradAmber,
+                                      ? AppColors.gradAmber
+                                      : AppColors.gradRose,
                               begin: Alignment.bottomCenter,
                               end: Alignment.topCenter,
                             ),

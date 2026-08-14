@@ -74,6 +74,17 @@ class _AppShellState extends State<AppShell> {
                   child: AnimatedSwitcher(
                     duration: AppMotion.normal,
                     switchInCurve: AppMotion.standard,
+                    // د تلواله layoutBuilder ماشومانو ته سست (loose) قیدونه
+                    // ورکوي، نو د ډاشبورډ د سکرول پاڼې لوړوالی نامعلوم
+                    // پاتې کېږي او رسمېږي نه. `StackFit.expand` قیدونه
+                    // ټینګوي — پاڼه د خپل ځای اندازه اخلي او سکرول کوي.
+                    layoutBuilder: (current, previous) => Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        ...previous,
+                        if (current != null) current,
+                      ],
+                    ),
                     transitionBuilder: (child, anim) => FadeTransition(
                       opacity: anim,
                       child: SlideTransition(

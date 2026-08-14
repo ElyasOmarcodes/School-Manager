@@ -55,7 +55,7 @@ class Sidebar extends StatelessWidget {
           Divider(height: 1, color: p.line),
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.symmetric(vertical: 10),
+              padding: const EdgeInsets.symmetric(vertical: 6),
               children: [
                 for (final g in groups) ...[
                   if (g.title(s).isNotEmpty)
@@ -90,7 +90,7 @@ class _Brand extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.palette;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 18, 16, 18),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
       child: Row(
         children: [
           Container(
@@ -153,7 +153,7 @@ class _GroupLabel extends StatelessWidget {
       child: expanded
           ? Padding(
               key: const ValueKey('label'),
-              padding: const EdgeInsets.fromLTRB(22, 14, 22, 7),
+              padding: const EdgeInsets.fromLTRB(20, 10, 20, 4),
               child: Text(
                 text,
                 style: TextStyle(
@@ -166,7 +166,7 @@ class _GroupLabel extends StatelessWidget {
             )
           : Padding(
               key: const ValueKey('rule'),
-              padding: const EdgeInsets.fromLTRB(24, 12, 24, 12),
+              padding: const EdgeInsets.fromLTRB(22, 9, 22, 9),
               child: Container(height: 1, color: p.line),
             ),
     );
@@ -210,8 +210,8 @@ class _NavTileState extends State<_NavTile> {
         child: AnimatedContainer(
           duration: AppMotion.fast,
           curve: AppMotion.standard,
-          margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+          margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 1),
+          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
           decoration: BoxDecoration(
             // فعال توکی د خپل ماډل په رنګ کې نرم شالید اخلي.
             color: active
@@ -229,8 +229,8 @@ class _NavTileState extends State<_NavTile> {
               // رنګینه نښه — دا هغه څه دي چې ډاشبورډ ژوندی ښکاري.
               AnimatedContainer(
                 duration: AppMotion.fast,
-                width: 30,
-                height: 30,
+                width: 27,
+                height: 27,
                 decoration: BoxDecoration(
                   color: active ? c : c.withValues(alpha: 0.13),
                   borderRadius: BorderRadius.circular(8),
@@ -293,7 +293,7 @@ class _CollapseButton extends StatelessWidget {
     return InkWell(
       onTap: onToggle,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 14),
+        padding: const EdgeInsets.symmetric(vertical: 11),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
