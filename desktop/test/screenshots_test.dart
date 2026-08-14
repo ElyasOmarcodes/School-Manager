@@ -3,7 +3,7 @@ library;
 
 import 'dart:io';
 
-import 'package:drift/drift.dart' show Value;
+import 'package:drift/drift.dart' show Value, Variable;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -25,7 +25,14 @@ import 'package:school_manager/features/shell/app_shell.dart';
 import 'package:school_manager/features/attendance/attendance_page.dart';
 import 'package:school_manager/features/classes/classes_page.dart';
 import 'package:school_manager/features/leave/leave_page.dart';
+import 'package:school_manager/data/repositories/device_repository.dart';
+import 'package:school_manager/data/repositories/message_repository.dart';
+import 'package:school_manager/data/repositories/notification_repository.dart';
 import 'package:school_manager/features/id_cards/id_cards_page.dart';
+import 'package:school_manager/features/messages/messages_page.dart';
+import 'package:school_manager/features/settings/settings_page.dart';
+import 'package:school_manager/server/api_router.dart';
+import 'package:school_manager/server/local_server.dart';
 import 'package:school_manager/features/teachers/teachers_page.dart';
 import 'package:school_manager/features/students/admission_wizard.dart';
 import 'package:school_manager/features/students/students_page.dart';
@@ -321,6 +328,122 @@ void main() {
       settle: const Duration(milliseconds: 500),
       child: Scaffold(
         body: LeavePage(repo: LeaveRepository(db), session: _session),
+      ),
+    );
+  });
+
+  testWidgets('17 — پیغامونه (د غیرحاضرۍ خبرتیا)', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await _seedSchool(db);
+    await _seedAbsences(db);
+
+    await _shoot(
+      tester,
+      name: '17-messages-compose',
+      settle: const Duration(milliseconds: 600),
+      child: Scaffold(
+        body: MessagesPage(
+          messages: MessageRepository(db),
+          attendance: AttendanceRepository(db),
+          notifications: NotificationRepository(db),
+          session: _session,
+          schoolName: 'د نور لیسه',
+          clock: () => DateTime(2026, 5, 12, 9, 15),
+        ),
+      ),
+    );
+  });
+
+  testWidgets('18 — د پیغامونو تاریخچه', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await _seedSchool(db);
+    await _seedAbsences(db);
+    await _seedSentMessages(db);
+
+    await _shoot(
+      tester,
+      name: '18-messages-log',
+      settle: const Duration(milliseconds: 600),
+      child: Scaffold(
+        body: MessagesPage(
+          messages: MessageRepository(db),
+          attendance: AttendanceRepository(db),
+          notifications: NotificationRepository(db),
+          session: _session,
+          schoolName: 'د نور لیسه',
+          clock: () => DateTime(2026, 5, 12, 9, 15),
+        ),
+      ),
+      after: (tester) async {
+        await tester.tap(find.text('د لېږلو تاریخچه'));
+        await tester.pumpAndSettle();
+      },
+    );
+  });
+
+  testWidgets('19 — تنظیمات: اړیکه او وسایل', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await _seedSchool(db);
+    await _seedDevices(db);
+
+    await _shoot(
+      tester,
+      name: '19-settings-connect',
+      settle: const Duration(milliseconds: 600),
+      child: Scaffold(
+        body: SettingsPage(
+          db: db,
+          devices: DeviceRepository(db),
+          server: LocalServer(ApiDeps.of(db, schoolName: () => 'د نور لیسه')),
+          session: _session,
+          config: const AppConfig(
+            databasePath: r'D:\\SchoolData\\school.db',
+            setupComplete: true,
+          ),
+          onConfigChanged: (_) {},
+          schoolName: 'د نور لیسه',
+          // ریښتینې شبکه نه پوښتو — د ازموینې دننه I/O نه ځواب کوي،
+          // او عکس باید هره ورځ یو شان وي.
+          lanLookup: (port) async => [
+            LanEndpoint(
+              interfaceName: 'Wi-Fi',
+              address: '192.168.1.14',
+              port: port,
+            ),
+            LanEndpoint(
+              interfaceName: 'Ethernet',
+              address: '10.0.0.7',
+              port: port,
+            ),
+          ],
+        ),
+      ),
+    );
+  });
+
+  testWidgets('20 — پیغامونه (تیاره)', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await _seedSchool(db);
+    await _seedAbsences(db);
+
+    await _shoot(
+      tester,
+      name: '20-messages-dark',
+      brightness: Brightness.dark,
+      settle: const Duration(milliseconds: 600),
+      child: Scaffold(
+        body: MessagesPage(
+          messages: MessageRepository(db),
+          attendance: AttendanceRepository(db),
+          notifications: NotificationRepository(db),
+          session: _session,
+          schoolName: 'د نور لیسه',
+          clock: () => DateTime(2026, 5, 12, 9, 15),
+        ),
       ),
     );
   });
@@ -643,4 +766,119 @@ Future<void> _seedLeaves(AppDatabase db) async {
       );
     }
   }
+}
+
+/// د غیرحاضرۍ ورځ — چې د پیغامونو پاڼه څه ولري چې وښیي.
+Future<void> _seedAbsences(AppDatabase db) async {
+  final att = AttendanceRepository(db);
+  final day = DateTime(2026, 5, 12);
+
+  // ځینې راغلي، ځینې نه — بیا ورځ تړو چې پاتې غیرحاضر شي.
+  for (final no in ['1405-0001', '1405-0002', '1405-0005', '1405-0007']) {
+    await att.checkIn(
+      input: no,
+      now: DateTime(2026, 5, 12, 7, 35),
+      byUserId: 1,
+      withRules: const AttendanceRules(),
+    );
+  }
+
+  // د تېرو ورځو غیرحاضري — چې «د میاشتې غیرحاضري» ستنه ژوندۍ وي.
+  final students = await db.select(db.students).get();
+  for (var back = 1; back <= 6; back++) {
+    final d = day.subtract(Duration(days: back));
+    await att.markRoster(
+      sectionId: 1,
+      date: d,
+      statusByStudentId: {
+        for (var i = 0; i < students.length; i++)
+          students[i].id: (i + back) % 4 == 0 ? 'absent' : 'present',
+      },
+      byUserId: 1,
+    );
+  }
+
+  await att.lockDay(date: day, byUserId: 1);
+}
+
+/// څو تللي پیغامونه — چې «تاریخچه» ټب تش نه وي.
+Future<void> _seedSentMessages(AppDatabase db) async {
+  final repo = MessageRepository(db);
+  await repo.ensureDefaultTemplates();
+
+  final absent = await AttendanceRepository(
+    db,
+  ).absentees(DateTime(2026, 5, 12));
+
+  // د لومړیو دریو کورونو اپ تړل شوی — نو هغه بریالي دي، پاتې ناکام.
+  final devices = DeviceRepository(db);
+  final links = await db.select(db.studentGuardians).get();
+  for (final a in absent.take(3)) {
+    final link = links.firstWhere((l) => l.studentId == a.student.id);
+    final code = await devices.createCode(
+      role: 'parent',
+      guardianId: link.guardianId,
+    );
+    await devices.redeem(
+      code: code.code,
+      deviceName: 'د ${a.student.firstName} کور',
+      now: DateTime(2026, 5, 12, 8, 0),
+    );
+  }
+
+  await repo.notifyAbsentees(
+    date: DateTime(2026, 5, 12),
+    studentIds: absent.map((a) => a.student.id).toList(),
+    byUserId: 1,
+    schoolName: 'د نور لیسه',
+    now: DateTime(2026, 5, 12, 9, 5),
+  );
+}
+
+/// څو تړل شوي تلیفونونه — د تنظیماتو د پاڼې لپاره.
+Future<void> _seedDevices(AppDatabase db) async {
+  final devices = DeviceRepository(db);
+  final links = await db.select(db.studentGuardians).get();
+
+  final manager = await devices.createCode(
+    role: 'manager',
+    userId: 1,
+    now: DateTime(2026, 5, 12, 8, 0),
+  );
+  await devices.redeem(
+    code: manager.code,
+    deviceName: 'د مدیر Samsung A54',
+    now: DateTime(2026, 5, 12, 8, 1),
+  );
+
+  // **هر وسیلې ته جلا وخت.** لیست د `paired_at` له مخې ترتیبېږي؛
+  // که دوه وسیلې هماغه وخت ولري، SQLite يې ترتیب خپله ټاکي او د
+  // گولډن عکس هر ځل بدلېږي.
+  for (final (i, link) in links.take(2).indexed) {
+    final c = await devices.createCode(
+      role: 'parent',
+      guardianId: link.guardianId,
+      now: DateTime(2026, 5, 12, 8, 0),
+    );
+    await devices.redeem(
+      code: c.code,
+      deviceName: i == 0 ? 'د احمد پلار — Infinix' : 'د زرغونې پلار — Nokia',
+      now: DateTime(2026, 5, 12, 8, 3 + i),
+    );
+  }
+
+  // یو ژوندی کوډ چې لا نه دی کارول شوی — پرده يې ښیي.
+  await devices.createCode(role: 'parent', guardianId: links.last.guardianId);
+
+  // **د کوډ ثابتول.** `createCode()` تصادفي شپږ توري جوړوي — هغه په
+  // تولید کې سم دی، خو د گولډن عکس يې هر ځل بدلوي. نو د عکس لپاره
+  // ثابت کوډ او ثابت وخت ورکوو.
+  // پای‌وخت لرې راتلونکي ته — که نه، د ریښتیني ساعت په تېرېدو سره
+  // کوډ «ختم شوی» ګڼل کېږي او له پردې ورکېږي.
+  await db.customUpdate(
+    "UPDATE pairing_codes SET code = 'KX7M4D', expires_at = ? "
+    'WHERE used_at IS NULL',
+    variables: [Variable<DateTime>(DateTime(2099, 1, 1, 8, 20))],
+    updates: {db.pairingCodes},
+  );
 }

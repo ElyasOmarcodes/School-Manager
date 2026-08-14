@@ -4,6 +4,7 @@ import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:sqlite3/sqlite3.dart';
 
+import 'tables/comm_tables.dart';
 import 'tables/core_tables.dart';
 
 part 'database.g.dart';
@@ -25,6 +26,12 @@ part 'database.g.dart';
     Attendances,
     LeaveRequests,
     AuditLogs,
+    // ── څلورم پړاو: اړیکه ─────────────────────────────────
+    Devices,
+    PairingCodes,
+    MessageTemplates,
+    Messages,
+    AppNotifications,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -61,7 +68,7 @@ class AppDatabase extends _$AppDatabase {
   );
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -70,8 +77,17 @@ class AppDatabase extends _$AppDatabase {
       await _createIndexes();
     },
     onUpgrade: (m, from, to) async {
-      // راتلونکې نسخې دلته زیاتېږي:
-      //   if (from < 2) { await m.addColumn(...); }
+      // ── ۱ → ۲: د اړیکې جدولونه ──────────────────────────
+      // دا ښوونځی ښايي نیم کال کار کړی وي؛ د شاګردانو او حاضرۍ
+      // ډیټا باید سالمه پاتې شي. نو یوازې نوي جدولونه زیاتوو —
+      // زاړه نه لمسوو.
+      if (from < 2) {
+        await m.createTable(devices);
+        await m.createTable(pairingCodes);
+        await m.createTable(messageTemplates);
+        await m.createTable(messages);
+        await m.createTable(appNotifications);
+      }
       await _createIndexes();
     },
     beforeOpen: (details) async {
@@ -127,6 +143,29 @@ class AppDatabase extends _$AppDatabase {
       'CREATE INDEX IF NOT EXISTS ix_audit_at ON audit_logs (at DESC)',
       'CREATE INDEX IF NOT EXISTS ix_audit_entity '
           'ON audit_logs (entity, entity_id)',
+
+      // ── اړیکه ─────────────────────────────────────────────
+      // هر API غوښتنه له توکن سره راځي — دا لټون باید فوري وي.
+      'CREATE INDEX IF NOT EXISTS ix_devices_token '
+          'ON devices (token_hash) WHERE revoked_at IS NULL',
+      'CREATE INDEX IF NOT EXISTS ix_devices_guardian '
+          'ON devices (guardian_id)',
+      'CREATE INDEX IF NOT EXISTS ix_pairing_code '
+          'ON pairing_codes (code) WHERE used_at IS NULL',
+
+      // د پیغامونو لیست او د بیا-هڅې قطار.
+      'CREATE INDEX IF NOT EXISTS ix_msg_created '
+          'ON messages (created_at DESC)',
+      'CREATE INDEX IF NOT EXISTS ix_msg_status '
+          'ON messages (status, created_at)',
+      'CREATE INDEX IF NOT EXISTS ix_msg_guardian '
+          'ON messages (guardian_id, created_at DESC)',
+      'CREATE INDEX IF NOT EXISTS ix_msg_student_date '
+          'ON messages (student_id, related_date)',
+
+      // د مدیر د اپ صندوق.
+      'CREATE INDEX IF NOT EXISTS ix_notif_inbox '
+          'ON app_notifications (audience, created_at DESC)',
     ];
     for (final s in stmts) {
       await customStatement(s);

@@ -27,3 +27,6 @@ Thumbs.db
 *.db-wal
 *.db-shm
 *.sqlite
+
+# د گولډن ازموینې د ناکامۍ عکسونه — موقت دي، نه ساتل کېږي.
+**/test/failures/

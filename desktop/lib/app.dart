@@ -3,13 +3,19 @@ import 'package:flutter/material.dart';
 
 import 'core/config/app_config.dart';
 import 'core/l10n/strings.dart';
+import 'core/theme/app_colors.dart';
 import 'core/theme/app_theme.dart';
 import 'data/db/database.dart';
 import 'data/repositories/academic_repository.dart';
 import 'data/repositories/attendance_repository.dart';
+import 'data/repositories/device_repository.dart';
 import 'data/repositories/leave_repository.dart';
+import 'data/repositories/message_repository.dart';
+import 'data/repositories/notification_repository.dart';
 import 'data/repositories/student_repository.dart';
 import 'data/repositories/teacher_repository.dart';
+import 'server/api_router.dart';
+import 'server/local_server.dart';
 import 'features/auth/auth_service.dart';
 import 'features/auth/login_page.dart';
 import 'features/dashboard/dashboard_page.dart';
@@ -44,6 +50,14 @@ class _SchoolManagerAppState extends State<SchoolManagerApp> {
   String _schoolName = '';
   DashboardStats _stats = DashboardStats.empty;
 
+  /// د ښوونځي محلي سرور — د موبایل اپ لپاره.
+  ///
+  /// **ولې پخپله نه چالانېږي؟** ځکه چې یو سرور د شبکې پورټ نیسي.
+  /// که پروګرام هر ځل پرته له پوښتنې پورټ ونیسي، د ویندوز فایروال
+  /// به هر ځل پوښتنه وکړي او مدیر به ونه پوهېږي ولې. نو تر هغې
+  /// ولاړ دی چې مدیر يې په تنظیماتو کې چالان کړي.
+  LocalServer? _server;
+
   @override
   void initState() {
     super.initState();
@@ -52,6 +66,7 @@ class _SchoolManagerAppState extends State<SchoolManagerApp> {
 
   @override
   void dispose() {
+    _server?.stop();
     _db?.close();
     super.dispose();
   }
@@ -89,6 +104,15 @@ class _SchoolManagerAppState extends State<SchoolManagerApp> {
     _db = db;
     _auth = AuthService(db);
     _schoolName = school?.name ?? '';
+    await _prepareServer(db);
+  }
+
+  /// سرور جوړوي (خو نه يې چالانوي) او تلوالې کینډۍ کېږدي.
+  Future<void> _prepareServer(AppDatabase db) async {
+    await MessageRepository(db).ensureDefaultTemplates();
+    _server = LocalServer(
+      ApiDeps.of(db, schoolName: () => _schoolName),
+    );
   }
 
   /// د ویزارډ پای — ډیټابیس جوړوي، ښوونځی ثبتوي، مدیر جوړوي.
@@ -144,12 +168,14 @@ class _SchoolManagerAppState extends State<SchoolManagerApp> {
     );
     await widget.store.save(cfg);
 
+    _schoolName = school?.name ?? r.schoolName;
+    await _prepareServer(db);
+
     if (!mounted) return;
     setState(() {
       _config = cfg;
       _db = db;
       _auth = auth;
-      _schoolName = school?.name ?? r.schoolName;
       _stage = _Stage.login;
     });
   }
@@ -197,27 +223,47 @@ class _SchoolManagerAppState extends State<SchoolManagerApp> {
     });
   }
 
-  /// د ډاشبورډ شمېرې. اوس یوازې د شاګردانو شمېر ریښتینی دی —
-  /// پاتې د دریم پړاو (حاضري) سره ژوندي کېږي.
+  /// د ډاشبورډ شمېرې — اوس د حاضرۍ له ریښتیني جدول څخه راځي.
   Future<DashboardStats> _loadStats() async {
     final db = _db;
     if (db == null) return DashboardStats.empty;
 
-    final students =
-        await (db.select(db.students)
-              ..where((s) => s.deletedAt.isNull())
-              ..where((s) => s.status.equals('active')))
-            .get();
+    final att = AttendanceRepository(db);
+    final today = DateTime.now();
+    final summary = await att.summary(today);
+
+    // د تېرو شپږو ورځو سلنه — د ډاشبورډ د کرښې چارټ لپاره.
+    final weekly = <double>[];
+    final labels = <String>[];
+    const dayNames = ['د', 'س', 'چ', 'پ', 'ج', 'ش', 'ی'];
+    for (var i = 5; i >= 0; i--) {
+      final d = today.subtract(Duration(days: i));
+      final s = await att.summary(d);
+      weekly.add(s.total == 0 ? 0 : s.presentPercent);
+      labels.add(dayNames[d.weekday - 1]);
+    }
+
+    // هغه شاګردان چې دې میاشت کې درې یا ډېرې ورځې غیرحاضر دي —
+    // مدیر باید له سکرول کولو پرته يې وویني.
+    final attention = await att.absentees(today);
 
     return DashboardStats(
-      totalStudents: students.length,
-      presentToday: 0,
-      absentToday: 0,
-      lateToday: 0,
+      totalStudents: summary.total,
+      presentToday: summary.present,
+      absentToday: summary.absent,
+      lateToday: summary.late,
       feesCollectedPercent: 0,
-      weeklyAttendance: const [0, 0, 0, 0, 0, 0],
-      weekdayLabels: const ['ش', 'ی', 'د', 'س', 'چ', 'پ'],
-      attention: const [],
+      weeklyAttendance: weekly,
+      weekdayLabels: labels,
+      attention: [
+        for (final a in attention.where((a) => a.monthlyAbsences >= 3).take(5))
+          AttentionItem(
+            '${a.student.firstName} — ${a.className ?? '—'} — '
+                'دې میاشت کې ${a.monthlyAbsences} ورځې غیرحاضر',
+            a.monthlyAbsences >= 5 ? AppColors.danger : AppColors.warning,
+            Icons.event_busy_rounded,
+          ),
+      ],
     );
   }
 
@@ -262,6 +308,16 @@ class _SchoolManagerAppState extends State<SchoolManagerApp> {
       teacherRepo: TeacherRepository(_db!),
       attendanceRepo: AttendanceRepository(_db!),
       leaveRepo: LeaveRepository(_db!),
+      messageRepo: MessageRepository(_db!),
+      notificationRepo: NotificationRepository(_db!),
+      deviceRepo: DeviceRepository(_db!),
+      server: _server,
+      db: _db,
+      config: _config,
+      onConfigChanged: (c) async {
+        await widget.store.save(c);
+        if (mounted) setState(() => _config = c);
+      },
       themeMode: _themeMode,
       onThemeChanged: _setTheme,
       onSignOut: _signOut,

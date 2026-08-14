@@ -233,7 +233,9 @@ jobs:
       - run: flutter analyze --no-fatal-infos
         working-directory: ${{ env.MOBILE_DIR }}
 
-      - run: flutter test
+      # سکرین‌شاټونه پرېږدو — هغه د پرمختیا په ماشین کې جوړ شوي او
+      # د CI د فونټ توپیر يې بې‌ځایه ماتوي. ډیسکټاپ هم همدا کوي.
+      - run: flutter test --exclude-tags screenshots
         working-directory: ${{ env.MOBILE_DIR }}
 
       # یوازې arm64 — تر یونیورسل APK ډېر کوچنی دی او له ~۲۰۱۹ راهیسې

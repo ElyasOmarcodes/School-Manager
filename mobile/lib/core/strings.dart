@@ -40,14 +40,13 @@ class T {
   String get connectTitle =>
       _p('ښوونځي ته وصل شئ', 'اتصال به مکتب', 'Connect to your school');
   String get connectSub => _p(
-    'هغه کوډ ولیکئ چې ښوونځي درکړی، یا د مدیر له پردې يې سکین کړئ.',
-    'کدی را که مکتب داده وارد کنید.',
-    'Enter the code your school gave you.',
+    'هغه پته او کوډ ولیکئ چې ښوونځي درکړی. د ښوونځي Wi-Fi ته وصل اوسئ.',
+    'آدرس و کدی را که مکتب داده وارد کنید.',
+    'Enter the address and code your school gave you.',
   );
   String get pairCode => _p('د تړلو کوډ', 'کد اتصال', 'Pairing code');
   String get connect => _p('وصل شه', 'اتصال', 'Connect');
   String get scanQr => _p('QR سکین کړه', 'اسکن QR', 'Scan QR');
-  String get demoMode => _p('د نمونې حالت وګوره', 'حالت نمونه', 'Explore demo');
 
   // ── رول ─────────────────────────────────────────────────
   String get iAmManager => _p('زه مدیر یم', 'من مدیر هستم', "I'm the manager");
@@ -79,11 +78,6 @@ class T {
     'لا ښوونځي ته نه یاست وصل.',
     'هنوز به مکتب وصل نیستید.',
     'Not connected to a school yet.',
-  );
-  String get comingInPhase4 => _p(
-    'دا برخه د څلورم پړاو سره ژوندۍ کېږي — کله چې اپ د ښوونځي سیسټم سره وصل شي.',
-    'این بخش در مرحله چهارم فعال می‌شود.',
-    'This becomes live in phase 4, once the app syncs with the school system.',
   );
 }
 

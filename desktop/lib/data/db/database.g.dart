@@ -9774,6 +9774,3453 @@ class AuditLogsCompanion extends UpdateCompanion<AuditLog> {
   }
 }
 
+class $DevicesTable extends Devices with TableInfo<$DevicesTable, Device> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DevicesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _platformMeta = const VerificationMeta(
+    'platform',
+  );
+  @override
+  late final GeneratedColumn<String> platform = GeneratedColumn<String>(
+    'platform',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('android'),
+  );
+  static const VerificationMeta _roleMeta = const VerificationMeta('role');
+  @override
+  late final GeneratedColumn<String> role = GeneratedColumn<String>(
+    'role',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<int> userId = GeneratedColumn<int>(
+    'user_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _guardianIdMeta = const VerificationMeta(
+    'guardianId',
+  );
+  @override
+  late final GeneratedColumn<int> guardianId = GeneratedColumn<int>(
+    'guardian_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES guardians (id)',
+    ),
+  );
+  static const VerificationMeta _tokenHashMeta = const VerificationMeta(
+    'tokenHash',
+  );
+  @override
+  late final GeneratedColumn<String> tokenHash = GeneratedColumn<String>(
+    'token_hash',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _pushTokenMeta = const VerificationMeta(
+    'pushToken',
+  );
+  @override
+  late final GeneratedColumn<String> pushToken = GeneratedColumn<String>(
+    'push_token',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _pairedAtMeta = const VerificationMeta(
+    'pairedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> pairedAt = GeneratedColumn<DateTime>(
+    'paired_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _lastSeenAtMeta = const VerificationMeta(
+    'lastSeenAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lastSeenAt = GeneratedColumn<DateTime>(
+    'last_seen_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _lastIpMeta = const VerificationMeta('lastIp');
+  @override
+  late final GeneratedColumn<String> lastIp = GeneratedColumn<String>(
+    'last_ip',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _revokedAtMeta = const VerificationMeta(
+    'revokedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> revokedAt = GeneratedColumn<DateTime>(
+    'revoked_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    platform,
+    role,
+    userId,
+    guardianId,
+    tokenHash,
+    pushToken,
+    pairedAt,
+    lastSeenAt,
+    lastIp,
+    revokedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'devices';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Device> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('platform')) {
+      context.handle(
+        _platformMeta,
+        platform.isAcceptableOrUnknown(data['platform']!, _platformMeta),
+      );
+    }
+    if (data.containsKey('role')) {
+      context.handle(
+        _roleMeta,
+        role.isAcceptableOrUnknown(data['role']!, _roleMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_roleMeta);
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
+    }
+    if (data.containsKey('guardian_id')) {
+      context.handle(
+        _guardianIdMeta,
+        guardianId.isAcceptableOrUnknown(data['guardian_id']!, _guardianIdMeta),
+      );
+    }
+    if (data.containsKey('token_hash')) {
+      context.handle(
+        _tokenHashMeta,
+        tokenHash.isAcceptableOrUnknown(data['token_hash']!, _tokenHashMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_tokenHashMeta);
+    }
+    if (data.containsKey('push_token')) {
+      context.handle(
+        _pushTokenMeta,
+        pushToken.isAcceptableOrUnknown(data['push_token']!, _pushTokenMeta),
+      );
+    }
+    if (data.containsKey('paired_at')) {
+      context.handle(
+        _pairedAtMeta,
+        pairedAt.isAcceptableOrUnknown(data['paired_at']!, _pairedAtMeta),
+      );
+    }
+    if (data.containsKey('last_seen_at')) {
+      context.handle(
+        _lastSeenAtMeta,
+        lastSeenAt.isAcceptableOrUnknown(
+          data['last_seen_at']!,
+          _lastSeenAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('last_ip')) {
+      context.handle(
+        _lastIpMeta,
+        lastIp.isAcceptableOrUnknown(data['last_ip']!, _lastIpMeta),
+      );
+    }
+    if (data.containsKey('revoked_at')) {
+      context.handle(
+        _revokedAtMeta,
+        revokedAt.isAcceptableOrUnknown(data['revoked_at']!, _revokedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {tokenHash},
+  ];
+  @override
+  Device map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Device(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      platform: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}platform'],
+      )!,
+      role: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}role'],
+      )!,
+      userId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}user_id'],
+      ),
+      guardianId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}guardian_id'],
+      ),
+      tokenHash: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}token_hash'],
+      )!,
+      pushToken: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}push_token'],
+      ),
+      pairedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}paired_at'],
+      )!,
+      lastSeenAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_seen_at'],
+      ),
+      lastIp: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}last_ip'],
+      ),
+      revokedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}revoked_at'],
+      ),
+    );
+  }
+
+  @override
+  $DevicesTable createAlias(String alias) {
+    return $DevicesTable(attachedDatabase, alias);
+  }
+}
+
+class Device extends DataClass implements Insertable<Device> {
+  final int id;
+
+  /// «د مدیر Samsung» — کارن يې پخپله ولیکي.
+  final String name;
+  final String platform;
+
+  /// `manager` | `parent`
+  final String role;
+
+  /// که مدیر وي — کوم کارن ته تړلی.
+  final int? userId;
+
+  /// که والدین وي — کوم سرپرست ته تړلی.
+  final int? guardianId;
+
+  /// د bearer توکن SHA-256.
+  final String tokenHash;
+
+  /// د FCM/پش لپاره — اوس یوازې ساتل کېږي، په اوږد مهال کې کارېږي.
+  final String? pushToken;
+  final DateTime pairedAt;
+  final DateTime? lastSeenAt;
+  final String? lastIp;
+  final DateTime? revokedAt;
+  const Device({
+    required this.id,
+    required this.name,
+    required this.platform,
+    required this.role,
+    this.userId,
+    this.guardianId,
+    required this.tokenHash,
+    this.pushToken,
+    required this.pairedAt,
+    this.lastSeenAt,
+    this.lastIp,
+    this.revokedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['name'] = Variable<String>(name);
+    map['platform'] = Variable<String>(platform);
+    map['role'] = Variable<String>(role);
+    if (!nullToAbsent || userId != null) {
+      map['user_id'] = Variable<int>(userId);
+    }
+    if (!nullToAbsent || guardianId != null) {
+      map['guardian_id'] = Variable<int>(guardianId);
+    }
+    map['token_hash'] = Variable<String>(tokenHash);
+    if (!nullToAbsent || pushToken != null) {
+      map['push_token'] = Variable<String>(pushToken);
+    }
+    map['paired_at'] = Variable<DateTime>(pairedAt);
+    if (!nullToAbsent || lastSeenAt != null) {
+      map['last_seen_at'] = Variable<DateTime>(lastSeenAt);
+    }
+    if (!nullToAbsent || lastIp != null) {
+      map['last_ip'] = Variable<String>(lastIp);
+    }
+    if (!nullToAbsent || revokedAt != null) {
+      map['revoked_at'] = Variable<DateTime>(revokedAt);
+    }
+    return map;
+  }
+
+  DevicesCompanion toCompanion(bool nullToAbsent) {
+    return DevicesCompanion(
+      id: Value(id),
+      name: Value(name),
+      platform: Value(platform),
+      role: Value(role),
+      userId: userId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(userId),
+      guardianId: guardianId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(guardianId),
+      tokenHash: Value(tokenHash),
+      pushToken: pushToken == null && nullToAbsent
+          ? const Value.absent()
+          : Value(pushToken),
+      pairedAt: Value(pairedAt),
+      lastSeenAt: lastSeenAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastSeenAt),
+      lastIp: lastIp == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastIp),
+      revokedAt: revokedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(revokedAt),
+    );
+  }
+
+  factory Device.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Device(
+      id: serializer.fromJson<int>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      platform: serializer.fromJson<String>(json['platform']),
+      role: serializer.fromJson<String>(json['role']),
+      userId: serializer.fromJson<int?>(json['userId']),
+      guardianId: serializer.fromJson<int?>(json['guardianId']),
+      tokenHash: serializer.fromJson<String>(json['tokenHash']),
+      pushToken: serializer.fromJson<String?>(json['pushToken']),
+      pairedAt: serializer.fromJson<DateTime>(json['pairedAt']),
+      lastSeenAt: serializer.fromJson<DateTime?>(json['lastSeenAt']),
+      lastIp: serializer.fromJson<String?>(json['lastIp']),
+      revokedAt: serializer.fromJson<DateTime?>(json['revokedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'name': serializer.toJson<String>(name),
+      'platform': serializer.toJson<String>(platform),
+      'role': serializer.toJson<String>(role),
+      'userId': serializer.toJson<int?>(userId),
+      'guardianId': serializer.toJson<int?>(guardianId),
+      'tokenHash': serializer.toJson<String>(tokenHash),
+      'pushToken': serializer.toJson<String?>(pushToken),
+      'pairedAt': serializer.toJson<DateTime>(pairedAt),
+      'lastSeenAt': serializer.toJson<DateTime?>(lastSeenAt),
+      'lastIp': serializer.toJson<String?>(lastIp),
+      'revokedAt': serializer.toJson<DateTime?>(revokedAt),
+    };
+  }
+
+  Device copyWith({
+    int? id,
+    String? name,
+    String? platform,
+    String? role,
+    Value<int?> userId = const Value.absent(),
+    Value<int?> guardianId = const Value.absent(),
+    String? tokenHash,
+    Value<String?> pushToken = const Value.absent(),
+    DateTime? pairedAt,
+    Value<DateTime?> lastSeenAt = const Value.absent(),
+    Value<String?> lastIp = const Value.absent(),
+    Value<DateTime?> revokedAt = const Value.absent(),
+  }) => Device(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    platform: platform ?? this.platform,
+    role: role ?? this.role,
+    userId: userId.present ? userId.value : this.userId,
+    guardianId: guardianId.present ? guardianId.value : this.guardianId,
+    tokenHash: tokenHash ?? this.tokenHash,
+    pushToken: pushToken.present ? pushToken.value : this.pushToken,
+    pairedAt: pairedAt ?? this.pairedAt,
+    lastSeenAt: lastSeenAt.present ? lastSeenAt.value : this.lastSeenAt,
+    lastIp: lastIp.present ? lastIp.value : this.lastIp,
+    revokedAt: revokedAt.present ? revokedAt.value : this.revokedAt,
+  );
+  Device copyWithCompanion(DevicesCompanion data) {
+    return Device(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      platform: data.platform.present ? data.platform.value : this.platform,
+      role: data.role.present ? data.role.value : this.role,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      guardianId: data.guardianId.present
+          ? data.guardianId.value
+          : this.guardianId,
+      tokenHash: data.tokenHash.present ? data.tokenHash.value : this.tokenHash,
+      pushToken: data.pushToken.present ? data.pushToken.value : this.pushToken,
+      pairedAt: data.pairedAt.present ? data.pairedAt.value : this.pairedAt,
+      lastSeenAt: data.lastSeenAt.present
+          ? data.lastSeenAt.value
+          : this.lastSeenAt,
+      lastIp: data.lastIp.present ? data.lastIp.value : this.lastIp,
+      revokedAt: data.revokedAt.present ? data.revokedAt.value : this.revokedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Device(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('platform: $platform, ')
+          ..write('role: $role, ')
+          ..write('userId: $userId, ')
+          ..write('guardianId: $guardianId, ')
+          ..write('tokenHash: $tokenHash, ')
+          ..write('pushToken: $pushToken, ')
+          ..write('pairedAt: $pairedAt, ')
+          ..write('lastSeenAt: $lastSeenAt, ')
+          ..write('lastIp: $lastIp, ')
+          ..write('revokedAt: $revokedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    name,
+    platform,
+    role,
+    userId,
+    guardianId,
+    tokenHash,
+    pushToken,
+    pairedAt,
+    lastSeenAt,
+    lastIp,
+    revokedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Device &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.platform == this.platform &&
+          other.role == this.role &&
+          other.userId == this.userId &&
+          other.guardianId == this.guardianId &&
+          other.tokenHash == this.tokenHash &&
+          other.pushToken == this.pushToken &&
+          other.pairedAt == this.pairedAt &&
+          other.lastSeenAt == this.lastSeenAt &&
+          other.lastIp == this.lastIp &&
+          other.revokedAt == this.revokedAt);
+}
+
+class DevicesCompanion extends UpdateCompanion<Device> {
+  final Value<int> id;
+  final Value<String> name;
+  final Value<String> platform;
+  final Value<String> role;
+  final Value<int?> userId;
+  final Value<int?> guardianId;
+  final Value<String> tokenHash;
+  final Value<String?> pushToken;
+  final Value<DateTime> pairedAt;
+  final Value<DateTime?> lastSeenAt;
+  final Value<String?> lastIp;
+  final Value<DateTime?> revokedAt;
+  const DevicesCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.platform = const Value.absent(),
+    this.role = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.guardianId = const Value.absent(),
+    this.tokenHash = const Value.absent(),
+    this.pushToken = const Value.absent(),
+    this.pairedAt = const Value.absent(),
+    this.lastSeenAt = const Value.absent(),
+    this.lastIp = const Value.absent(),
+    this.revokedAt = const Value.absent(),
+  });
+  DevicesCompanion.insert({
+    this.id = const Value.absent(),
+    required String name,
+    this.platform = const Value.absent(),
+    required String role,
+    this.userId = const Value.absent(),
+    this.guardianId = const Value.absent(),
+    required String tokenHash,
+    this.pushToken = const Value.absent(),
+    this.pairedAt = const Value.absent(),
+    this.lastSeenAt = const Value.absent(),
+    this.lastIp = const Value.absent(),
+    this.revokedAt = const Value.absent(),
+  }) : name = Value(name),
+       role = Value(role),
+       tokenHash = Value(tokenHash);
+  static Insertable<Device> custom({
+    Expression<int>? id,
+    Expression<String>? name,
+    Expression<String>? platform,
+    Expression<String>? role,
+    Expression<int>? userId,
+    Expression<int>? guardianId,
+    Expression<String>? tokenHash,
+    Expression<String>? pushToken,
+    Expression<DateTime>? pairedAt,
+    Expression<DateTime>? lastSeenAt,
+    Expression<String>? lastIp,
+    Expression<DateTime>? revokedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (platform != null) 'platform': platform,
+      if (role != null) 'role': role,
+      if (userId != null) 'user_id': userId,
+      if (guardianId != null) 'guardian_id': guardianId,
+      if (tokenHash != null) 'token_hash': tokenHash,
+      if (pushToken != null) 'push_token': pushToken,
+      if (pairedAt != null) 'paired_at': pairedAt,
+      if (lastSeenAt != null) 'last_seen_at': lastSeenAt,
+      if (lastIp != null) 'last_ip': lastIp,
+      if (revokedAt != null) 'revoked_at': revokedAt,
+    });
+  }
+
+  DevicesCompanion copyWith({
+    Value<int>? id,
+    Value<String>? name,
+    Value<String>? platform,
+    Value<String>? role,
+    Value<int?>? userId,
+    Value<int?>? guardianId,
+    Value<String>? tokenHash,
+    Value<String?>? pushToken,
+    Value<DateTime>? pairedAt,
+    Value<DateTime?>? lastSeenAt,
+    Value<String?>? lastIp,
+    Value<DateTime?>? revokedAt,
+  }) {
+    return DevicesCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      platform: platform ?? this.platform,
+      role: role ?? this.role,
+      userId: userId ?? this.userId,
+      guardianId: guardianId ?? this.guardianId,
+      tokenHash: tokenHash ?? this.tokenHash,
+      pushToken: pushToken ?? this.pushToken,
+      pairedAt: pairedAt ?? this.pairedAt,
+      lastSeenAt: lastSeenAt ?? this.lastSeenAt,
+      lastIp: lastIp ?? this.lastIp,
+      revokedAt: revokedAt ?? this.revokedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (platform.present) {
+      map['platform'] = Variable<String>(platform.value);
+    }
+    if (role.present) {
+      map['role'] = Variable<String>(role.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<int>(userId.value);
+    }
+    if (guardianId.present) {
+      map['guardian_id'] = Variable<int>(guardianId.value);
+    }
+    if (tokenHash.present) {
+      map['token_hash'] = Variable<String>(tokenHash.value);
+    }
+    if (pushToken.present) {
+      map['push_token'] = Variable<String>(pushToken.value);
+    }
+    if (pairedAt.present) {
+      map['paired_at'] = Variable<DateTime>(pairedAt.value);
+    }
+    if (lastSeenAt.present) {
+      map['last_seen_at'] = Variable<DateTime>(lastSeenAt.value);
+    }
+    if (lastIp.present) {
+      map['last_ip'] = Variable<String>(lastIp.value);
+    }
+    if (revokedAt.present) {
+      map['revoked_at'] = Variable<DateTime>(revokedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DevicesCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('platform: $platform, ')
+          ..write('role: $role, ')
+          ..write('userId: $userId, ')
+          ..write('guardianId: $guardianId, ')
+          ..write('tokenHash: $tokenHash, ')
+          ..write('pushToken: $pushToken, ')
+          ..write('pairedAt: $pairedAt, ')
+          ..write('lastSeenAt: $lastSeenAt, ')
+          ..write('lastIp: $lastIp, ')
+          ..write('revokedAt: $revokedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $PairingCodesTable extends PairingCodes
+    with TableInfo<$PairingCodesTable, PairingCode> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PairingCodesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _codeMeta = const VerificationMeta('code');
+  @override
+  late final GeneratedColumn<String> code = GeneratedColumn<String>(
+    'code',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _roleMeta = const VerificationMeta('role');
+  @override
+  late final GeneratedColumn<String> role = GeneratedColumn<String>(
+    'role',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<int> userId = GeneratedColumn<int>(
+    'user_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _guardianIdMeta = const VerificationMeta(
+    'guardianId',
+  );
+  @override
+  late final GeneratedColumn<int> guardianId = GeneratedColumn<int>(
+    'guardian_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES guardians (id)',
+    ),
+  );
+  static const VerificationMeta _expiresAtMeta = const VerificationMeta(
+    'expiresAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> expiresAt = GeneratedColumn<DateTime>(
+    'expires_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _usedAtMeta = const VerificationMeta('usedAt');
+  @override
+  late final GeneratedColumn<DateTime> usedAt = GeneratedColumn<DateTime>(
+    'used_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _usedByDeviceIdMeta = const VerificationMeta(
+    'usedByDeviceId',
+  );
+  @override
+  late final GeneratedColumn<int> usedByDeviceId = GeneratedColumn<int>(
+    'used_by_device_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdByUserIdMeta = const VerificationMeta(
+    'createdByUserId',
+  );
+  @override
+  late final GeneratedColumn<int> createdByUserId = GeneratedColumn<int>(
+    'created_by_user_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    code,
+    role,
+    userId,
+    guardianId,
+    expiresAt,
+    usedAt,
+    usedByDeviceId,
+    createdByUserId,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'pairing_codes';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<PairingCode> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('code')) {
+      context.handle(
+        _codeMeta,
+        code.isAcceptableOrUnknown(data['code']!, _codeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_codeMeta);
+    }
+    if (data.containsKey('role')) {
+      context.handle(
+        _roleMeta,
+        role.isAcceptableOrUnknown(data['role']!, _roleMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_roleMeta);
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
+    }
+    if (data.containsKey('guardian_id')) {
+      context.handle(
+        _guardianIdMeta,
+        guardianId.isAcceptableOrUnknown(data['guardian_id']!, _guardianIdMeta),
+      );
+    }
+    if (data.containsKey('expires_at')) {
+      context.handle(
+        _expiresAtMeta,
+        expiresAt.isAcceptableOrUnknown(data['expires_at']!, _expiresAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_expiresAtMeta);
+    }
+    if (data.containsKey('used_at')) {
+      context.handle(
+        _usedAtMeta,
+        usedAt.isAcceptableOrUnknown(data['used_at']!, _usedAtMeta),
+      );
+    }
+    if (data.containsKey('used_by_device_id')) {
+      context.handle(
+        _usedByDeviceIdMeta,
+        usedByDeviceId.isAcceptableOrUnknown(
+          data['used_by_device_id']!,
+          _usedByDeviceIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_by_user_id')) {
+      context.handle(
+        _createdByUserIdMeta,
+        createdByUserId.isAcceptableOrUnknown(
+          data['created_by_user_id']!,
+          _createdByUserIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {code},
+  ];
+  @override
+  PairingCode map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PairingCode(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      code: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}code'],
+      )!,
+      role: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}role'],
+      )!,
+      userId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}user_id'],
+      ),
+      guardianId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}guardian_id'],
+      ),
+      expiresAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}expires_at'],
+      )!,
+      usedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}used_at'],
+      ),
+      usedByDeviceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}used_by_device_id'],
+      ),
+      createdByUserId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_by_user_id'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $PairingCodesTable createAlias(String alias) {
+    return $PairingCodesTable(attachedDatabase, alias);
+  }
+}
+
+class PairingCode extends DataClass implements Insertable<PairingCode> {
+  final int id;
+  final String code;
+
+  /// `manager` | `parent`
+  final String role;
+  final int? userId;
+  final int? guardianId;
+  final DateTime expiresAt;
+  final DateTime? usedAt;
+  final int? usedByDeviceId;
+  final int? createdByUserId;
+  final DateTime createdAt;
+  const PairingCode({
+    required this.id,
+    required this.code,
+    required this.role,
+    this.userId,
+    this.guardianId,
+    required this.expiresAt,
+    this.usedAt,
+    this.usedByDeviceId,
+    this.createdByUserId,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['code'] = Variable<String>(code);
+    map['role'] = Variable<String>(role);
+    if (!nullToAbsent || userId != null) {
+      map['user_id'] = Variable<int>(userId);
+    }
+    if (!nullToAbsent || guardianId != null) {
+      map['guardian_id'] = Variable<int>(guardianId);
+    }
+    map['expires_at'] = Variable<DateTime>(expiresAt);
+    if (!nullToAbsent || usedAt != null) {
+      map['used_at'] = Variable<DateTime>(usedAt);
+    }
+    if (!nullToAbsent || usedByDeviceId != null) {
+      map['used_by_device_id'] = Variable<int>(usedByDeviceId);
+    }
+    if (!nullToAbsent || createdByUserId != null) {
+      map['created_by_user_id'] = Variable<int>(createdByUserId);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  PairingCodesCompanion toCompanion(bool nullToAbsent) {
+    return PairingCodesCompanion(
+      id: Value(id),
+      code: Value(code),
+      role: Value(role),
+      userId: userId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(userId),
+      guardianId: guardianId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(guardianId),
+      expiresAt: Value(expiresAt),
+      usedAt: usedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(usedAt),
+      usedByDeviceId: usedByDeviceId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(usedByDeviceId),
+      createdByUserId: createdByUserId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(createdByUserId),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory PairingCode.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PairingCode(
+      id: serializer.fromJson<int>(json['id']),
+      code: serializer.fromJson<String>(json['code']),
+      role: serializer.fromJson<String>(json['role']),
+      userId: serializer.fromJson<int?>(json['userId']),
+      guardianId: serializer.fromJson<int?>(json['guardianId']),
+      expiresAt: serializer.fromJson<DateTime>(json['expiresAt']),
+      usedAt: serializer.fromJson<DateTime?>(json['usedAt']),
+      usedByDeviceId: serializer.fromJson<int?>(json['usedByDeviceId']),
+      createdByUserId: serializer.fromJson<int?>(json['createdByUserId']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'code': serializer.toJson<String>(code),
+      'role': serializer.toJson<String>(role),
+      'userId': serializer.toJson<int?>(userId),
+      'guardianId': serializer.toJson<int?>(guardianId),
+      'expiresAt': serializer.toJson<DateTime>(expiresAt),
+      'usedAt': serializer.toJson<DateTime?>(usedAt),
+      'usedByDeviceId': serializer.toJson<int?>(usedByDeviceId),
+      'createdByUserId': serializer.toJson<int?>(createdByUserId),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  PairingCode copyWith({
+    int? id,
+    String? code,
+    String? role,
+    Value<int?> userId = const Value.absent(),
+    Value<int?> guardianId = const Value.absent(),
+    DateTime? expiresAt,
+    Value<DateTime?> usedAt = const Value.absent(),
+    Value<int?> usedByDeviceId = const Value.absent(),
+    Value<int?> createdByUserId = const Value.absent(),
+    DateTime? createdAt,
+  }) => PairingCode(
+    id: id ?? this.id,
+    code: code ?? this.code,
+    role: role ?? this.role,
+    userId: userId.present ? userId.value : this.userId,
+    guardianId: guardianId.present ? guardianId.value : this.guardianId,
+    expiresAt: expiresAt ?? this.expiresAt,
+    usedAt: usedAt.present ? usedAt.value : this.usedAt,
+    usedByDeviceId: usedByDeviceId.present
+        ? usedByDeviceId.value
+        : this.usedByDeviceId,
+    createdByUserId: createdByUserId.present
+        ? createdByUserId.value
+        : this.createdByUserId,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  PairingCode copyWithCompanion(PairingCodesCompanion data) {
+    return PairingCode(
+      id: data.id.present ? data.id.value : this.id,
+      code: data.code.present ? data.code.value : this.code,
+      role: data.role.present ? data.role.value : this.role,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      guardianId: data.guardianId.present
+          ? data.guardianId.value
+          : this.guardianId,
+      expiresAt: data.expiresAt.present ? data.expiresAt.value : this.expiresAt,
+      usedAt: data.usedAt.present ? data.usedAt.value : this.usedAt,
+      usedByDeviceId: data.usedByDeviceId.present
+          ? data.usedByDeviceId.value
+          : this.usedByDeviceId,
+      createdByUserId: data.createdByUserId.present
+          ? data.createdByUserId.value
+          : this.createdByUserId,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PairingCode(')
+          ..write('id: $id, ')
+          ..write('code: $code, ')
+          ..write('role: $role, ')
+          ..write('userId: $userId, ')
+          ..write('guardianId: $guardianId, ')
+          ..write('expiresAt: $expiresAt, ')
+          ..write('usedAt: $usedAt, ')
+          ..write('usedByDeviceId: $usedByDeviceId, ')
+          ..write('createdByUserId: $createdByUserId, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    code,
+    role,
+    userId,
+    guardianId,
+    expiresAt,
+    usedAt,
+    usedByDeviceId,
+    createdByUserId,
+    createdAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PairingCode &&
+          other.id == this.id &&
+          other.code == this.code &&
+          other.role == this.role &&
+          other.userId == this.userId &&
+          other.guardianId == this.guardianId &&
+          other.expiresAt == this.expiresAt &&
+          other.usedAt == this.usedAt &&
+          other.usedByDeviceId == this.usedByDeviceId &&
+          other.createdByUserId == this.createdByUserId &&
+          other.createdAt == this.createdAt);
+}
+
+class PairingCodesCompanion extends UpdateCompanion<PairingCode> {
+  final Value<int> id;
+  final Value<String> code;
+  final Value<String> role;
+  final Value<int?> userId;
+  final Value<int?> guardianId;
+  final Value<DateTime> expiresAt;
+  final Value<DateTime?> usedAt;
+  final Value<int?> usedByDeviceId;
+  final Value<int?> createdByUserId;
+  final Value<DateTime> createdAt;
+  const PairingCodesCompanion({
+    this.id = const Value.absent(),
+    this.code = const Value.absent(),
+    this.role = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.guardianId = const Value.absent(),
+    this.expiresAt = const Value.absent(),
+    this.usedAt = const Value.absent(),
+    this.usedByDeviceId = const Value.absent(),
+    this.createdByUserId = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  PairingCodesCompanion.insert({
+    this.id = const Value.absent(),
+    required String code,
+    required String role,
+    this.userId = const Value.absent(),
+    this.guardianId = const Value.absent(),
+    required DateTime expiresAt,
+    this.usedAt = const Value.absent(),
+    this.usedByDeviceId = const Value.absent(),
+    this.createdByUserId = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  }) : code = Value(code),
+       role = Value(role),
+       expiresAt = Value(expiresAt);
+  static Insertable<PairingCode> custom({
+    Expression<int>? id,
+    Expression<String>? code,
+    Expression<String>? role,
+    Expression<int>? userId,
+    Expression<int>? guardianId,
+    Expression<DateTime>? expiresAt,
+    Expression<DateTime>? usedAt,
+    Expression<int>? usedByDeviceId,
+    Expression<int>? createdByUserId,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (code != null) 'code': code,
+      if (role != null) 'role': role,
+      if (userId != null) 'user_id': userId,
+      if (guardianId != null) 'guardian_id': guardianId,
+      if (expiresAt != null) 'expires_at': expiresAt,
+      if (usedAt != null) 'used_at': usedAt,
+      if (usedByDeviceId != null) 'used_by_device_id': usedByDeviceId,
+      if (createdByUserId != null) 'created_by_user_id': createdByUserId,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  PairingCodesCompanion copyWith({
+    Value<int>? id,
+    Value<String>? code,
+    Value<String>? role,
+    Value<int?>? userId,
+    Value<int?>? guardianId,
+    Value<DateTime>? expiresAt,
+    Value<DateTime?>? usedAt,
+    Value<int?>? usedByDeviceId,
+    Value<int?>? createdByUserId,
+    Value<DateTime>? createdAt,
+  }) {
+    return PairingCodesCompanion(
+      id: id ?? this.id,
+      code: code ?? this.code,
+      role: role ?? this.role,
+      userId: userId ?? this.userId,
+      guardianId: guardianId ?? this.guardianId,
+      expiresAt: expiresAt ?? this.expiresAt,
+      usedAt: usedAt ?? this.usedAt,
+      usedByDeviceId: usedByDeviceId ?? this.usedByDeviceId,
+      createdByUserId: createdByUserId ?? this.createdByUserId,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (code.present) {
+      map['code'] = Variable<String>(code.value);
+    }
+    if (role.present) {
+      map['role'] = Variable<String>(role.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<int>(userId.value);
+    }
+    if (guardianId.present) {
+      map['guardian_id'] = Variable<int>(guardianId.value);
+    }
+    if (expiresAt.present) {
+      map['expires_at'] = Variable<DateTime>(expiresAt.value);
+    }
+    if (usedAt.present) {
+      map['used_at'] = Variable<DateTime>(usedAt.value);
+    }
+    if (usedByDeviceId.present) {
+      map['used_by_device_id'] = Variable<int>(usedByDeviceId.value);
+    }
+    if (createdByUserId.present) {
+      map['created_by_user_id'] = Variable<int>(createdByUserId.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PairingCodesCompanion(')
+          ..write('id: $id, ')
+          ..write('code: $code, ')
+          ..write('role: $role, ')
+          ..write('userId: $userId, ')
+          ..write('guardianId: $guardianId, ')
+          ..write('expiresAt: $expiresAt, ')
+          ..write('usedAt: $usedAt, ')
+          ..write('usedByDeviceId: $usedByDeviceId, ')
+          ..write('createdByUserId: $createdByUserId, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $MessageTemplatesTable extends MessageTemplates
+    with TableInfo<$MessageTemplatesTable, MessageTemplate> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $MessageTemplatesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _templateKeyMeta = const VerificationMeta(
+    'templateKey',
+  );
+  @override
+  late final GeneratedColumn<String> templateKey = GeneratedColumn<String>(
+    'template_key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+    'title',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bodyMeta = const VerificationMeta('body');
+  @override
+  late final GeneratedColumn<String> body = GeneratedColumn<String>(
+    'body',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _channelMeta = const VerificationMeta(
+    'channel',
+  );
+  @override
+  late final GeneratedColumn<String> channel = GeneratedColumn<String>(
+    'channel',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('any'),
+  );
+  static const VerificationMeta _isActiveMeta = const VerificationMeta(
+    'isActive',
+  );
+  @override
+  late final GeneratedColumn<bool> isActive = GeneratedColumn<bool>(
+    'is_active',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_active" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _isBuiltInMeta = const VerificationMeta(
+    'isBuiltIn',
+  );
+  @override
+  late final GeneratedColumn<bool> isBuiltIn = GeneratedColumn<bool>(
+    'is_built_in',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_built_in" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    templateKey,
+    title,
+    body,
+    channel,
+    isActive,
+    isBuiltIn,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'message_templates';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<MessageTemplate> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('template_key')) {
+      context.handle(
+        _templateKeyMeta,
+        templateKey.isAcceptableOrUnknown(
+          data['template_key']!,
+          _templateKeyMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_templateKeyMeta);
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+        _titleMeta,
+        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
+    if (data.containsKey('body')) {
+      context.handle(
+        _bodyMeta,
+        body.isAcceptableOrUnknown(data['body']!, _bodyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bodyMeta);
+    }
+    if (data.containsKey('channel')) {
+      context.handle(
+        _channelMeta,
+        channel.isAcceptableOrUnknown(data['channel']!, _channelMeta),
+      );
+    }
+    if (data.containsKey('is_active')) {
+      context.handle(
+        _isActiveMeta,
+        isActive.isAcceptableOrUnknown(data['is_active']!, _isActiveMeta),
+      );
+    }
+    if (data.containsKey('is_built_in')) {
+      context.handle(
+        _isBuiltInMeta,
+        isBuiltIn.isAcceptableOrUnknown(data['is_built_in']!, _isBuiltInMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {templateKey},
+  ];
+  @override
+  MessageTemplate map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return MessageTemplate(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      templateKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}template_key'],
+      )!,
+      title: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}title'],
+      )!,
+      body: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}body'],
+      )!,
+      channel: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}channel'],
+      )!,
+      isActive: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_active'],
+      )!,
+      isBuiltIn: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_built_in'],
+      )!,
+    );
+  }
+
+  @override
+  $MessageTemplatesTable createAlias(String alias) {
+    return $MessageTemplatesTable(attachedDatabase, alias);
+  }
+}
+
+class MessageTemplate extends DataClass implements Insertable<MessageTemplate> {
+  final int id;
+
+  /// `absence` | `absence_repeat` | `leave_approved` | `leave_rejected`
+  /// | `fee_due` | `announcement`
+  final String templateKey;
+  final String title;
+  final String body;
+
+  /// `sms` | `app` | `any`
+  final String channel;
+  final bool isActive;
+  final bool isBuiltIn;
+  const MessageTemplate({
+    required this.id,
+    required this.templateKey,
+    required this.title,
+    required this.body,
+    required this.channel,
+    required this.isActive,
+    required this.isBuiltIn,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['template_key'] = Variable<String>(templateKey);
+    map['title'] = Variable<String>(title);
+    map['body'] = Variable<String>(body);
+    map['channel'] = Variable<String>(channel);
+    map['is_active'] = Variable<bool>(isActive);
+    map['is_built_in'] = Variable<bool>(isBuiltIn);
+    return map;
+  }
+
+  MessageTemplatesCompanion toCompanion(bool nullToAbsent) {
+    return MessageTemplatesCompanion(
+      id: Value(id),
+      templateKey: Value(templateKey),
+      title: Value(title),
+      body: Value(body),
+      channel: Value(channel),
+      isActive: Value(isActive),
+      isBuiltIn: Value(isBuiltIn),
+    );
+  }
+
+  factory MessageTemplate.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return MessageTemplate(
+      id: serializer.fromJson<int>(json['id']),
+      templateKey: serializer.fromJson<String>(json['templateKey']),
+      title: serializer.fromJson<String>(json['title']),
+      body: serializer.fromJson<String>(json['body']),
+      channel: serializer.fromJson<String>(json['channel']),
+      isActive: serializer.fromJson<bool>(json['isActive']),
+      isBuiltIn: serializer.fromJson<bool>(json['isBuiltIn']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'templateKey': serializer.toJson<String>(templateKey),
+      'title': serializer.toJson<String>(title),
+      'body': serializer.toJson<String>(body),
+      'channel': serializer.toJson<String>(channel),
+      'isActive': serializer.toJson<bool>(isActive),
+      'isBuiltIn': serializer.toJson<bool>(isBuiltIn),
+    };
+  }
+
+  MessageTemplate copyWith({
+    int? id,
+    String? templateKey,
+    String? title,
+    String? body,
+    String? channel,
+    bool? isActive,
+    bool? isBuiltIn,
+  }) => MessageTemplate(
+    id: id ?? this.id,
+    templateKey: templateKey ?? this.templateKey,
+    title: title ?? this.title,
+    body: body ?? this.body,
+    channel: channel ?? this.channel,
+    isActive: isActive ?? this.isActive,
+    isBuiltIn: isBuiltIn ?? this.isBuiltIn,
+  );
+  MessageTemplate copyWithCompanion(MessageTemplatesCompanion data) {
+    return MessageTemplate(
+      id: data.id.present ? data.id.value : this.id,
+      templateKey: data.templateKey.present
+          ? data.templateKey.value
+          : this.templateKey,
+      title: data.title.present ? data.title.value : this.title,
+      body: data.body.present ? data.body.value : this.body,
+      channel: data.channel.present ? data.channel.value : this.channel,
+      isActive: data.isActive.present ? data.isActive.value : this.isActive,
+      isBuiltIn: data.isBuiltIn.present ? data.isBuiltIn.value : this.isBuiltIn,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MessageTemplate(')
+          ..write('id: $id, ')
+          ..write('templateKey: $templateKey, ')
+          ..write('title: $title, ')
+          ..write('body: $body, ')
+          ..write('channel: $channel, ')
+          ..write('isActive: $isActive, ')
+          ..write('isBuiltIn: $isBuiltIn')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, templateKey, title, body, channel, isActive, isBuiltIn);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is MessageTemplate &&
+          other.id == this.id &&
+          other.templateKey == this.templateKey &&
+          other.title == this.title &&
+          other.body == this.body &&
+          other.channel == this.channel &&
+          other.isActive == this.isActive &&
+          other.isBuiltIn == this.isBuiltIn);
+}
+
+class MessageTemplatesCompanion extends UpdateCompanion<MessageTemplate> {
+  final Value<int> id;
+  final Value<String> templateKey;
+  final Value<String> title;
+  final Value<String> body;
+  final Value<String> channel;
+  final Value<bool> isActive;
+  final Value<bool> isBuiltIn;
+  const MessageTemplatesCompanion({
+    this.id = const Value.absent(),
+    this.templateKey = const Value.absent(),
+    this.title = const Value.absent(),
+    this.body = const Value.absent(),
+    this.channel = const Value.absent(),
+    this.isActive = const Value.absent(),
+    this.isBuiltIn = const Value.absent(),
+  });
+  MessageTemplatesCompanion.insert({
+    this.id = const Value.absent(),
+    required String templateKey,
+    required String title,
+    required String body,
+    this.channel = const Value.absent(),
+    this.isActive = const Value.absent(),
+    this.isBuiltIn = const Value.absent(),
+  }) : templateKey = Value(templateKey),
+       title = Value(title),
+       body = Value(body);
+  static Insertable<MessageTemplate> custom({
+    Expression<int>? id,
+    Expression<String>? templateKey,
+    Expression<String>? title,
+    Expression<String>? body,
+    Expression<String>? channel,
+    Expression<bool>? isActive,
+    Expression<bool>? isBuiltIn,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (templateKey != null) 'template_key': templateKey,
+      if (title != null) 'title': title,
+      if (body != null) 'body': body,
+      if (channel != null) 'channel': channel,
+      if (isActive != null) 'is_active': isActive,
+      if (isBuiltIn != null) 'is_built_in': isBuiltIn,
+    });
+  }
+
+  MessageTemplatesCompanion copyWith({
+    Value<int>? id,
+    Value<String>? templateKey,
+    Value<String>? title,
+    Value<String>? body,
+    Value<String>? channel,
+    Value<bool>? isActive,
+    Value<bool>? isBuiltIn,
+  }) {
+    return MessageTemplatesCompanion(
+      id: id ?? this.id,
+      templateKey: templateKey ?? this.templateKey,
+      title: title ?? this.title,
+      body: body ?? this.body,
+      channel: channel ?? this.channel,
+      isActive: isActive ?? this.isActive,
+      isBuiltIn: isBuiltIn ?? this.isBuiltIn,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (templateKey.present) {
+      map['template_key'] = Variable<String>(templateKey.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (body.present) {
+      map['body'] = Variable<String>(body.value);
+    }
+    if (channel.present) {
+      map['channel'] = Variable<String>(channel.value);
+    }
+    if (isActive.present) {
+      map['is_active'] = Variable<bool>(isActive.value);
+    }
+    if (isBuiltIn.present) {
+      map['is_built_in'] = Variable<bool>(isBuiltIn.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MessageTemplatesCompanion(')
+          ..write('id: $id, ')
+          ..write('templateKey: $templateKey, ')
+          ..write('title: $title, ')
+          ..write('body: $body, ')
+          ..write('channel: $channel, ')
+          ..write('isActive: $isActive, ')
+          ..write('isBuiltIn: $isBuiltIn')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $MessagesTable extends Messages with TableInfo<$MessagesTable, Message> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $MessagesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _batchIdMeta = const VerificationMeta(
+    'batchId',
+  );
+  @override
+  late final GeneratedColumn<String> batchId = GeneratedColumn<String>(
+    'batch_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _kindMeta = const VerificationMeta('kind');
+  @override
+  late final GeneratedColumn<String> kind = GeneratedColumn<String>(
+    'kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _studentIdMeta = const VerificationMeta(
+    'studentId',
+  );
+  @override
+  late final GeneratedColumn<int> studentId = GeneratedColumn<int>(
+    'student_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES students (id)',
+    ),
+  );
+  static const VerificationMeta _guardianIdMeta = const VerificationMeta(
+    'guardianId',
+  );
+  @override
+  late final GeneratedColumn<int> guardianId = GeneratedColumn<int>(
+    'guardian_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES guardians (id)',
+    ),
+  );
+  static const VerificationMeta _toNameMeta = const VerificationMeta('toName');
+  @override
+  late final GeneratedColumn<String> toName = GeneratedColumn<String>(
+    'to_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _toPhoneMeta = const VerificationMeta(
+    'toPhone',
+  );
+  @override
+  late final GeneratedColumn<String> toPhone = GeneratedColumn<String>(
+    'to_phone',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _channelMeta = const VerificationMeta(
+    'channel',
+  );
+  @override
+  late final GeneratedColumn<String> channel = GeneratedColumn<String>(
+    'channel',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('app'),
+  );
+  static const VerificationMeta _bodyMeta = const VerificationMeta('body');
+  @override
+  late final GeneratedColumn<String> body = GeneratedColumn<String>(
+    'body',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('queued'),
+  );
+  static const VerificationMeta _attemptsMeta = const VerificationMeta(
+    'attempts',
+  );
+  @override
+  late final GeneratedColumn<int> attempts = GeneratedColumn<int>(
+    'attempts',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _errorMeta = const VerificationMeta('error');
+  @override
+  late final GeneratedColumn<String> error = GeneratedColumn<String>(
+    'error',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _relatedDateMeta = const VerificationMeta(
+    'relatedDate',
+  );
+  @override
+  late final GeneratedColumn<DateTime> relatedDate = GeneratedColumn<DateTime>(
+    'related_date',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdByUserIdMeta = const VerificationMeta(
+    'createdByUserId',
+  );
+  @override
+  late final GeneratedColumn<int> createdByUserId = GeneratedColumn<int>(
+    'created_by_user_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _sentAtMeta = const VerificationMeta('sentAt');
+  @override
+  late final GeneratedColumn<DateTime> sentAt = GeneratedColumn<DateTime>(
+    'sent_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _readAtMeta = const VerificationMeta('readAt');
+  @override
+  late final GeneratedColumn<DateTime> readAt = GeneratedColumn<DateTime>(
+    'read_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    batchId,
+    kind,
+    studentId,
+    guardianId,
+    toName,
+    toPhone,
+    channel,
+    body,
+    status,
+    attempts,
+    error,
+    relatedDate,
+    createdByUserId,
+    createdAt,
+    sentAt,
+    readAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'messages';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Message> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('batch_id')) {
+      context.handle(
+        _batchIdMeta,
+        batchId.isAcceptableOrUnknown(data['batch_id']!, _batchIdMeta),
+      );
+    }
+    if (data.containsKey('kind')) {
+      context.handle(
+        _kindMeta,
+        kind.isAcceptableOrUnknown(data['kind']!, _kindMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_kindMeta);
+    }
+    if (data.containsKey('student_id')) {
+      context.handle(
+        _studentIdMeta,
+        studentId.isAcceptableOrUnknown(data['student_id']!, _studentIdMeta),
+      );
+    }
+    if (data.containsKey('guardian_id')) {
+      context.handle(
+        _guardianIdMeta,
+        guardianId.isAcceptableOrUnknown(data['guardian_id']!, _guardianIdMeta),
+      );
+    }
+    if (data.containsKey('to_name')) {
+      context.handle(
+        _toNameMeta,
+        toName.isAcceptableOrUnknown(data['to_name']!, _toNameMeta),
+      );
+    }
+    if (data.containsKey('to_phone')) {
+      context.handle(
+        _toPhoneMeta,
+        toPhone.isAcceptableOrUnknown(data['to_phone']!, _toPhoneMeta),
+      );
+    }
+    if (data.containsKey('channel')) {
+      context.handle(
+        _channelMeta,
+        channel.isAcceptableOrUnknown(data['channel']!, _channelMeta),
+      );
+    }
+    if (data.containsKey('body')) {
+      context.handle(
+        _bodyMeta,
+        body.isAcceptableOrUnknown(data['body']!, _bodyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bodyMeta);
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    }
+    if (data.containsKey('attempts')) {
+      context.handle(
+        _attemptsMeta,
+        attempts.isAcceptableOrUnknown(data['attempts']!, _attemptsMeta),
+      );
+    }
+    if (data.containsKey('error')) {
+      context.handle(
+        _errorMeta,
+        error.isAcceptableOrUnknown(data['error']!, _errorMeta),
+      );
+    }
+    if (data.containsKey('related_date')) {
+      context.handle(
+        _relatedDateMeta,
+        relatedDate.isAcceptableOrUnknown(
+          data['related_date']!,
+          _relatedDateMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_by_user_id')) {
+      context.handle(
+        _createdByUserIdMeta,
+        createdByUserId.isAcceptableOrUnknown(
+          data['created_by_user_id']!,
+          _createdByUserIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('sent_at')) {
+      context.handle(
+        _sentAtMeta,
+        sentAt.isAcceptableOrUnknown(data['sent_at']!, _sentAtMeta),
+      );
+    }
+    if (data.containsKey('read_at')) {
+      context.handle(
+        _readAtMeta,
+        readAt.isAcceptableOrUnknown(data['read_at']!, _readAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Message map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Message(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      batchId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}batch_id'],
+      ),
+      kind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}kind'],
+      )!,
+      studentId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}student_id'],
+      ),
+      guardianId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}guardian_id'],
+      ),
+      toName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}to_name'],
+      ),
+      toPhone: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}to_phone'],
+      ),
+      channel: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}channel'],
+      )!,
+      body: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}body'],
+      )!,
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
+      attempts: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}attempts'],
+      )!,
+      error: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}error'],
+      ),
+      relatedDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}related_date'],
+      ),
+      createdByUserId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_by_user_id'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      sentAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}sent_at'],
+      ),
+      readAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}read_at'],
+      ),
+    );
+  }
+
+  @override
+  $MessagesTable createAlias(String alias) {
+    return $MessagesTable(attachedDatabase, alias);
+  }
+}
+
+class Message extends DataClass implements Insertable<Message> {
+  final int id;
+
+  /// یوه ډله چې یو ځای ولېږل شوه — «نن ۴۷ غیرحاضر».
+  final String? batchId;
+
+  /// `absence` | `leave` | `announcement` | `fee` | `custom`
+  final String kind;
+  final int? studentId;
+  final int? guardianId;
+  final String? toName;
+  final String? toPhone;
+
+  /// `app` | `sms` | `whatsapp`
+  final String channel;
+  final String body;
+
+  /// `queued` | `sent` | `failed` | `read`
+  final String status;
+  final int attempts;
+  final String? error;
+
+  /// کومې ورځې پورې اړه لري — د غیرحاضرۍ نېټه.
+  final DateTime? relatedDate;
+  final int? createdByUserId;
+  final DateTime createdAt;
+  final DateTime? sentAt;
+  final DateTime? readAt;
+  const Message({
+    required this.id,
+    this.batchId,
+    required this.kind,
+    this.studentId,
+    this.guardianId,
+    this.toName,
+    this.toPhone,
+    required this.channel,
+    required this.body,
+    required this.status,
+    required this.attempts,
+    this.error,
+    this.relatedDate,
+    this.createdByUserId,
+    required this.createdAt,
+    this.sentAt,
+    this.readAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    if (!nullToAbsent || batchId != null) {
+      map['batch_id'] = Variable<String>(batchId);
+    }
+    map['kind'] = Variable<String>(kind);
+    if (!nullToAbsent || studentId != null) {
+      map['student_id'] = Variable<int>(studentId);
+    }
+    if (!nullToAbsent || guardianId != null) {
+      map['guardian_id'] = Variable<int>(guardianId);
+    }
+    if (!nullToAbsent || toName != null) {
+      map['to_name'] = Variable<String>(toName);
+    }
+    if (!nullToAbsent || toPhone != null) {
+      map['to_phone'] = Variable<String>(toPhone);
+    }
+    map['channel'] = Variable<String>(channel);
+    map['body'] = Variable<String>(body);
+    map['status'] = Variable<String>(status);
+    map['attempts'] = Variable<int>(attempts);
+    if (!nullToAbsent || error != null) {
+      map['error'] = Variable<String>(error);
+    }
+    if (!nullToAbsent || relatedDate != null) {
+      map['related_date'] = Variable<DateTime>(relatedDate);
+    }
+    if (!nullToAbsent || createdByUserId != null) {
+      map['created_by_user_id'] = Variable<int>(createdByUserId);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    if (!nullToAbsent || sentAt != null) {
+      map['sent_at'] = Variable<DateTime>(sentAt);
+    }
+    if (!nullToAbsent || readAt != null) {
+      map['read_at'] = Variable<DateTime>(readAt);
+    }
+    return map;
+  }
+
+  MessagesCompanion toCompanion(bool nullToAbsent) {
+    return MessagesCompanion(
+      id: Value(id),
+      batchId: batchId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(batchId),
+      kind: Value(kind),
+      studentId: studentId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(studentId),
+      guardianId: guardianId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(guardianId),
+      toName: toName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(toName),
+      toPhone: toPhone == null && nullToAbsent
+          ? const Value.absent()
+          : Value(toPhone),
+      channel: Value(channel),
+      body: Value(body),
+      status: Value(status),
+      attempts: Value(attempts),
+      error: error == null && nullToAbsent
+          ? const Value.absent()
+          : Value(error),
+      relatedDate: relatedDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(relatedDate),
+      createdByUserId: createdByUserId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(createdByUserId),
+      createdAt: Value(createdAt),
+      sentAt: sentAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sentAt),
+      readAt: readAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(readAt),
+    );
+  }
+
+  factory Message.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Message(
+      id: serializer.fromJson<int>(json['id']),
+      batchId: serializer.fromJson<String?>(json['batchId']),
+      kind: serializer.fromJson<String>(json['kind']),
+      studentId: serializer.fromJson<int?>(json['studentId']),
+      guardianId: serializer.fromJson<int?>(json['guardianId']),
+      toName: serializer.fromJson<String?>(json['toName']),
+      toPhone: serializer.fromJson<String?>(json['toPhone']),
+      channel: serializer.fromJson<String>(json['channel']),
+      body: serializer.fromJson<String>(json['body']),
+      status: serializer.fromJson<String>(json['status']),
+      attempts: serializer.fromJson<int>(json['attempts']),
+      error: serializer.fromJson<String?>(json['error']),
+      relatedDate: serializer.fromJson<DateTime?>(json['relatedDate']),
+      createdByUserId: serializer.fromJson<int?>(json['createdByUserId']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      sentAt: serializer.fromJson<DateTime?>(json['sentAt']),
+      readAt: serializer.fromJson<DateTime?>(json['readAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'batchId': serializer.toJson<String?>(batchId),
+      'kind': serializer.toJson<String>(kind),
+      'studentId': serializer.toJson<int?>(studentId),
+      'guardianId': serializer.toJson<int?>(guardianId),
+      'toName': serializer.toJson<String?>(toName),
+      'toPhone': serializer.toJson<String?>(toPhone),
+      'channel': serializer.toJson<String>(channel),
+      'body': serializer.toJson<String>(body),
+      'status': serializer.toJson<String>(status),
+      'attempts': serializer.toJson<int>(attempts),
+      'error': serializer.toJson<String?>(error),
+      'relatedDate': serializer.toJson<DateTime?>(relatedDate),
+      'createdByUserId': serializer.toJson<int?>(createdByUserId),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'sentAt': serializer.toJson<DateTime?>(sentAt),
+      'readAt': serializer.toJson<DateTime?>(readAt),
+    };
+  }
+
+  Message copyWith({
+    int? id,
+    Value<String?> batchId = const Value.absent(),
+    String? kind,
+    Value<int?> studentId = const Value.absent(),
+    Value<int?> guardianId = const Value.absent(),
+    Value<String?> toName = const Value.absent(),
+    Value<String?> toPhone = const Value.absent(),
+    String? channel,
+    String? body,
+    String? status,
+    int? attempts,
+    Value<String?> error = const Value.absent(),
+    Value<DateTime?> relatedDate = const Value.absent(),
+    Value<int?> createdByUserId = const Value.absent(),
+    DateTime? createdAt,
+    Value<DateTime?> sentAt = const Value.absent(),
+    Value<DateTime?> readAt = const Value.absent(),
+  }) => Message(
+    id: id ?? this.id,
+    batchId: batchId.present ? batchId.value : this.batchId,
+    kind: kind ?? this.kind,
+    studentId: studentId.present ? studentId.value : this.studentId,
+    guardianId: guardianId.present ? guardianId.value : this.guardianId,
+    toName: toName.present ? toName.value : this.toName,
+    toPhone: toPhone.present ? toPhone.value : this.toPhone,
+    channel: channel ?? this.channel,
+    body: body ?? this.body,
+    status: status ?? this.status,
+    attempts: attempts ?? this.attempts,
+    error: error.present ? error.value : this.error,
+    relatedDate: relatedDate.present ? relatedDate.value : this.relatedDate,
+    createdByUserId: createdByUserId.present
+        ? createdByUserId.value
+        : this.createdByUserId,
+    createdAt: createdAt ?? this.createdAt,
+    sentAt: sentAt.present ? sentAt.value : this.sentAt,
+    readAt: readAt.present ? readAt.value : this.readAt,
+  );
+  Message copyWithCompanion(MessagesCompanion data) {
+    return Message(
+      id: data.id.present ? data.id.value : this.id,
+      batchId: data.batchId.present ? data.batchId.value : this.batchId,
+      kind: data.kind.present ? data.kind.value : this.kind,
+      studentId: data.studentId.present ? data.studentId.value : this.studentId,
+      guardianId: data.guardianId.present
+          ? data.guardianId.value
+          : this.guardianId,
+      toName: data.toName.present ? data.toName.value : this.toName,
+      toPhone: data.toPhone.present ? data.toPhone.value : this.toPhone,
+      channel: data.channel.present ? data.channel.value : this.channel,
+      body: data.body.present ? data.body.value : this.body,
+      status: data.status.present ? data.status.value : this.status,
+      attempts: data.attempts.present ? data.attempts.value : this.attempts,
+      error: data.error.present ? data.error.value : this.error,
+      relatedDate: data.relatedDate.present
+          ? data.relatedDate.value
+          : this.relatedDate,
+      createdByUserId: data.createdByUserId.present
+          ? data.createdByUserId.value
+          : this.createdByUserId,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      sentAt: data.sentAt.present ? data.sentAt.value : this.sentAt,
+      readAt: data.readAt.present ? data.readAt.value : this.readAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Message(')
+          ..write('id: $id, ')
+          ..write('batchId: $batchId, ')
+          ..write('kind: $kind, ')
+          ..write('studentId: $studentId, ')
+          ..write('guardianId: $guardianId, ')
+          ..write('toName: $toName, ')
+          ..write('toPhone: $toPhone, ')
+          ..write('channel: $channel, ')
+          ..write('body: $body, ')
+          ..write('status: $status, ')
+          ..write('attempts: $attempts, ')
+          ..write('error: $error, ')
+          ..write('relatedDate: $relatedDate, ')
+          ..write('createdByUserId: $createdByUserId, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('sentAt: $sentAt, ')
+          ..write('readAt: $readAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    batchId,
+    kind,
+    studentId,
+    guardianId,
+    toName,
+    toPhone,
+    channel,
+    body,
+    status,
+    attempts,
+    error,
+    relatedDate,
+    createdByUserId,
+    createdAt,
+    sentAt,
+    readAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Message &&
+          other.id == this.id &&
+          other.batchId == this.batchId &&
+          other.kind == this.kind &&
+          other.studentId == this.studentId &&
+          other.guardianId == this.guardianId &&
+          other.toName == this.toName &&
+          other.toPhone == this.toPhone &&
+          other.channel == this.channel &&
+          other.body == this.body &&
+          other.status == this.status &&
+          other.attempts == this.attempts &&
+          other.error == this.error &&
+          other.relatedDate == this.relatedDate &&
+          other.createdByUserId == this.createdByUserId &&
+          other.createdAt == this.createdAt &&
+          other.sentAt == this.sentAt &&
+          other.readAt == this.readAt);
+}
+
+class MessagesCompanion extends UpdateCompanion<Message> {
+  final Value<int> id;
+  final Value<String?> batchId;
+  final Value<String> kind;
+  final Value<int?> studentId;
+  final Value<int?> guardianId;
+  final Value<String?> toName;
+  final Value<String?> toPhone;
+  final Value<String> channel;
+  final Value<String> body;
+  final Value<String> status;
+  final Value<int> attempts;
+  final Value<String?> error;
+  final Value<DateTime?> relatedDate;
+  final Value<int?> createdByUserId;
+  final Value<DateTime> createdAt;
+  final Value<DateTime?> sentAt;
+  final Value<DateTime?> readAt;
+  const MessagesCompanion({
+    this.id = const Value.absent(),
+    this.batchId = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.studentId = const Value.absent(),
+    this.guardianId = const Value.absent(),
+    this.toName = const Value.absent(),
+    this.toPhone = const Value.absent(),
+    this.channel = const Value.absent(),
+    this.body = const Value.absent(),
+    this.status = const Value.absent(),
+    this.attempts = const Value.absent(),
+    this.error = const Value.absent(),
+    this.relatedDate = const Value.absent(),
+    this.createdByUserId = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.sentAt = const Value.absent(),
+    this.readAt = const Value.absent(),
+  });
+  MessagesCompanion.insert({
+    this.id = const Value.absent(),
+    this.batchId = const Value.absent(),
+    required String kind,
+    this.studentId = const Value.absent(),
+    this.guardianId = const Value.absent(),
+    this.toName = const Value.absent(),
+    this.toPhone = const Value.absent(),
+    this.channel = const Value.absent(),
+    required String body,
+    this.status = const Value.absent(),
+    this.attempts = const Value.absent(),
+    this.error = const Value.absent(),
+    this.relatedDate = const Value.absent(),
+    this.createdByUserId = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.sentAt = const Value.absent(),
+    this.readAt = const Value.absent(),
+  }) : kind = Value(kind),
+       body = Value(body);
+  static Insertable<Message> custom({
+    Expression<int>? id,
+    Expression<String>? batchId,
+    Expression<String>? kind,
+    Expression<int>? studentId,
+    Expression<int>? guardianId,
+    Expression<String>? toName,
+    Expression<String>? toPhone,
+    Expression<String>? channel,
+    Expression<String>? body,
+    Expression<String>? status,
+    Expression<int>? attempts,
+    Expression<String>? error,
+    Expression<DateTime>? relatedDate,
+    Expression<int>? createdByUserId,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? sentAt,
+    Expression<DateTime>? readAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (batchId != null) 'batch_id': batchId,
+      if (kind != null) 'kind': kind,
+      if (studentId != null) 'student_id': studentId,
+      if (guardianId != null) 'guardian_id': guardianId,
+      if (toName != null) 'to_name': toName,
+      if (toPhone != null) 'to_phone': toPhone,
+      if (channel != null) 'channel': channel,
+      if (body != null) 'body': body,
+      if (status != null) 'status': status,
+      if (attempts != null) 'attempts': attempts,
+      if (error != null) 'error': error,
+      if (relatedDate != null) 'related_date': relatedDate,
+      if (createdByUserId != null) 'created_by_user_id': createdByUserId,
+      if (createdAt != null) 'created_at': createdAt,
+      if (sentAt != null) 'sent_at': sentAt,
+      if (readAt != null) 'read_at': readAt,
+    });
+  }
+
+  MessagesCompanion copyWith({
+    Value<int>? id,
+    Value<String?>? batchId,
+    Value<String>? kind,
+    Value<int?>? studentId,
+    Value<int?>? guardianId,
+    Value<String?>? toName,
+    Value<String?>? toPhone,
+    Value<String>? channel,
+    Value<String>? body,
+    Value<String>? status,
+    Value<int>? attempts,
+    Value<String?>? error,
+    Value<DateTime?>? relatedDate,
+    Value<int?>? createdByUserId,
+    Value<DateTime>? createdAt,
+    Value<DateTime?>? sentAt,
+    Value<DateTime?>? readAt,
+  }) {
+    return MessagesCompanion(
+      id: id ?? this.id,
+      batchId: batchId ?? this.batchId,
+      kind: kind ?? this.kind,
+      studentId: studentId ?? this.studentId,
+      guardianId: guardianId ?? this.guardianId,
+      toName: toName ?? this.toName,
+      toPhone: toPhone ?? this.toPhone,
+      channel: channel ?? this.channel,
+      body: body ?? this.body,
+      status: status ?? this.status,
+      attempts: attempts ?? this.attempts,
+      error: error ?? this.error,
+      relatedDate: relatedDate ?? this.relatedDate,
+      createdByUserId: createdByUserId ?? this.createdByUserId,
+      createdAt: createdAt ?? this.createdAt,
+      sentAt: sentAt ?? this.sentAt,
+      readAt: readAt ?? this.readAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (batchId.present) {
+      map['batch_id'] = Variable<String>(batchId.value);
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(kind.value);
+    }
+    if (studentId.present) {
+      map['student_id'] = Variable<int>(studentId.value);
+    }
+    if (guardianId.present) {
+      map['guardian_id'] = Variable<int>(guardianId.value);
+    }
+    if (toName.present) {
+      map['to_name'] = Variable<String>(toName.value);
+    }
+    if (toPhone.present) {
+      map['to_phone'] = Variable<String>(toPhone.value);
+    }
+    if (channel.present) {
+      map['channel'] = Variable<String>(channel.value);
+    }
+    if (body.present) {
+      map['body'] = Variable<String>(body.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (attempts.present) {
+      map['attempts'] = Variable<int>(attempts.value);
+    }
+    if (error.present) {
+      map['error'] = Variable<String>(error.value);
+    }
+    if (relatedDate.present) {
+      map['related_date'] = Variable<DateTime>(relatedDate.value);
+    }
+    if (createdByUserId.present) {
+      map['created_by_user_id'] = Variable<int>(createdByUserId.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (sentAt.present) {
+      map['sent_at'] = Variable<DateTime>(sentAt.value);
+    }
+    if (readAt.present) {
+      map['read_at'] = Variable<DateTime>(readAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MessagesCompanion(')
+          ..write('id: $id, ')
+          ..write('batchId: $batchId, ')
+          ..write('kind: $kind, ')
+          ..write('studentId: $studentId, ')
+          ..write('guardianId: $guardianId, ')
+          ..write('toName: $toName, ')
+          ..write('toPhone: $toPhone, ')
+          ..write('channel: $channel, ')
+          ..write('body: $body, ')
+          ..write('status: $status, ')
+          ..write('attempts: $attempts, ')
+          ..write('error: $error, ')
+          ..write('relatedDate: $relatedDate, ')
+          ..write('createdByUserId: $createdByUserId, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('sentAt: $sentAt, ')
+          ..write('readAt: $readAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $AppNotificationsTable extends AppNotifications
+    with TableInfo<$AppNotificationsTable, AppNotification> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $AppNotificationsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _kindMeta = const VerificationMeta('kind');
+  @override
+  late final GeneratedColumn<String> kind = GeneratedColumn<String>(
+    'kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+    'title',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bodyMeta = const VerificationMeta('body');
+  @override
+  late final GeneratedColumn<String> body = GeneratedColumn<String>(
+    'body',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _payloadJsonMeta = const VerificationMeta(
+    'payloadJson',
+  );
+  @override
+  late final GeneratedColumn<String> payloadJson = GeneratedColumn<String>(
+    'payload_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _audienceMeta = const VerificationMeta(
+    'audience',
+  );
+  @override
+  late final GeneratedColumn<String> audience = GeneratedColumn<String>(
+    'audience',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('manager'),
+  );
+  static const VerificationMeta _guardianIdMeta = const VerificationMeta(
+    'guardianId',
+  );
+  @override
+  late final GeneratedColumn<int> guardianId = GeneratedColumn<int>(
+    'guardian_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES guardians (id)',
+    ),
+  );
+  static const VerificationMeta _dedupeKeyMeta = const VerificationMeta(
+    'dedupeKey',
+  );
+  @override
+  late final GeneratedColumn<String> dedupeKey = GeneratedColumn<String>(
+    'dedupe_key',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _readAtMeta = const VerificationMeta('readAt');
+  @override
+  late final GeneratedColumn<DateTime> readAt = GeneratedColumn<DateTime>(
+    'read_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _actedAtMeta = const VerificationMeta(
+    'actedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> actedAt = GeneratedColumn<DateTime>(
+    'acted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    kind,
+    title,
+    body,
+    payloadJson,
+    audience,
+    guardianId,
+    dedupeKey,
+    createdAt,
+    updatedAt,
+    readAt,
+    actedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'app_notifications';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<AppNotification> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('kind')) {
+      context.handle(
+        _kindMeta,
+        kind.isAcceptableOrUnknown(data['kind']!, _kindMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_kindMeta);
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+        _titleMeta,
+        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
+    if (data.containsKey('body')) {
+      context.handle(
+        _bodyMeta,
+        body.isAcceptableOrUnknown(data['body']!, _bodyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bodyMeta);
+    }
+    if (data.containsKey('payload_json')) {
+      context.handle(
+        _payloadJsonMeta,
+        payloadJson.isAcceptableOrUnknown(
+          data['payload_json']!,
+          _payloadJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('audience')) {
+      context.handle(
+        _audienceMeta,
+        audience.isAcceptableOrUnknown(data['audience']!, _audienceMeta),
+      );
+    }
+    if (data.containsKey('guardian_id')) {
+      context.handle(
+        _guardianIdMeta,
+        guardianId.isAcceptableOrUnknown(data['guardian_id']!, _guardianIdMeta),
+      );
+    }
+    if (data.containsKey('dedupe_key')) {
+      context.handle(
+        _dedupeKeyMeta,
+        dedupeKey.isAcceptableOrUnknown(data['dedupe_key']!, _dedupeKeyMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    if (data.containsKey('read_at')) {
+      context.handle(
+        _readAtMeta,
+        readAt.isAcceptableOrUnknown(data['read_at']!, _readAtMeta),
+      );
+    }
+    if (data.containsKey('acted_at')) {
+      context.handle(
+        _actedAtMeta,
+        actedAt.isAcceptableOrUnknown(data['acted_at']!, _actedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {dedupeKey},
+  ];
+  @override
+  AppNotification map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return AppNotification(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      kind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}kind'],
+      )!,
+      title: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}title'],
+      )!,
+      body: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}body'],
+      )!,
+      payloadJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}payload_json'],
+      ),
+      audience: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}audience'],
+      )!,
+      guardianId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}guardian_id'],
+      ),
+      dedupeKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}dedupe_key'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      readAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}read_at'],
+      ),
+      actedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}acted_at'],
+      ),
+    );
+  }
+
+  @override
+  $AppNotificationsTable createAlias(String alias) {
+    return $AppNotificationsTable(attachedDatabase, alias);
+  }
+}
+
+class AppNotification extends DataClass implements Insertable<AppNotification> {
+  final int id;
+
+  /// `absence_digest` | `leave_request` | `chronic_absence` | `system`
+  final String kind;
+  final String title;
+  final String body;
+
+  /// د تڼۍ لپاره ډیټا — {"date":"2026-08-14","studentIds":[…]}
+  final String? payloadJson;
+
+  /// `manager` | `parent`
+  final String audience;
+  final int? guardianId;
+
+  /// د دوه‌ځلي مخنیوي کلی — «absence_digest:2026-08-14».
+  /// یوه ورځ یوازې یوه خبرتیا لري، خو شمېره يې تازه کېږي.
+  final String? dedupeKey;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime? readAt;
+  final DateTime? actedAt;
+  const AppNotification({
+    required this.id,
+    required this.kind,
+    required this.title,
+    required this.body,
+    this.payloadJson,
+    required this.audience,
+    this.guardianId,
+    this.dedupeKey,
+    required this.createdAt,
+    required this.updatedAt,
+    this.readAt,
+    this.actedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['kind'] = Variable<String>(kind);
+    map['title'] = Variable<String>(title);
+    map['body'] = Variable<String>(body);
+    if (!nullToAbsent || payloadJson != null) {
+      map['payload_json'] = Variable<String>(payloadJson);
+    }
+    map['audience'] = Variable<String>(audience);
+    if (!nullToAbsent || guardianId != null) {
+      map['guardian_id'] = Variable<int>(guardianId);
+    }
+    if (!nullToAbsent || dedupeKey != null) {
+      map['dedupe_key'] = Variable<String>(dedupeKey);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || readAt != null) {
+      map['read_at'] = Variable<DateTime>(readAt);
+    }
+    if (!nullToAbsent || actedAt != null) {
+      map['acted_at'] = Variable<DateTime>(actedAt);
+    }
+    return map;
+  }
+
+  AppNotificationsCompanion toCompanion(bool nullToAbsent) {
+    return AppNotificationsCompanion(
+      id: Value(id),
+      kind: Value(kind),
+      title: Value(title),
+      body: Value(body),
+      payloadJson: payloadJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(payloadJson),
+      audience: Value(audience),
+      guardianId: guardianId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(guardianId),
+      dedupeKey: dedupeKey == null && nullToAbsent
+          ? const Value.absent()
+          : Value(dedupeKey),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      readAt: readAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(readAt),
+      actedAt: actedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(actedAt),
+    );
+  }
+
+  factory AppNotification.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return AppNotification(
+      id: serializer.fromJson<int>(json['id']),
+      kind: serializer.fromJson<String>(json['kind']),
+      title: serializer.fromJson<String>(json['title']),
+      body: serializer.fromJson<String>(json['body']),
+      payloadJson: serializer.fromJson<String?>(json['payloadJson']),
+      audience: serializer.fromJson<String>(json['audience']),
+      guardianId: serializer.fromJson<int?>(json['guardianId']),
+      dedupeKey: serializer.fromJson<String?>(json['dedupeKey']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      readAt: serializer.fromJson<DateTime?>(json['readAt']),
+      actedAt: serializer.fromJson<DateTime?>(json['actedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'kind': serializer.toJson<String>(kind),
+      'title': serializer.toJson<String>(title),
+      'body': serializer.toJson<String>(body),
+      'payloadJson': serializer.toJson<String?>(payloadJson),
+      'audience': serializer.toJson<String>(audience),
+      'guardianId': serializer.toJson<int?>(guardianId),
+      'dedupeKey': serializer.toJson<String?>(dedupeKey),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'readAt': serializer.toJson<DateTime?>(readAt),
+      'actedAt': serializer.toJson<DateTime?>(actedAt),
+    };
+  }
+
+  AppNotification copyWith({
+    int? id,
+    String? kind,
+    String? title,
+    String? body,
+    Value<String?> payloadJson = const Value.absent(),
+    String? audience,
+    Value<int?> guardianId = const Value.absent(),
+    Value<String?> dedupeKey = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    Value<DateTime?> readAt = const Value.absent(),
+    Value<DateTime?> actedAt = const Value.absent(),
+  }) => AppNotification(
+    id: id ?? this.id,
+    kind: kind ?? this.kind,
+    title: title ?? this.title,
+    body: body ?? this.body,
+    payloadJson: payloadJson.present ? payloadJson.value : this.payloadJson,
+    audience: audience ?? this.audience,
+    guardianId: guardianId.present ? guardianId.value : this.guardianId,
+    dedupeKey: dedupeKey.present ? dedupeKey.value : this.dedupeKey,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    readAt: readAt.present ? readAt.value : this.readAt,
+    actedAt: actedAt.present ? actedAt.value : this.actedAt,
+  );
+  AppNotification copyWithCompanion(AppNotificationsCompanion data) {
+    return AppNotification(
+      id: data.id.present ? data.id.value : this.id,
+      kind: data.kind.present ? data.kind.value : this.kind,
+      title: data.title.present ? data.title.value : this.title,
+      body: data.body.present ? data.body.value : this.body,
+      payloadJson: data.payloadJson.present
+          ? data.payloadJson.value
+          : this.payloadJson,
+      audience: data.audience.present ? data.audience.value : this.audience,
+      guardianId: data.guardianId.present
+          ? data.guardianId.value
+          : this.guardianId,
+      dedupeKey: data.dedupeKey.present ? data.dedupeKey.value : this.dedupeKey,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      readAt: data.readAt.present ? data.readAt.value : this.readAt,
+      actedAt: data.actedAt.present ? data.actedAt.value : this.actedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AppNotification(')
+          ..write('id: $id, ')
+          ..write('kind: $kind, ')
+          ..write('title: $title, ')
+          ..write('body: $body, ')
+          ..write('payloadJson: $payloadJson, ')
+          ..write('audience: $audience, ')
+          ..write('guardianId: $guardianId, ')
+          ..write('dedupeKey: $dedupeKey, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('readAt: $readAt, ')
+          ..write('actedAt: $actedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    kind,
+    title,
+    body,
+    payloadJson,
+    audience,
+    guardianId,
+    dedupeKey,
+    createdAt,
+    updatedAt,
+    readAt,
+    actedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is AppNotification &&
+          other.id == this.id &&
+          other.kind == this.kind &&
+          other.title == this.title &&
+          other.body == this.body &&
+          other.payloadJson == this.payloadJson &&
+          other.audience == this.audience &&
+          other.guardianId == this.guardianId &&
+          other.dedupeKey == this.dedupeKey &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.readAt == this.readAt &&
+          other.actedAt == this.actedAt);
+}
+
+class AppNotificationsCompanion extends UpdateCompanion<AppNotification> {
+  final Value<int> id;
+  final Value<String> kind;
+  final Value<String> title;
+  final Value<String> body;
+  final Value<String?> payloadJson;
+  final Value<String> audience;
+  final Value<int?> guardianId;
+  final Value<String?> dedupeKey;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<DateTime?> readAt;
+  final Value<DateTime?> actedAt;
+  const AppNotificationsCompanion({
+    this.id = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.title = const Value.absent(),
+    this.body = const Value.absent(),
+    this.payloadJson = const Value.absent(),
+    this.audience = const Value.absent(),
+    this.guardianId = const Value.absent(),
+    this.dedupeKey = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.readAt = const Value.absent(),
+    this.actedAt = const Value.absent(),
+  });
+  AppNotificationsCompanion.insert({
+    this.id = const Value.absent(),
+    required String kind,
+    required String title,
+    required String body,
+    this.payloadJson = const Value.absent(),
+    this.audience = const Value.absent(),
+    this.guardianId = const Value.absent(),
+    this.dedupeKey = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.readAt = const Value.absent(),
+    this.actedAt = const Value.absent(),
+  }) : kind = Value(kind),
+       title = Value(title),
+       body = Value(body);
+  static Insertable<AppNotification> custom({
+    Expression<int>? id,
+    Expression<String>? kind,
+    Expression<String>? title,
+    Expression<String>? body,
+    Expression<String>? payloadJson,
+    Expression<String>? audience,
+    Expression<int>? guardianId,
+    Expression<String>? dedupeKey,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? readAt,
+    Expression<DateTime>? actedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (kind != null) 'kind': kind,
+      if (title != null) 'title': title,
+      if (body != null) 'body': body,
+      if (payloadJson != null) 'payload_json': payloadJson,
+      if (audience != null) 'audience': audience,
+      if (guardianId != null) 'guardian_id': guardianId,
+      if (dedupeKey != null) 'dedupe_key': dedupeKey,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (readAt != null) 'read_at': readAt,
+      if (actedAt != null) 'acted_at': actedAt,
+    });
+  }
+
+  AppNotificationsCompanion copyWith({
+    Value<int>? id,
+    Value<String>? kind,
+    Value<String>? title,
+    Value<String>? body,
+    Value<String?>? payloadJson,
+    Value<String>? audience,
+    Value<int?>? guardianId,
+    Value<String?>? dedupeKey,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<DateTime?>? readAt,
+    Value<DateTime?>? actedAt,
+  }) {
+    return AppNotificationsCompanion(
+      id: id ?? this.id,
+      kind: kind ?? this.kind,
+      title: title ?? this.title,
+      body: body ?? this.body,
+      payloadJson: payloadJson ?? this.payloadJson,
+      audience: audience ?? this.audience,
+      guardianId: guardianId ?? this.guardianId,
+      dedupeKey: dedupeKey ?? this.dedupeKey,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      readAt: readAt ?? this.readAt,
+      actedAt: actedAt ?? this.actedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(kind.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (body.present) {
+      map['body'] = Variable<String>(body.value);
+    }
+    if (payloadJson.present) {
+      map['payload_json'] = Variable<String>(payloadJson.value);
+    }
+    if (audience.present) {
+      map['audience'] = Variable<String>(audience.value);
+    }
+    if (guardianId.present) {
+      map['guardian_id'] = Variable<int>(guardianId.value);
+    }
+    if (dedupeKey.present) {
+      map['dedupe_key'] = Variable<String>(dedupeKey.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (readAt.present) {
+      map['read_at'] = Variable<DateTime>(readAt.value);
+    }
+    if (actedAt.present) {
+      map['acted_at'] = Variable<DateTime>(actedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AppNotificationsCompanion(')
+          ..write('id: $id, ')
+          ..write('kind: $kind, ')
+          ..write('title: $title, ')
+          ..write('body: $body, ')
+          ..write('payloadJson: $payloadJson, ')
+          ..write('audience: $audience, ')
+          ..write('guardianId: $guardianId, ')
+          ..write('dedupeKey: $dedupeKey, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('readAt: $readAt, ')
+          ..write('actedAt: $actedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -9794,6 +13241,15 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $AttendancesTable attendances = $AttendancesTable(this);
   late final $LeaveRequestsTable leaveRequests = $LeaveRequestsTable(this);
   late final $AuditLogsTable auditLogs = $AuditLogsTable(this);
+  late final $DevicesTable devices = $DevicesTable(this);
+  late final $PairingCodesTable pairingCodes = $PairingCodesTable(this);
+  late final $MessageTemplatesTable messageTemplates = $MessageTemplatesTable(
+    this,
+  );
+  late final $MessagesTable messages = $MessagesTable(this);
+  late final $AppNotificationsTable appNotifications = $AppNotificationsTable(
+    this,
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -9814,6 +13270,11 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     attendances,
     leaveRequests,
     auditLogs,
+    devices,
+    pairingCodes,
+    messageTemplates,
+    messages,
+    appNotifications,
   ];
 }
 
@@ -12459,6 +15920,25 @@ final class $$StudentsTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<$MessagesTable, List<Message>> _messagesRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.messages,
+    aliasName: $_aliasNameGenerator(db.students.id, db.messages.studentId),
+  );
+
+  $$MessagesTableProcessedTableManager get messagesRefs {
+    final manager = $$MessagesTableTableManager(
+      $_db,
+      $_db.messages,
+    ).filter((f) => f.studentId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_messagesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$StudentsTableFilterComposer
@@ -12671,6 +16151,31 @@ class $$StudentsTableFilterComposer
           }) => $$LeaveRequestsTableFilterComposer(
             $db: $db,
             $table: $db.leaveRequests,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> messagesRefs(
+    Expression<bool> Function($$MessagesTableFilterComposer f) f,
+  ) {
+    final $$MessagesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.messages,
+      getReferencedColumn: (t) => t.studentId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MessagesTableFilterComposer(
+            $db: $db,
+            $table: $db.messages,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -12993,6 +16498,31 @@ class $$StudentsTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> messagesRefs<T extends Object>(
+    Expression<T> Function($$MessagesTableAnnotationComposer a) f,
+  ) {
+    final $$MessagesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.messages,
+      getReferencedColumn: (t) => t.studentId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MessagesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.messages,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$StudentsTableTableManager
@@ -13013,6 +16543,7 @@ class $$StudentsTableTableManager
             bool enrollmentsRefs,
             bool attendancesRefs,
             bool leaveRequestsRefs,
+            bool messagesRefs,
           })
         > {
   $$StudentsTableTableManager(_$AppDatabase db, $StudentsTable table)
@@ -13136,6 +16667,7 @@ class $$StudentsTableTableManager
                 enrollmentsRefs = false,
                 attendancesRefs = false,
                 leaveRequestsRefs = false,
+                messagesRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -13144,6 +16676,7 @@ class $$StudentsTableTableManager
                     if (enrollmentsRefs) db.enrollments,
                     if (attendancesRefs) db.attendances,
                     if (leaveRequestsRefs) db.leaveRequests,
+                    if (messagesRefs) db.messages,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -13232,6 +16765,27 @@ class $$StudentsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (messagesRefs)
+                        await $_getPrefetchedData<
+                          Student,
+                          $StudentsTable,
+                          Message
+                        >(
+                          currentTable: table,
+                          referencedTable: $$StudentsTableReferences
+                              ._messagesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$StudentsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).messagesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.studentId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -13257,6 +16811,7 @@ typedef $$StudentsTableProcessedTableManager =
         bool enrollmentsRefs,
         bool attendancesRefs,
         bool leaveRequestsRefs,
+        bool messagesRefs,
       })
     >;
 typedef $$GuardiansTableCreateCompanionBuilder =
@@ -13309,6 +16864,88 @@ final class $$GuardiansTableReferences
 
     final cache = $_typedResult.readTableOrNull(
       _studentGuardiansRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$DevicesTable, List<Device>> _devicesRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.devices,
+    aliasName: $_aliasNameGenerator(db.guardians.id, db.devices.guardianId),
+  );
+
+  $$DevicesTableProcessedTableManager get devicesRefs {
+    final manager = $$DevicesTableTableManager(
+      $_db,
+      $_db.devices,
+    ).filter((f) => f.guardianId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_devicesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$PairingCodesTable, List<PairingCode>>
+  _pairingCodesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.pairingCodes,
+    aliasName: $_aliasNameGenerator(
+      db.guardians.id,
+      db.pairingCodes.guardianId,
+    ),
+  );
+
+  $$PairingCodesTableProcessedTableManager get pairingCodesRefs {
+    final manager = $$PairingCodesTableTableManager(
+      $_db,
+      $_db.pairingCodes,
+    ).filter((f) => f.guardianId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_pairingCodesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$MessagesTable, List<Message>> _messagesRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.messages,
+    aliasName: $_aliasNameGenerator(db.guardians.id, db.messages.guardianId),
+  );
+
+  $$MessagesTableProcessedTableManager get messagesRefs {
+    final manager = $$MessagesTableTableManager(
+      $_db,
+      $_db.messages,
+    ).filter((f) => f.guardianId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_messagesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$AppNotificationsTable, List<AppNotification>>
+  _appNotificationsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.appNotifications,
+    aliasName: $_aliasNameGenerator(
+      db.guardians.id,
+      db.appNotifications.guardianId,
+    ),
+  );
+
+  $$AppNotificationsTableProcessedTableManager get appNotificationsRefs {
+    final manager = $$AppNotificationsTableTableManager(
+      $_db,
+      $_db.appNotifications,
+    ).filter((f) => f.guardianId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _appNotificationsRefsTable($_db),
     );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
@@ -13396,6 +17033,106 @@ class $$GuardiansTableFilterComposer
           }) => $$StudentGuardiansTableFilterComposer(
             $db: $db,
             $table: $db.studentGuardians,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> devicesRefs(
+    Expression<bool> Function($$DevicesTableFilterComposer f) f,
+  ) {
+    final $$DevicesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.devices,
+      getReferencedColumn: (t) => t.guardianId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$DevicesTableFilterComposer(
+            $db: $db,
+            $table: $db.devices,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> pairingCodesRefs(
+    Expression<bool> Function($$PairingCodesTableFilterComposer f) f,
+  ) {
+    final $$PairingCodesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.pairingCodes,
+      getReferencedColumn: (t) => t.guardianId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PairingCodesTableFilterComposer(
+            $db: $db,
+            $table: $db.pairingCodes,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> messagesRefs(
+    Expression<bool> Function($$MessagesTableFilterComposer f) f,
+  ) {
+    final $$MessagesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.messages,
+      getReferencedColumn: (t) => t.guardianId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MessagesTableFilterComposer(
+            $db: $db,
+            $table: $db.messages,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> appNotificationsRefs(
+    Expression<bool> Function($$AppNotificationsTableFilterComposer f) f,
+  ) {
+    final $$AppNotificationsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.appNotifications,
+      getReferencedColumn: (t) => t.guardianId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AppNotificationsTableFilterComposer(
+            $db: $db,
+            $table: $db.appNotifications,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -13545,6 +17282,106 @@ class $$GuardiansTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> devicesRefs<T extends Object>(
+    Expression<T> Function($$DevicesTableAnnotationComposer a) f,
+  ) {
+    final $$DevicesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.devices,
+      getReferencedColumn: (t) => t.guardianId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$DevicesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.devices,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> pairingCodesRefs<T extends Object>(
+    Expression<T> Function($$PairingCodesTableAnnotationComposer a) f,
+  ) {
+    final $$PairingCodesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.pairingCodes,
+      getReferencedColumn: (t) => t.guardianId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PairingCodesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.pairingCodes,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> messagesRefs<T extends Object>(
+    Expression<T> Function($$MessagesTableAnnotationComposer a) f,
+  ) {
+    final $$MessagesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.messages,
+      getReferencedColumn: (t) => t.guardianId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MessagesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.messages,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> appNotificationsRefs<T extends Object>(
+    Expression<T> Function($$AppNotificationsTableAnnotationComposer a) f,
+  ) {
+    final $$AppNotificationsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.appNotifications,
+      getReferencedColumn: (t) => t.guardianId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AppNotificationsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.appNotifications,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$GuardiansTableTableManager
@@ -13560,7 +17397,13 @@ class $$GuardiansTableTableManager
           $$GuardiansTableUpdateCompanionBuilder,
           (Guardian, $$GuardiansTableReferences),
           Guardian,
-          PrefetchHooks Function({bool studentGuardiansRefs})
+          PrefetchHooks Function({
+            bool studentGuardiansRefs,
+            bool devicesRefs,
+            bool pairingCodesRefs,
+            bool messagesRefs,
+            bool appNotificationsRefs,
+          })
         > {
   $$GuardiansTableTableManager(_$AppDatabase db, $GuardiansTable table)
     : super(
@@ -13633,38 +17476,135 @@ class $$GuardiansTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({studentGuardiansRefs = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [
-                if (studentGuardiansRefs) db.studentGuardians,
-              ],
-              addJoins: null,
-              getPrefetchedDataCallback: (items) async {
-                return [
-                  if (studentGuardiansRefs)
-                    await $_getPrefetchedData<
-                      Guardian,
-                      $GuardiansTable,
-                      StudentGuardian
-                    >(
-                      currentTable: table,
-                      referencedTable: $$GuardiansTableReferences
-                          ._studentGuardiansRefsTable(db),
-                      managerFromTypedResult: (p0) =>
-                          $$GuardiansTableReferences(
-                            db,
-                            table,
-                            p0,
-                          ).studentGuardiansRefs,
-                      referencedItemsForCurrentItem: (item, referencedItems) =>
-                          referencedItems.where((e) => e.guardianId == item.id),
-                      typedResults: items,
-                    ),
-                ];
+          prefetchHooksCallback:
+              ({
+                studentGuardiansRefs = false,
+                devicesRefs = false,
+                pairingCodesRefs = false,
+                messagesRefs = false,
+                appNotificationsRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (studentGuardiansRefs) db.studentGuardians,
+                    if (devicesRefs) db.devices,
+                    if (pairingCodesRefs) db.pairingCodes,
+                    if (messagesRefs) db.messages,
+                    if (appNotificationsRefs) db.appNotifications,
+                  ],
+                  addJoins: null,
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (studentGuardiansRefs)
+                        await $_getPrefetchedData<
+                          Guardian,
+                          $GuardiansTable,
+                          StudentGuardian
+                        >(
+                          currentTable: table,
+                          referencedTable: $$GuardiansTableReferences
+                              ._studentGuardiansRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$GuardiansTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).studentGuardiansRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.guardianId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (devicesRefs)
+                        await $_getPrefetchedData<
+                          Guardian,
+                          $GuardiansTable,
+                          Device
+                        >(
+                          currentTable: table,
+                          referencedTable: $$GuardiansTableReferences
+                              ._devicesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$GuardiansTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).devicesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.guardianId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (pairingCodesRefs)
+                        await $_getPrefetchedData<
+                          Guardian,
+                          $GuardiansTable,
+                          PairingCode
+                        >(
+                          currentTable: table,
+                          referencedTable: $$GuardiansTableReferences
+                              ._pairingCodesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$GuardiansTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).pairingCodesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.guardianId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (messagesRefs)
+                        await $_getPrefetchedData<
+                          Guardian,
+                          $GuardiansTable,
+                          Message
+                        >(
+                          currentTable: table,
+                          referencedTable: $$GuardiansTableReferences
+                              ._messagesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$GuardiansTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).messagesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.guardianId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (appNotificationsRefs)
+                        await $_getPrefetchedData<
+                          Guardian,
+                          $GuardiansTable,
+                          AppNotification
+                        >(
+                          currentTable: table,
+                          referencedTable: $$GuardiansTableReferences
+                              ._appNotificationsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$GuardiansTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).appNotificationsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.guardianId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -13681,7 +17621,13 @@ typedef $$GuardiansTableProcessedTableManager =
       $$GuardiansTableUpdateCompanionBuilder,
       (Guardian, $$GuardiansTableReferences),
       Guardian,
-      PrefetchHooks Function({bool studentGuardiansRefs})
+      PrefetchHooks Function({
+        bool studentGuardiansRefs,
+        bool devicesRefs,
+        bool pairingCodesRefs,
+        bool messagesRefs,
+        bool appNotificationsRefs,
+      })
     >;
 typedef $$StudentGuardiansTableCreateCompanionBuilder =
     StudentGuardiansCompanion Function({
@@ -16721,6 +20667,2194 @@ typedef $$AuditLogsTableProcessedTableManager =
       AuditLog,
       PrefetchHooks Function()
     >;
+typedef $$DevicesTableCreateCompanionBuilder =
+    DevicesCompanion Function({
+      Value<int> id,
+      required String name,
+      Value<String> platform,
+      required String role,
+      Value<int?> userId,
+      Value<int?> guardianId,
+      required String tokenHash,
+      Value<String?> pushToken,
+      Value<DateTime> pairedAt,
+      Value<DateTime?> lastSeenAt,
+      Value<String?> lastIp,
+      Value<DateTime?> revokedAt,
+    });
+typedef $$DevicesTableUpdateCompanionBuilder =
+    DevicesCompanion Function({
+      Value<int> id,
+      Value<String> name,
+      Value<String> platform,
+      Value<String> role,
+      Value<int?> userId,
+      Value<int?> guardianId,
+      Value<String> tokenHash,
+      Value<String?> pushToken,
+      Value<DateTime> pairedAt,
+      Value<DateTime?> lastSeenAt,
+      Value<String?> lastIp,
+      Value<DateTime?> revokedAt,
+    });
+
+final class $$DevicesTableReferences
+    extends BaseReferences<_$AppDatabase, $DevicesTable, Device> {
+  $$DevicesTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $GuardiansTable _guardianIdTable(_$AppDatabase db) =>
+      db.guardians.createAlias(
+        $_aliasNameGenerator(db.devices.guardianId, db.guardians.id),
+      );
+
+  $$GuardiansTableProcessedTableManager? get guardianId {
+    final $_column = $_itemColumn<int>('guardian_id');
+    if ($_column == null) return null;
+    final manager = $$GuardiansTableTableManager(
+      $_db,
+      $_db.guardians,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_guardianIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$DevicesTableFilterComposer
+    extends Composer<_$AppDatabase, $DevicesTable> {
+  $$DevicesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get platform => $composableBuilder(
+    column: $table.platform,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get role => $composableBuilder(
+    column: $table.role,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get tokenHash => $composableBuilder(
+    column: $table.tokenHash,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get pushToken => $composableBuilder(
+    column: $table.pushToken,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get pairedAt => $composableBuilder(
+    column: $table.pairedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lastSeenAt => $composableBuilder(
+    column: $table.lastSeenAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get lastIp => $composableBuilder(
+    column: $table.lastIp,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get revokedAt => $composableBuilder(
+    column: $table.revokedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$GuardiansTableFilterComposer get guardianId {
+    final $$GuardiansTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.guardianId,
+      referencedTable: $db.guardians,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$GuardiansTableFilterComposer(
+            $db: $db,
+            $table: $db.guardians,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$DevicesTableOrderingComposer
+    extends Composer<_$AppDatabase, $DevicesTable> {
+  $$DevicesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get platform => $composableBuilder(
+    column: $table.platform,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get role => $composableBuilder(
+    column: $table.role,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get tokenHash => $composableBuilder(
+    column: $table.tokenHash,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get pushToken => $composableBuilder(
+    column: $table.pushToken,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get pairedAt => $composableBuilder(
+    column: $table.pairedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get lastSeenAt => $composableBuilder(
+    column: $table.lastSeenAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get lastIp => $composableBuilder(
+    column: $table.lastIp,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get revokedAt => $composableBuilder(
+    column: $table.revokedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$GuardiansTableOrderingComposer get guardianId {
+    final $$GuardiansTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.guardianId,
+      referencedTable: $db.guardians,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$GuardiansTableOrderingComposer(
+            $db: $db,
+            $table: $db.guardians,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$DevicesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $DevicesTable> {
+  $$DevicesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get platform =>
+      $composableBuilder(column: $table.platform, builder: (column) => column);
+
+  GeneratedColumn<String> get role =>
+      $composableBuilder(column: $table.role, builder: (column) => column);
+
+  GeneratedColumn<int> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<String> get tokenHash =>
+      $composableBuilder(column: $table.tokenHash, builder: (column) => column);
+
+  GeneratedColumn<String> get pushToken =>
+      $composableBuilder(column: $table.pushToken, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get pairedAt =>
+      $composableBuilder(column: $table.pairedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get lastSeenAt => $composableBuilder(
+    column: $table.lastSeenAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get lastIp =>
+      $composableBuilder(column: $table.lastIp, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get revokedAt =>
+      $composableBuilder(column: $table.revokedAt, builder: (column) => column);
+
+  $$GuardiansTableAnnotationComposer get guardianId {
+    final $$GuardiansTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.guardianId,
+      referencedTable: $db.guardians,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$GuardiansTableAnnotationComposer(
+            $db: $db,
+            $table: $db.guardians,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$DevicesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $DevicesTable,
+          Device,
+          $$DevicesTableFilterComposer,
+          $$DevicesTableOrderingComposer,
+          $$DevicesTableAnnotationComposer,
+          $$DevicesTableCreateCompanionBuilder,
+          $$DevicesTableUpdateCompanionBuilder,
+          (Device, $$DevicesTableReferences),
+          Device,
+          PrefetchHooks Function({bool guardianId})
+        > {
+  $$DevicesTableTableManager(_$AppDatabase db, $DevicesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$DevicesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$DevicesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$DevicesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String> platform = const Value.absent(),
+                Value<String> role = const Value.absent(),
+                Value<int?> userId = const Value.absent(),
+                Value<int?> guardianId = const Value.absent(),
+                Value<String> tokenHash = const Value.absent(),
+                Value<String?> pushToken = const Value.absent(),
+                Value<DateTime> pairedAt = const Value.absent(),
+                Value<DateTime?> lastSeenAt = const Value.absent(),
+                Value<String?> lastIp = const Value.absent(),
+                Value<DateTime?> revokedAt = const Value.absent(),
+              }) => DevicesCompanion(
+                id: id,
+                name: name,
+                platform: platform,
+                role: role,
+                userId: userId,
+                guardianId: guardianId,
+                tokenHash: tokenHash,
+                pushToken: pushToken,
+                pairedAt: pairedAt,
+                lastSeenAt: lastSeenAt,
+                lastIp: lastIp,
+                revokedAt: revokedAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String name,
+                Value<String> platform = const Value.absent(),
+                required String role,
+                Value<int?> userId = const Value.absent(),
+                Value<int?> guardianId = const Value.absent(),
+                required String tokenHash,
+                Value<String?> pushToken = const Value.absent(),
+                Value<DateTime> pairedAt = const Value.absent(),
+                Value<DateTime?> lastSeenAt = const Value.absent(),
+                Value<String?> lastIp = const Value.absent(),
+                Value<DateTime?> revokedAt = const Value.absent(),
+              }) => DevicesCompanion.insert(
+                id: id,
+                name: name,
+                platform: platform,
+                role: role,
+                userId: userId,
+                guardianId: guardianId,
+                tokenHash: tokenHash,
+                pushToken: pushToken,
+                pairedAt: pairedAt,
+                lastSeenAt: lastSeenAt,
+                lastIp: lastIp,
+                revokedAt: revokedAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$DevicesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({guardianId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (guardianId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.guardianId,
+                                referencedTable: $$DevicesTableReferences
+                                    ._guardianIdTable(db),
+                                referencedColumn: $$DevicesTableReferences
+                                    ._guardianIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$DevicesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $DevicesTable,
+      Device,
+      $$DevicesTableFilterComposer,
+      $$DevicesTableOrderingComposer,
+      $$DevicesTableAnnotationComposer,
+      $$DevicesTableCreateCompanionBuilder,
+      $$DevicesTableUpdateCompanionBuilder,
+      (Device, $$DevicesTableReferences),
+      Device,
+      PrefetchHooks Function({bool guardianId})
+    >;
+typedef $$PairingCodesTableCreateCompanionBuilder =
+    PairingCodesCompanion Function({
+      Value<int> id,
+      required String code,
+      required String role,
+      Value<int?> userId,
+      Value<int?> guardianId,
+      required DateTime expiresAt,
+      Value<DateTime?> usedAt,
+      Value<int?> usedByDeviceId,
+      Value<int?> createdByUserId,
+      Value<DateTime> createdAt,
+    });
+typedef $$PairingCodesTableUpdateCompanionBuilder =
+    PairingCodesCompanion Function({
+      Value<int> id,
+      Value<String> code,
+      Value<String> role,
+      Value<int?> userId,
+      Value<int?> guardianId,
+      Value<DateTime> expiresAt,
+      Value<DateTime?> usedAt,
+      Value<int?> usedByDeviceId,
+      Value<int?> createdByUserId,
+      Value<DateTime> createdAt,
+    });
+
+final class $$PairingCodesTableReferences
+    extends BaseReferences<_$AppDatabase, $PairingCodesTable, PairingCode> {
+  $$PairingCodesTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $GuardiansTable _guardianIdTable(_$AppDatabase db) =>
+      db.guardians.createAlias(
+        $_aliasNameGenerator(db.pairingCodes.guardianId, db.guardians.id),
+      );
+
+  $$GuardiansTableProcessedTableManager? get guardianId {
+    final $_column = $_itemColumn<int>('guardian_id');
+    if ($_column == null) return null;
+    final manager = $$GuardiansTableTableManager(
+      $_db,
+      $_db.guardians,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_guardianIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$PairingCodesTableFilterComposer
+    extends Composer<_$AppDatabase, $PairingCodesTable> {
+  $$PairingCodesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get code => $composableBuilder(
+    column: $table.code,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get role => $composableBuilder(
+    column: $table.role,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get expiresAt => $composableBuilder(
+    column: $table.expiresAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get usedAt => $composableBuilder(
+    column: $table.usedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get usedByDeviceId => $composableBuilder(
+    column: $table.usedByDeviceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdByUserId => $composableBuilder(
+    column: $table.createdByUserId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$GuardiansTableFilterComposer get guardianId {
+    final $$GuardiansTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.guardianId,
+      referencedTable: $db.guardians,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$GuardiansTableFilterComposer(
+            $db: $db,
+            $table: $db.guardians,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PairingCodesTableOrderingComposer
+    extends Composer<_$AppDatabase, $PairingCodesTable> {
+  $$PairingCodesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get code => $composableBuilder(
+    column: $table.code,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get role => $composableBuilder(
+    column: $table.role,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get expiresAt => $composableBuilder(
+    column: $table.expiresAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get usedAt => $composableBuilder(
+    column: $table.usedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get usedByDeviceId => $composableBuilder(
+    column: $table.usedByDeviceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdByUserId => $composableBuilder(
+    column: $table.createdByUserId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$GuardiansTableOrderingComposer get guardianId {
+    final $$GuardiansTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.guardianId,
+      referencedTable: $db.guardians,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$GuardiansTableOrderingComposer(
+            $db: $db,
+            $table: $db.guardians,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PairingCodesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PairingCodesTable> {
+  $$PairingCodesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get code =>
+      $composableBuilder(column: $table.code, builder: (column) => column);
+
+  GeneratedColumn<String> get role =>
+      $composableBuilder(column: $table.role, builder: (column) => column);
+
+  GeneratedColumn<int> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get expiresAt =>
+      $composableBuilder(column: $table.expiresAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get usedAt =>
+      $composableBuilder(column: $table.usedAt, builder: (column) => column);
+
+  GeneratedColumn<int> get usedByDeviceId => $composableBuilder(
+    column: $table.usedByDeviceId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get createdByUserId => $composableBuilder(
+    column: $table.createdByUserId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  $$GuardiansTableAnnotationComposer get guardianId {
+    final $$GuardiansTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.guardianId,
+      referencedTable: $db.guardians,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$GuardiansTableAnnotationComposer(
+            $db: $db,
+            $table: $db.guardians,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PairingCodesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $PairingCodesTable,
+          PairingCode,
+          $$PairingCodesTableFilterComposer,
+          $$PairingCodesTableOrderingComposer,
+          $$PairingCodesTableAnnotationComposer,
+          $$PairingCodesTableCreateCompanionBuilder,
+          $$PairingCodesTableUpdateCompanionBuilder,
+          (PairingCode, $$PairingCodesTableReferences),
+          PairingCode,
+          PrefetchHooks Function({bool guardianId})
+        > {
+  $$PairingCodesTableTableManager(_$AppDatabase db, $PairingCodesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PairingCodesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PairingCodesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PairingCodesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> code = const Value.absent(),
+                Value<String> role = const Value.absent(),
+                Value<int?> userId = const Value.absent(),
+                Value<int?> guardianId = const Value.absent(),
+                Value<DateTime> expiresAt = const Value.absent(),
+                Value<DateTime?> usedAt = const Value.absent(),
+                Value<int?> usedByDeviceId = const Value.absent(),
+                Value<int?> createdByUserId = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => PairingCodesCompanion(
+                id: id,
+                code: code,
+                role: role,
+                userId: userId,
+                guardianId: guardianId,
+                expiresAt: expiresAt,
+                usedAt: usedAt,
+                usedByDeviceId: usedByDeviceId,
+                createdByUserId: createdByUserId,
+                createdAt: createdAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String code,
+                required String role,
+                Value<int?> userId = const Value.absent(),
+                Value<int?> guardianId = const Value.absent(),
+                required DateTime expiresAt,
+                Value<DateTime?> usedAt = const Value.absent(),
+                Value<int?> usedByDeviceId = const Value.absent(),
+                Value<int?> createdByUserId = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => PairingCodesCompanion.insert(
+                id: id,
+                code: code,
+                role: role,
+                userId: userId,
+                guardianId: guardianId,
+                expiresAt: expiresAt,
+                usedAt: usedAt,
+                usedByDeviceId: usedByDeviceId,
+                createdByUserId: createdByUserId,
+                createdAt: createdAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$PairingCodesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({guardianId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (guardianId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.guardianId,
+                                referencedTable: $$PairingCodesTableReferences
+                                    ._guardianIdTable(db),
+                                referencedColumn: $$PairingCodesTableReferences
+                                    ._guardianIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$PairingCodesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $PairingCodesTable,
+      PairingCode,
+      $$PairingCodesTableFilterComposer,
+      $$PairingCodesTableOrderingComposer,
+      $$PairingCodesTableAnnotationComposer,
+      $$PairingCodesTableCreateCompanionBuilder,
+      $$PairingCodesTableUpdateCompanionBuilder,
+      (PairingCode, $$PairingCodesTableReferences),
+      PairingCode,
+      PrefetchHooks Function({bool guardianId})
+    >;
+typedef $$MessageTemplatesTableCreateCompanionBuilder =
+    MessageTemplatesCompanion Function({
+      Value<int> id,
+      required String templateKey,
+      required String title,
+      required String body,
+      Value<String> channel,
+      Value<bool> isActive,
+      Value<bool> isBuiltIn,
+    });
+typedef $$MessageTemplatesTableUpdateCompanionBuilder =
+    MessageTemplatesCompanion Function({
+      Value<int> id,
+      Value<String> templateKey,
+      Value<String> title,
+      Value<String> body,
+      Value<String> channel,
+      Value<bool> isActive,
+      Value<bool> isBuiltIn,
+    });
+
+class $$MessageTemplatesTableFilterComposer
+    extends Composer<_$AppDatabase, $MessageTemplatesTable> {
+  $$MessageTemplatesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get templateKey => $composableBuilder(
+    column: $table.templateKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get body => $composableBuilder(
+    column: $table.body,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get channel => $composableBuilder(
+    column: $table.channel,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isActive => $composableBuilder(
+    column: $table.isActive,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isBuiltIn => $composableBuilder(
+    column: $table.isBuiltIn,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$MessageTemplatesTableOrderingComposer
+    extends Composer<_$AppDatabase, $MessageTemplatesTable> {
+  $$MessageTemplatesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get templateKey => $composableBuilder(
+    column: $table.templateKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get body => $composableBuilder(
+    column: $table.body,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get channel => $composableBuilder(
+    column: $table.channel,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isActive => $composableBuilder(
+    column: $table.isActive,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isBuiltIn => $composableBuilder(
+    column: $table.isBuiltIn,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$MessageTemplatesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $MessageTemplatesTable> {
+  $$MessageTemplatesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get templateKey => $composableBuilder(
+    column: $table.templateKey,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<String> get body =>
+      $composableBuilder(column: $table.body, builder: (column) => column);
+
+  GeneratedColumn<String> get channel =>
+      $composableBuilder(column: $table.channel, builder: (column) => column);
+
+  GeneratedColumn<bool> get isActive =>
+      $composableBuilder(column: $table.isActive, builder: (column) => column);
+
+  GeneratedColumn<bool> get isBuiltIn =>
+      $composableBuilder(column: $table.isBuiltIn, builder: (column) => column);
+}
+
+class $$MessageTemplatesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $MessageTemplatesTable,
+          MessageTemplate,
+          $$MessageTemplatesTableFilterComposer,
+          $$MessageTemplatesTableOrderingComposer,
+          $$MessageTemplatesTableAnnotationComposer,
+          $$MessageTemplatesTableCreateCompanionBuilder,
+          $$MessageTemplatesTableUpdateCompanionBuilder,
+          (
+            MessageTemplate,
+            BaseReferences<
+              _$AppDatabase,
+              $MessageTemplatesTable,
+              MessageTemplate
+            >,
+          ),
+          MessageTemplate,
+          PrefetchHooks Function()
+        > {
+  $$MessageTemplatesTableTableManager(
+    _$AppDatabase db,
+    $MessageTemplatesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$MessageTemplatesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$MessageTemplatesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$MessageTemplatesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> templateKey = const Value.absent(),
+                Value<String> title = const Value.absent(),
+                Value<String> body = const Value.absent(),
+                Value<String> channel = const Value.absent(),
+                Value<bool> isActive = const Value.absent(),
+                Value<bool> isBuiltIn = const Value.absent(),
+              }) => MessageTemplatesCompanion(
+                id: id,
+                templateKey: templateKey,
+                title: title,
+                body: body,
+                channel: channel,
+                isActive: isActive,
+                isBuiltIn: isBuiltIn,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String templateKey,
+                required String title,
+                required String body,
+                Value<String> channel = const Value.absent(),
+                Value<bool> isActive = const Value.absent(),
+                Value<bool> isBuiltIn = const Value.absent(),
+              }) => MessageTemplatesCompanion.insert(
+                id: id,
+                templateKey: templateKey,
+                title: title,
+                body: body,
+                channel: channel,
+                isActive: isActive,
+                isBuiltIn: isBuiltIn,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$MessageTemplatesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $MessageTemplatesTable,
+      MessageTemplate,
+      $$MessageTemplatesTableFilterComposer,
+      $$MessageTemplatesTableOrderingComposer,
+      $$MessageTemplatesTableAnnotationComposer,
+      $$MessageTemplatesTableCreateCompanionBuilder,
+      $$MessageTemplatesTableUpdateCompanionBuilder,
+      (
+        MessageTemplate,
+        BaseReferences<_$AppDatabase, $MessageTemplatesTable, MessageTemplate>,
+      ),
+      MessageTemplate,
+      PrefetchHooks Function()
+    >;
+typedef $$MessagesTableCreateCompanionBuilder =
+    MessagesCompanion Function({
+      Value<int> id,
+      Value<String?> batchId,
+      required String kind,
+      Value<int?> studentId,
+      Value<int?> guardianId,
+      Value<String?> toName,
+      Value<String?> toPhone,
+      Value<String> channel,
+      required String body,
+      Value<String> status,
+      Value<int> attempts,
+      Value<String?> error,
+      Value<DateTime?> relatedDate,
+      Value<int?> createdByUserId,
+      Value<DateTime> createdAt,
+      Value<DateTime?> sentAt,
+      Value<DateTime?> readAt,
+    });
+typedef $$MessagesTableUpdateCompanionBuilder =
+    MessagesCompanion Function({
+      Value<int> id,
+      Value<String?> batchId,
+      Value<String> kind,
+      Value<int?> studentId,
+      Value<int?> guardianId,
+      Value<String?> toName,
+      Value<String?> toPhone,
+      Value<String> channel,
+      Value<String> body,
+      Value<String> status,
+      Value<int> attempts,
+      Value<String?> error,
+      Value<DateTime?> relatedDate,
+      Value<int?> createdByUserId,
+      Value<DateTime> createdAt,
+      Value<DateTime?> sentAt,
+      Value<DateTime?> readAt,
+    });
+
+final class $$MessagesTableReferences
+    extends BaseReferences<_$AppDatabase, $MessagesTable, Message> {
+  $$MessagesTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $StudentsTable _studentIdTable(_$AppDatabase db) => db.students
+      .createAlias($_aliasNameGenerator(db.messages.studentId, db.students.id));
+
+  $$StudentsTableProcessedTableManager? get studentId {
+    final $_column = $_itemColumn<int>('student_id');
+    if ($_column == null) return null;
+    final manager = $$StudentsTableTableManager(
+      $_db,
+      $_db.students,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_studentIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $GuardiansTable _guardianIdTable(_$AppDatabase db) =>
+      db.guardians.createAlias(
+        $_aliasNameGenerator(db.messages.guardianId, db.guardians.id),
+      );
+
+  $$GuardiansTableProcessedTableManager? get guardianId {
+    final $_column = $_itemColumn<int>('guardian_id');
+    if ($_column == null) return null;
+    final manager = $$GuardiansTableTableManager(
+      $_db,
+      $_db.guardians,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_guardianIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$MessagesTableFilterComposer
+    extends Composer<_$AppDatabase, $MessagesTable> {
+  $$MessagesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get batchId => $composableBuilder(
+    column: $table.batchId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get toName => $composableBuilder(
+    column: $table.toName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get toPhone => $composableBuilder(
+    column: $table.toPhone,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get channel => $composableBuilder(
+    column: $table.channel,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get body => $composableBuilder(
+    column: $table.body,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get attempts => $composableBuilder(
+    column: $table.attempts,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get error => $composableBuilder(
+    column: $table.error,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get relatedDate => $composableBuilder(
+    column: $table.relatedDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdByUserId => $composableBuilder(
+    column: $table.createdByUserId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get sentAt => $composableBuilder(
+    column: $table.sentAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get readAt => $composableBuilder(
+    column: $table.readAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$StudentsTableFilterComposer get studentId {
+    final $$StudentsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.studentId,
+      referencedTable: $db.students,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$StudentsTableFilterComposer(
+            $db: $db,
+            $table: $db.students,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$GuardiansTableFilterComposer get guardianId {
+    final $$GuardiansTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.guardianId,
+      referencedTable: $db.guardians,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$GuardiansTableFilterComposer(
+            $db: $db,
+            $table: $db.guardians,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$MessagesTableOrderingComposer
+    extends Composer<_$AppDatabase, $MessagesTable> {
+  $$MessagesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get batchId => $composableBuilder(
+    column: $table.batchId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get toName => $composableBuilder(
+    column: $table.toName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get toPhone => $composableBuilder(
+    column: $table.toPhone,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get channel => $composableBuilder(
+    column: $table.channel,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get body => $composableBuilder(
+    column: $table.body,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get attempts => $composableBuilder(
+    column: $table.attempts,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get error => $composableBuilder(
+    column: $table.error,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get relatedDate => $composableBuilder(
+    column: $table.relatedDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdByUserId => $composableBuilder(
+    column: $table.createdByUserId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get sentAt => $composableBuilder(
+    column: $table.sentAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get readAt => $composableBuilder(
+    column: $table.readAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$StudentsTableOrderingComposer get studentId {
+    final $$StudentsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.studentId,
+      referencedTable: $db.students,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$StudentsTableOrderingComposer(
+            $db: $db,
+            $table: $db.students,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$GuardiansTableOrderingComposer get guardianId {
+    final $$GuardiansTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.guardianId,
+      referencedTable: $db.guardians,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$GuardiansTableOrderingComposer(
+            $db: $db,
+            $table: $db.guardians,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$MessagesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $MessagesTable> {
+  $$MessagesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get batchId =>
+      $composableBuilder(column: $table.batchId, builder: (column) => column);
+
+  GeneratedColumn<String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumn<String> get toName =>
+      $composableBuilder(column: $table.toName, builder: (column) => column);
+
+  GeneratedColumn<String> get toPhone =>
+      $composableBuilder(column: $table.toPhone, builder: (column) => column);
+
+  GeneratedColumn<String> get channel =>
+      $composableBuilder(column: $table.channel, builder: (column) => column);
+
+  GeneratedColumn<String> get body =>
+      $composableBuilder(column: $table.body, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<int> get attempts =>
+      $composableBuilder(column: $table.attempts, builder: (column) => column);
+
+  GeneratedColumn<String> get error =>
+      $composableBuilder(column: $table.error, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get relatedDate => $composableBuilder(
+    column: $table.relatedDate,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get createdByUserId => $composableBuilder(
+    column: $table.createdByUserId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get sentAt =>
+      $composableBuilder(column: $table.sentAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get readAt =>
+      $composableBuilder(column: $table.readAt, builder: (column) => column);
+
+  $$StudentsTableAnnotationComposer get studentId {
+    final $$StudentsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.studentId,
+      referencedTable: $db.students,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$StudentsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.students,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$GuardiansTableAnnotationComposer get guardianId {
+    final $$GuardiansTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.guardianId,
+      referencedTable: $db.guardians,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$GuardiansTableAnnotationComposer(
+            $db: $db,
+            $table: $db.guardians,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$MessagesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $MessagesTable,
+          Message,
+          $$MessagesTableFilterComposer,
+          $$MessagesTableOrderingComposer,
+          $$MessagesTableAnnotationComposer,
+          $$MessagesTableCreateCompanionBuilder,
+          $$MessagesTableUpdateCompanionBuilder,
+          (Message, $$MessagesTableReferences),
+          Message,
+          PrefetchHooks Function({bool studentId, bool guardianId})
+        > {
+  $$MessagesTableTableManager(_$AppDatabase db, $MessagesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$MessagesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$MessagesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$MessagesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String?> batchId = const Value.absent(),
+                Value<String> kind = const Value.absent(),
+                Value<int?> studentId = const Value.absent(),
+                Value<int?> guardianId = const Value.absent(),
+                Value<String?> toName = const Value.absent(),
+                Value<String?> toPhone = const Value.absent(),
+                Value<String> channel = const Value.absent(),
+                Value<String> body = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<int> attempts = const Value.absent(),
+                Value<String?> error = const Value.absent(),
+                Value<DateTime?> relatedDate = const Value.absent(),
+                Value<int?> createdByUserId = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime?> sentAt = const Value.absent(),
+                Value<DateTime?> readAt = const Value.absent(),
+              }) => MessagesCompanion(
+                id: id,
+                batchId: batchId,
+                kind: kind,
+                studentId: studentId,
+                guardianId: guardianId,
+                toName: toName,
+                toPhone: toPhone,
+                channel: channel,
+                body: body,
+                status: status,
+                attempts: attempts,
+                error: error,
+                relatedDate: relatedDate,
+                createdByUserId: createdByUserId,
+                createdAt: createdAt,
+                sentAt: sentAt,
+                readAt: readAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String?> batchId = const Value.absent(),
+                required String kind,
+                Value<int?> studentId = const Value.absent(),
+                Value<int?> guardianId = const Value.absent(),
+                Value<String?> toName = const Value.absent(),
+                Value<String?> toPhone = const Value.absent(),
+                Value<String> channel = const Value.absent(),
+                required String body,
+                Value<String> status = const Value.absent(),
+                Value<int> attempts = const Value.absent(),
+                Value<String?> error = const Value.absent(),
+                Value<DateTime?> relatedDate = const Value.absent(),
+                Value<int?> createdByUserId = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime?> sentAt = const Value.absent(),
+                Value<DateTime?> readAt = const Value.absent(),
+              }) => MessagesCompanion.insert(
+                id: id,
+                batchId: batchId,
+                kind: kind,
+                studentId: studentId,
+                guardianId: guardianId,
+                toName: toName,
+                toPhone: toPhone,
+                channel: channel,
+                body: body,
+                status: status,
+                attempts: attempts,
+                error: error,
+                relatedDate: relatedDate,
+                createdByUserId: createdByUserId,
+                createdAt: createdAt,
+                sentAt: sentAt,
+                readAt: readAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$MessagesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({studentId = false, guardianId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (studentId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.studentId,
+                                referencedTable: $$MessagesTableReferences
+                                    ._studentIdTable(db),
+                                referencedColumn: $$MessagesTableReferences
+                                    ._studentIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+                    if (guardianId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.guardianId,
+                                referencedTable: $$MessagesTableReferences
+                                    ._guardianIdTable(db),
+                                referencedColumn: $$MessagesTableReferences
+                                    ._guardianIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$MessagesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $MessagesTable,
+      Message,
+      $$MessagesTableFilterComposer,
+      $$MessagesTableOrderingComposer,
+      $$MessagesTableAnnotationComposer,
+      $$MessagesTableCreateCompanionBuilder,
+      $$MessagesTableUpdateCompanionBuilder,
+      (Message, $$MessagesTableReferences),
+      Message,
+      PrefetchHooks Function({bool studentId, bool guardianId})
+    >;
+typedef $$AppNotificationsTableCreateCompanionBuilder =
+    AppNotificationsCompanion Function({
+      Value<int> id,
+      required String kind,
+      required String title,
+      required String body,
+      Value<String?> payloadJson,
+      Value<String> audience,
+      Value<int?> guardianId,
+      Value<String?> dedupeKey,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<DateTime?> readAt,
+      Value<DateTime?> actedAt,
+    });
+typedef $$AppNotificationsTableUpdateCompanionBuilder =
+    AppNotificationsCompanion Function({
+      Value<int> id,
+      Value<String> kind,
+      Value<String> title,
+      Value<String> body,
+      Value<String?> payloadJson,
+      Value<String> audience,
+      Value<int?> guardianId,
+      Value<String?> dedupeKey,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<DateTime?> readAt,
+      Value<DateTime?> actedAt,
+    });
+
+final class $$AppNotificationsTableReferences
+    extends
+        BaseReferences<_$AppDatabase, $AppNotificationsTable, AppNotification> {
+  $$AppNotificationsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $GuardiansTable _guardianIdTable(_$AppDatabase db) =>
+      db.guardians.createAlias(
+        $_aliasNameGenerator(db.appNotifications.guardianId, db.guardians.id),
+      );
+
+  $$GuardiansTableProcessedTableManager? get guardianId {
+    final $_column = $_itemColumn<int>('guardian_id');
+    if ($_column == null) return null;
+    final manager = $$GuardiansTableTableManager(
+      $_db,
+      $_db.guardians,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_guardianIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$AppNotificationsTableFilterComposer
+    extends Composer<_$AppDatabase, $AppNotificationsTable> {
+  $$AppNotificationsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get body => $composableBuilder(
+    column: $table.body,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get payloadJson => $composableBuilder(
+    column: $table.payloadJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get audience => $composableBuilder(
+    column: $table.audience,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get dedupeKey => $composableBuilder(
+    column: $table.dedupeKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get readAt => $composableBuilder(
+    column: $table.readAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get actedAt => $composableBuilder(
+    column: $table.actedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$GuardiansTableFilterComposer get guardianId {
+    final $$GuardiansTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.guardianId,
+      referencedTable: $db.guardians,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$GuardiansTableFilterComposer(
+            $db: $db,
+            $table: $db.guardians,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$AppNotificationsTableOrderingComposer
+    extends Composer<_$AppDatabase, $AppNotificationsTable> {
+  $$AppNotificationsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get body => $composableBuilder(
+    column: $table.body,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get payloadJson => $composableBuilder(
+    column: $table.payloadJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get audience => $composableBuilder(
+    column: $table.audience,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get dedupeKey => $composableBuilder(
+    column: $table.dedupeKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get readAt => $composableBuilder(
+    column: $table.readAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get actedAt => $composableBuilder(
+    column: $table.actedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$GuardiansTableOrderingComposer get guardianId {
+    final $$GuardiansTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.guardianId,
+      referencedTable: $db.guardians,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$GuardiansTableOrderingComposer(
+            $db: $db,
+            $table: $db.guardians,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$AppNotificationsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $AppNotificationsTable> {
+  $$AppNotificationsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<String> get body =>
+      $composableBuilder(column: $table.body, builder: (column) => column);
+
+  GeneratedColumn<String> get payloadJson => $composableBuilder(
+    column: $table.payloadJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get audience =>
+      $composableBuilder(column: $table.audience, builder: (column) => column);
+
+  GeneratedColumn<String> get dedupeKey =>
+      $composableBuilder(column: $table.dedupeKey, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get readAt =>
+      $composableBuilder(column: $table.readAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get actedAt =>
+      $composableBuilder(column: $table.actedAt, builder: (column) => column);
+
+  $$GuardiansTableAnnotationComposer get guardianId {
+    final $$GuardiansTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.guardianId,
+      referencedTable: $db.guardians,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$GuardiansTableAnnotationComposer(
+            $db: $db,
+            $table: $db.guardians,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$AppNotificationsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $AppNotificationsTable,
+          AppNotification,
+          $$AppNotificationsTableFilterComposer,
+          $$AppNotificationsTableOrderingComposer,
+          $$AppNotificationsTableAnnotationComposer,
+          $$AppNotificationsTableCreateCompanionBuilder,
+          $$AppNotificationsTableUpdateCompanionBuilder,
+          (AppNotification, $$AppNotificationsTableReferences),
+          AppNotification,
+          PrefetchHooks Function({bool guardianId})
+        > {
+  $$AppNotificationsTableTableManager(
+    _$AppDatabase db,
+    $AppNotificationsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$AppNotificationsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$AppNotificationsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$AppNotificationsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> kind = const Value.absent(),
+                Value<String> title = const Value.absent(),
+                Value<String> body = const Value.absent(),
+                Value<String?> payloadJson = const Value.absent(),
+                Value<String> audience = const Value.absent(),
+                Value<int?> guardianId = const Value.absent(),
+                Value<String?> dedupeKey = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<DateTime?> readAt = const Value.absent(),
+                Value<DateTime?> actedAt = const Value.absent(),
+              }) => AppNotificationsCompanion(
+                id: id,
+                kind: kind,
+                title: title,
+                body: body,
+                payloadJson: payloadJson,
+                audience: audience,
+                guardianId: guardianId,
+                dedupeKey: dedupeKey,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                readAt: readAt,
+                actedAt: actedAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String kind,
+                required String title,
+                required String body,
+                Value<String?> payloadJson = const Value.absent(),
+                Value<String> audience = const Value.absent(),
+                Value<int?> guardianId = const Value.absent(),
+                Value<String?> dedupeKey = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<DateTime?> readAt = const Value.absent(),
+                Value<DateTime?> actedAt = const Value.absent(),
+              }) => AppNotificationsCompanion.insert(
+                id: id,
+                kind: kind,
+                title: title,
+                body: body,
+                payloadJson: payloadJson,
+                audience: audience,
+                guardianId: guardianId,
+                dedupeKey: dedupeKey,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                readAt: readAt,
+                actedAt: actedAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$AppNotificationsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({guardianId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (guardianId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.guardianId,
+                                referencedTable:
+                                    $$AppNotificationsTableReferences
+                                        ._guardianIdTable(db),
+                                referencedColumn:
+                                    $$AppNotificationsTableReferences
+                                        ._guardianIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$AppNotificationsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $AppNotificationsTable,
+      AppNotification,
+      $$AppNotificationsTableFilterComposer,
+      $$AppNotificationsTableOrderingComposer,
+      $$AppNotificationsTableAnnotationComposer,
+      $$AppNotificationsTableCreateCompanionBuilder,
+      $$AppNotificationsTableUpdateCompanionBuilder,
+      (AppNotification, $$AppNotificationsTableReferences),
+      AppNotification,
+      PrefetchHooks Function({bool guardianId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -16755,4 +22889,14 @@ class $AppDatabaseManager {
       $$LeaveRequestsTableTableManager(_db, _db.leaveRequests);
   $$AuditLogsTableTableManager get auditLogs =>
       $$AuditLogsTableTableManager(_db, _db.auditLogs);
+  $$DevicesTableTableManager get devices =>
+      $$DevicesTableTableManager(_db, _db.devices);
+  $$PairingCodesTableTableManager get pairingCodes =>
+      $$PairingCodesTableTableManager(_db, _db.pairingCodes);
+  $$MessageTemplatesTableTableManager get messageTemplates =>
+      $$MessageTemplatesTableTableManager(_db, _db.messageTemplates);
+  $$MessagesTableTableManager get messages =>
+      $$MessagesTableTableManager(_db, _db.messages);
+  $$AppNotificationsTableTableManager get appNotifications =>
+      $$AppNotificationsTableTableManager(_db, _db.appNotifications);
 }

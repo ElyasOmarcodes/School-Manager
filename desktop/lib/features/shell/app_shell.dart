@@ -1,13 +1,19 @@
 import 'package:flutter/material.dart';
 
+import '../../core/config/app_config.dart';
 import '../../core/l10n/strings.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_motion.dart';
+import '../../data/db/database.dart';
 import '../../data/repositories/academic_repository.dart';
 import '../../data/repositories/attendance_repository.dart';
+import '../../data/repositories/device_repository.dart';
 import '../../data/repositories/leave_repository.dart';
+import '../../data/repositories/message_repository.dart';
+import '../../data/repositories/notification_repository.dart';
 import '../../data/repositories/student_repository.dart';
 import '../../data/repositories/teacher_repository.dart';
+import '../../server/local_server.dart';
 import '../auth/auth_service.dart';
 import '../dashboard/dashboard_page.dart';
 import '../students/admission_wizard.dart';
@@ -15,6 +21,8 @@ import '../attendance/attendance_page.dart';
 import '../classes/classes_page.dart';
 import '../leave/leave_page.dart';
 import '../id_cards/id_cards_page.dart';
+import '../messages/messages_page.dart';
+import '../settings/settings_page.dart';
 import '../students/students_page.dart';
 import '../teachers/teachers_page.dart';
 import 'nav_items.dart';
@@ -34,6 +42,15 @@ class AppShell extends StatefulWidget {
   final AttendanceRepository? attendanceRepo;
   final LeaveRepository? leaveRepo;
 
+  // ── څلورم پړاو ────────────────────────────────────────
+  final MessageRepository? messageRepo;
+  final NotificationRepository? notificationRepo;
+  final DeviceRepository? deviceRepo;
+  final LocalServer? server;
+  final AppDatabase? db;
+  final AppConfig? config;
+  final ValueChanged<AppConfig>? onConfigChanged;
+
   const AppShell({
     super.key,
     required this.session,
@@ -47,6 +64,13 @@ class AppShell extends StatefulWidget {
     this.teacherRepo,
     this.attendanceRepo,
     this.leaveRepo,
+    this.messageRepo,
+    this.notificationRepo,
+    this.deviceRepo,
+    this.server,
+    this.db,
+    this.config,
+    this.onConfigChanged,
   });
 
   @override
@@ -201,6 +225,33 @@ class _AppShellState extends State<AppShell> {
     }
     if (_route == '/classes' && academic != null && teachers != null) {
       return ClassesPage(academic: academic, teachers: teachers);
+    }
+    if (_route == '/messages' &&
+        widget.messageRepo != null &&
+        widget.attendanceRepo != null &&
+        widget.notificationRepo != null) {
+      return MessagesPage(
+        messages: widget.messageRepo!,
+        attendance: widget.attendanceRepo!,
+        notifications: widget.notificationRepo!,
+        session: widget.session,
+        schoolName: widget.schoolName,
+      );
+    }
+    if (_route == '/settings' &&
+        widget.db != null &&
+        widget.deviceRepo != null &&
+        widget.server != null &&
+        widget.config != null) {
+      return SettingsPage(
+        db: widget.db!,
+        devices: widget.deviceRepo!,
+        server: widget.server!,
+        session: widget.session,
+        config: widget.config!,
+        onConfigChanged: widget.onConfigChanged ?? (_) {},
+        schoolName: widget.schoolName,
+      );
     }
 
     // پاتې ماډلونه په راتلونکو پړاوونو کې جوړېږي — خو سایډبار
