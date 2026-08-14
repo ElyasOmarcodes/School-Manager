@@ -132,7 +132,11 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(radiusSm),
           ),
+          // `fontFamily` دلته باید په ډاګه ولیکل شي. د `styleFrom`
+          // له لارې ورکړل شوی TextStyle د ټیم فونټ نه میراثوي، نو
+          // پرته له دې د تڼیو پښتو متن چوکاټونه ښیي.
           textStyle: const TextStyle(
+            fontFamily: fontFamily,
             fontWeight: FontWeight.w700,
             fontSize: 15,
           ),
@@ -142,6 +146,11 @@ class AppTheme {
         style: OutlinedButton.styleFrom(
           foregroundColor: p.inkSoft,
           side: BorderSide(color: p.lineStrong),
+          textStyle: const TextStyle(
+            fontFamily: fontFamily,
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
+          ),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(radiusSm),
@@ -155,6 +164,7 @@ class AppTheme {
           borderRadius: BorderRadius.circular(6),
         ),
         textStyle: TextStyle(
+          fontFamily: fontFamily,
           color: isDark ? p.ink : Colors.white,
           fontSize: 12,
         ),

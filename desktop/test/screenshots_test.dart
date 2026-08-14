@@ -3,6 +3,7 @@ library;
 
 import 'dart:io';
 
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -14,8 +15,10 @@ import 'package:school_manager/data/db/database.dart';
 import 'package:school_manager/features/auth/auth_service.dart';
 import 'package:school_manager/features/auth/login_page.dart';
 import 'package:school_manager/features/dashboard/dashboard_page.dart';
+import 'package:school_manager/data/repositories/student_repository.dart';
 import 'package:school_manager/features/setup/setup_wizard.dart';
 import 'package:school_manager/features/shell/app_shell.dart';
+import 'package:school_manager/features/students/students_page.dart';
 
 /// د UI سکرین‌شاټونه — پرته له دې چې پروګرام په ویندوز کې وځغلوو.
 ///
@@ -107,6 +110,31 @@ void main() {
     );
   });
 
+  testWidgets('07 — د شاګردانو لیست', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await _seedSchool(db);
+
+    await _shoot(
+      tester,
+      name: '07-students',
+      settle: const Duration(milliseconds: 400),
+      child: Scaffold(body: StudentsPage(repo: StudentRepository(db))),
+    );
+  });
+
+  testWidgets('08 — د شاګردانو تش لیست', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+
+    await _shoot(
+      tester,
+      name: '08-students-empty',
+      settle: const Duration(milliseconds: 400),
+      child: Scaffold(body: StudentsPage(repo: StudentRepository(db))),
+    );
+  });
+
   testWidgets('06 — ډاشبورډ په انګلیسي (LTR)', (tester) async {
     await _shoot(
       tester,
@@ -184,6 +212,7 @@ Future<void> _shoot(
   required Widget child,
   Brightness brightness = Brightness.light,
   AppLocale locale = AppLocale.ps,
+  Duration settle = const Duration(milliseconds: 50),
   Future<void> Function(WidgetTester)? after,
 }) async {
   await tester.binding.setSurfaceSize(_windowSize);
@@ -202,7 +231,7 @@ Future<void> _shoot(
   );
 
   // انیمیشنونه پای ته ورسوه — چې عکس د وروستي حالت وي، نه د نیمګړي.
-  await tester.pumpAndSettle(const Duration(milliseconds: 50));
+  await tester.pumpAndSettle(settle);
   await after?.call(tester);
 
   await expectLater(
@@ -258,4 +287,74 @@ String? _findMaterialIcons() {
     dir = parent;
   }
   return null;
+}
+
+/// نمونه ښوونځی — ټولګي، بخشونه او ۱۴ شاګردان.
+Future<void> _seedSchool(AppDatabase db) async {
+  final yearId = await db.into(db.academicYears).insert(
+        AcademicYearsCompanion.insert(
+          label: '۱۴۰۵',
+          startsOn: DateTime(2026, 3, 21),
+          endsOn: DateTime(2026, 12, 21),
+          isCurrent: const Value(true),
+        ),
+      );
+
+  final sections = <int>[];
+  for (final (name, level) in [('نهم', 9), ('لسم', 10), ('یوولسم', 11)]) {
+    final gradeId = await db
+        .into(db.grades)
+        .insert(GradesCompanion.insert(name: name, level: level));
+    for (final sec in ['الف', 'ب']) {
+      sections.add(
+        await db.into(db.sections).insert(
+              SectionsCompanion.insert(
+                gradeId: gradeId,
+                academicYearId: yearId,
+                name: sec,
+              ),
+            ),
+      );
+    }
+  }
+
+  const names = [
+    ('احمد', 'ولي', 'محمود', 'male'),
+    ('زرغونه', 'نوري', 'عبدالرحمن', 'female'),
+    ('کریم', 'الله', 'رحیم', 'male'),
+    ('مرسل', 'احمدي', 'نجیب', 'female'),
+    ('بلال', 'خان', 'شیرخان', 'male'),
+    ('حبیبه', 'صافي', 'ګل احمد', 'female'),
+    ('نصرت', 'الله', 'عزیز', 'male'),
+    ('پلوشه', 'کریمي', 'محمد نبي', 'female'),
+    ('عمران', 'زدران', 'دولت', 'male'),
+    ('شکریه', 'رحیمي', 'فضل', 'female'),
+    ('سمیع', 'الله', 'نور محمد', 'male'),
+    ('ملالۍ', 'ټوخي', 'اسدالله', 'female'),
+    ('فیصل', 'یوسفزی', 'یوسف', 'male'),
+    ('عایشه', 'حیدري', 'حیدر', 'female'),
+  ];
+
+  for (var i = 0; i < names.length; i++) {
+    final (first, last, father, gender) = names[i];
+    final id = await db.into(db.students).insert(
+          StudentsCompanion.insert(
+            admissionNo: '1405-${(i + 1).toString().padLeft(4, '0')}',
+            firstName: first,
+            lastName: Value(last),
+            fatherName: father,
+            gender: gender,
+            phone: Value('070${(1234567 + i * 4321)}'),
+            status: Value(i == 12 ? 'suspended' : 'active'),
+          ),
+        );
+    await db.into(db.enrollments).insert(
+          EnrollmentsCompanion.insert(
+            studentId: id,
+            sectionId: sections[i % sections.length],
+            academicYearId: yearId,
+            rollNo: Value((i ~/ sections.length) + 1),
+          ),
+        );
+  }
 }

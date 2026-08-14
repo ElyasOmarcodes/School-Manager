@@ -359,18 +359,23 @@ class _SetupWizardState extends State<SetupWizard> {
           ],
         ),
         const SizedBox(height: 18),
-        OutlinedButton.icon(
-          onPressed: _checking
-              ? null
-              : (_openExisting ? _pickExistingFile : _pickFolder),
-          icon: _checking
-              ? const SizedBox(
-                  width: 15,
-                  height: 15,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Icon(Icons.drive_folder_upload_rounded, size: 18),
-          label: Text(s.browse),
+        // د پلنوالي محدودول: مور Column د `stretch` سره ده، نو پرته
+        // له دې تڼۍ ټوله کرښه نیسي او نااخته ښکاري.
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: OutlinedButton.icon(
+            onPressed: _checking
+                ? null
+                : (_openExisting ? _pickExistingFile : _pickFolder),
+            icon: _checking
+                ? const SizedBox(
+                    width: 15,
+                    height: 15,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.drive_folder_upload_rounded, size: 18),
+            label: Text(s.browse),
+          ),
         ),
         if (_pathError != null) ...[
           const SizedBox(height: 12),

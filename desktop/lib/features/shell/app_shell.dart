@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import '../../core/l10n/strings.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_motion.dart';
+import '../../data/repositories/student_repository.dart';
 import '../auth/auth_service.dart';
 import '../dashboard/dashboard_page.dart';
+import '../students/students_page.dart';
 import 'nav_items.dart';
 import 'sidebar.dart';
 
@@ -16,6 +18,7 @@ class AppShell extends StatefulWidget {
   final VoidCallback onSignOut;
   final ValueChanged<ThemeMode> onThemeChanged;
   final ThemeMode themeMode;
+  final StudentRepository? studentRepo;
 
   const AppShell({
     super.key,
@@ -25,6 +28,7 @@ class AppShell extends StatefulWidget {
     required this.onSignOut,
     required this.onThemeChanged,
     required this.themeMode,
+    this.studentRepo,
   });
 
   @override
@@ -112,6 +116,9 @@ class _AppShellState extends State<AppShell> {
   Widget _buildPage() {
     if (_route == '/dashboard') {
       return DashboardPage(stats: widget.stats);
+    }
+    if (_route == '/students' && widget.studentRepo != null) {
+      return StudentsPage(repo: widget.studentRepo!);
     }
     // پاتې ماډلونه په راتلونکو پړاوونو کې جوړېږي — خو سایډبار
     // اوس هم ټول ښیي، چې د پرمختګ لار څرګنده وي.

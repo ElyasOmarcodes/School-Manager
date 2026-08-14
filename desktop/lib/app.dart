@@ -5,6 +5,7 @@ import 'core/config/app_config.dart';
 import 'core/l10n/strings.dart';
 import 'core/theme/app_theme.dart';
 import 'data/db/database.dart';
+import 'data/repositories/student_repository.dart';
 import 'features/auth/auth_service.dart';
 import 'features/auth/login_page.dart';
 import 'features/dashboard/dashboard_page.dart';
@@ -238,6 +239,7 @@ class _SchoolManagerAppState extends State<SchoolManagerApp> {
             session: _session!,
             schoolName: _schoolName,
             stats: _stats,
+            studentRepo: StudentRepository(_db!),
             themeMode: _themeMode,
             onThemeChanged: _setTheme,
             onSignOut: _signOut,
