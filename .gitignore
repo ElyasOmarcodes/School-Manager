@@ -1,0 +1,25 @@
+# Flutter / Dart
+desktop/build/
+desktop/.dart_tool/
+desktop/.flutter-plugins
+desktop/.flutter-plugins-dependencies
+desktop/*.iml
+.packages
+
+# د تولید شوی کوډ ساتو (چې پرته له build_runner هم پروژه ولوستل شي)
+# desktop/lib/**/*.g.dart
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# د ډیټابیس فایلونه — هېڅکله ګټ ته نه ځي
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
