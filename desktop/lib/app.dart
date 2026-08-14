@@ -6,6 +6,8 @@ import 'core/l10n/strings.dart';
 import 'core/theme/app_theme.dart';
 import 'data/db/database.dart';
 import 'data/repositories/academic_repository.dart';
+import 'data/repositories/attendance_repository.dart';
+import 'data/repositories/leave_repository.dart';
 import 'data/repositories/student_repository.dart';
 import 'data/repositories/teacher_repository.dart';
 import 'features/auth/auth_service.dart';
@@ -258,6 +260,8 @@ class _SchoolManagerAppState extends State<SchoolManagerApp> {
       studentRepo: StudentRepository(_db!),
       academicRepo: AcademicRepository(_db!),
       teacherRepo: TeacherRepository(_db!),
+      attendanceRepo: AttendanceRepository(_db!),
+      leaveRepo: LeaveRepository(_db!),
       themeMode: _themeMode,
       onThemeChanged: _setTheme,
       onSignOut: _signOut,

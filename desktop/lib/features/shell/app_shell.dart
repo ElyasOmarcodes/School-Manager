@@ -4,12 +4,16 @@ import '../../core/l10n/strings.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_motion.dart';
 import '../../data/repositories/academic_repository.dart';
+import '../../data/repositories/attendance_repository.dart';
+import '../../data/repositories/leave_repository.dart';
 import '../../data/repositories/student_repository.dart';
 import '../../data/repositories/teacher_repository.dart';
 import '../auth/auth_service.dart';
 import '../dashboard/dashboard_page.dart';
 import '../students/admission_wizard.dart';
+import '../attendance/attendance_page.dart';
 import '../classes/classes_page.dart';
+import '../leave/leave_page.dart';
 import '../id_cards/id_cards_page.dart';
 import '../students/students_page.dart';
 import '../teachers/teachers_page.dart';
@@ -27,6 +31,8 @@ class AppShell extends StatefulWidget {
   final StudentRepository? studentRepo;
   final AcademicRepository? academicRepo;
   final TeacherRepository? teacherRepo;
+  final AttendanceRepository? attendanceRepo;
+  final LeaveRepository? leaveRepo;
 
   const AppShell({
     super.key,
@@ -39,6 +45,8 @@ class AppShell extends StatefulWidget {
     this.studentRepo,
     this.academicRepo,
     this.teacherRepo,
+    this.attendanceRepo,
+    this.leaveRepo,
   });
 
   @override
@@ -175,6 +183,18 @@ class _AppShellState extends State<AppShell> {
         academic: academic,
         schoolName: widget.schoolName,
       );
+    }
+    if (_route == '/attendance' &&
+        widget.attendanceRepo != null &&
+        academic != null) {
+      return AttendancePage(
+        attendance: widget.attendanceRepo!,
+        academic: academic,
+        session: widget.session,
+      );
+    }
+    if (_route == '/leave' && widget.leaveRepo != null) {
+      return LeavePage(repo: widget.leaveRepo!, session: widget.session);
     }
     if (_route == '/teachers' && teachers != null) {
       return TeachersPage(repo: teachers, session: widget.session);

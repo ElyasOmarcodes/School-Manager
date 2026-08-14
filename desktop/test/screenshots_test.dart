@@ -17,10 +17,14 @@ import 'package:school_manager/features/auth/login_page.dart';
 import 'package:school_manager/features/dashboard/dashboard_page.dart';
 import 'package:school_manager/data/repositories/academic_repository.dart';
 import 'package:school_manager/data/repositories/student_repository.dart';
+import 'package:school_manager/data/repositories/attendance_repository.dart';
+import 'package:school_manager/data/repositories/leave_repository.dart';
 import 'package:school_manager/data/repositories/teacher_repository.dart';
 import 'package:school_manager/features/setup/setup_wizard.dart';
 import 'package:school_manager/features/shell/app_shell.dart';
+import 'package:school_manager/features/attendance/attendance_page.dart';
 import 'package:school_manager/features/classes/classes_page.dart';
+import 'package:school_manager/features/leave/leave_page.dart';
 import 'package:school_manager/features/id_cards/id_cards_page.dart';
 import 'package:school_manager/features/teachers/teachers_page.dart';
 import 'package:school_manager/features/students/admission_wizard.dart';
@@ -264,6 +268,63 @@ void main() {
     );
   });
 
+  testWidgets('15 — حاضري (د سکین پرده)', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await _seedSchool(db);
+    final att = AttendanceRepository(db);
+
+    // څو سکینونه چې پرده ژوندۍ وښیي.
+    for (final (no, h, m) in [
+      ('1405-0001', 7, 32),
+      ('1405-0002', 7, 41),
+      ('1405-0003', 7, 58),
+    ]) {
+      await att.checkIn(
+        input: no,
+        now: DateTime(2026, 5, 12, h, m),
+        byUserId: 1,
+        withRules: const AttendanceRules(),
+      );
+    }
+
+    await _shoot(
+      tester,
+      name: '15-attendance',
+      settle: const Duration(milliseconds: 700),
+      child: Scaffold(
+        body: AttendancePage(
+          attendance: att,
+          academic: AcademicRepository(db),
+          session: _session,
+          clock: () => DateTime(2026, 5, 12, 8, 2),
+        ),
+      ),
+      after: (tester) async {
+        // یو سکین د پردې پر مخ وکړه چې لویه پایله ښکاره شي.
+        await tester.enterText(find.byType(TextField), '1405-0004');
+        await tester.testTextInput.receiveAction(TextInputAction.done);
+        await tester.pumpAndSettle();
+      },
+    );
+  });
+
+  testWidgets('16 — اجازت نامې', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await _seedSchool(db);
+    await _seedLeaves(db);
+
+    await _shoot(
+      tester,
+      name: '16-leave',
+      settle: const Duration(milliseconds: 500),
+      child: Scaffold(
+        body: LeavePage(repo: LeaveRepository(db), session: _session),
+      ),
+    );
+  });
+
   testWidgets('06 — ډاشبورډ په انګلیسي (LTR)', (tester) async {
     await _shoot(
       tester,
@@ -493,6 +554,14 @@ Future<void> _seedSchool(AppDatabase db) async {
       byUserName: 'admin',
     );
   }
+
+  // **د QR کلي ثابتول.** `admit()` هر شاګرد ته تصادفي کلید ورکوي —
+  // هغه په تولید کې سم دی، خو دلته د گولډن عکس هر ځل بدلوي او
+  // پرتله يې بې‌ځایه سره کوي. نو د عکسونو لپاره ثابت کلي ورکوو.
+  await db.customUpdate(
+    "UPDATE students SET qr_secret = 'demo-key-' || admission_no",
+    updates: {db.students},
+  );
 }
 
 Widget _wizard(AppDatabase db) => AdmissionWizard(
@@ -542,5 +611,36 @@ Future<void> _seedTeachers(AppDatabase db) async {
       sectionId: sections[i].sectionId,
       teacherId: ids[i],
     );
+  }
+}
+
+/// نمونه اجازت نامې — درې د تمې په حال، یوه منل شوې.
+Future<void> _seedLeaves(AppDatabase db) async {
+  final repo = LeaveRepository(db);
+  final students = await db.select(db.students).get();
+
+  const cases = [
+    ('sick', 0, 2),
+    ('family', 1, 1),
+    ('travel', 3, 7),
+    ('official', 0, 0),
+  ];
+
+  for (var i = 0; i < cases.length && i < students.length; i++) {
+    final (reason, fromOffset, toOffset) = cases[i];
+    final id = await repo.request(
+      studentId: students[i].id,
+      reasonType: reason,
+      fromDate: DateTime(2026, 5, 12).add(Duration(days: fromOffset)),
+      toDate: DateTime(2026, 5, 12).add(Duration(days: toOffset)),
+    );
+    if (i == 3) {
+      await repo.decide(
+        leaveId: id,
+        approve: true,
+        byUserId: 1,
+        byUserName: 'admin',
+      );
+    }
   }
 }
