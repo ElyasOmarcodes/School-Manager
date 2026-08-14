@@ -138,17 +138,17 @@ class CountUpText extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (MediaQuery.disableAnimationsOf(context)) {
-      return Text('${format?.call(value) ?? value.round()}$suffix',
-          style: style);
+      return Text(
+        '${format?.call(value) ?? value.round()}$suffix',
+        style: style,
+      );
     }
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0, end: value.toDouble()),
       duration: AppMotion.counter,
       curve: AppMotion.emphasized,
-      builder: (context, v, _) => Text(
-        '${format?.call(v) ?? v.round()}$suffix',
-        style: style,
-      ),
+      builder: (context, v, _) =>
+          Text('${format?.call(v) ?? v.round()}$suffix', style: style),
     );
   }
 }

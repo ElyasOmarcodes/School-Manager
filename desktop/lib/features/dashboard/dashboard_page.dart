@@ -278,9 +278,7 @@ class _KpiRow extends StatelessWidget {
         return Wrap(
           spacing: gap,
           runSpacing: gap,
-          children: [
-            for (final card in cards) SizedBox(width: w, child: card),
-          ],
+          children: [for (final card in cards) SizedBox(width: w, child: card)],
         );
       },
     );
@@ -332,8 +330,9 @@ class _KpiCardState extends State<_KpiCard> {
           borderRadius: BorderRadius.circular(AppTheme.radiusLg),
           boxShadow: [
             BoxShadow(
-              color:
-                  widget.gradient.first.withValues(alpha: _hover ? 0.34 : 0.20),
+              color: widget.gradient.first.withValues(
+                alpha: _hover ? 0.34 : 0.20,
+              ),
               blurRadius: _hover ? 22 : 14,
               offset: Offset(0, _hover ? 9 : 5),
             ),
@@ -361,12 +360,14 @@ class _KpiCardState extends State<_KpiCard> {
               value: widget.value,
               suffix: widget.suffix,
               format: (v) => widget.locale.num(v.round()),
-              style: AppTheme.tabular(const TextStyle(
-                fontSize: 27,
-                fontWeight: FontWeight.w800,
-                color: Colors.white,
-                height: 1.15,
-              )),
+              style: AppTheme.tabular(
+                const TextStyle(
+                  fontSize: 27,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  height: 1.15,
+                ),
+              ),
             ),
             const SizedBox(height: 2),
             Text(
@@ -419,9 +420,11 @@ class _ChartCard extends StatelessWidget {
                   ),
                   titlesData: FlTitlesData(
                     topTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false)),
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
                     rightTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false)),
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
                     leftTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
@@ -470,8 +473,8 @@ class _ChartCard extends StatelessWidget {
                               colors: stats.weeklyAttendance[i] >= 90
                                   ? AppColors.gradEmerald
                                   : stats.weeklyAttendance[i] >= 75
-                                      ? AppColors.gradAmber
-                                      : AppColors.gradRose,
+                                  ? AppColors.gradAmber
+                                  : AppColors.gradRose,
                               begin: Alignment.bottomCenter,
                               end: Alignment.topCenter,
                             ),
@@ -530,8 +533,9 @@ class _AttentionCard extends StatelessWidget {
                             width: 30,
                             height: 30,
                             decoration: BoxDecoration(
-                              color: stats.attention[i].color
-                                  .withValues(alpha: 0.13),
+                              color: stats.attention[i].color.withValues(
+                                alpha: 0.13,
+                              ),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Icon(
@@ -544,8 +548,10 @@ class _AttentionCard extends StatelessWidget {
                           Expanded(
                             child: Text(
                               stats.attention[i].text,
-                              style:
-                                  TextStyle(fontSize: 12.8, color: p.inkSoft),
+                              style: TextStyle(
+                                fontSize: 12.8,
+                                color: p.inkSoft,
+                              ),
                             ),
                           ),
                         ],

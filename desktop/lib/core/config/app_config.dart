@@ -60,22 +60,22 @@ class AppConfig {
   }
 
   Map<String, dynamic> toJson() => {
-        'databasePath': databasePath,
-        'backupPath': backupPath,
-        'locale': locale,
-        'themeMode': themeMode,
-        'calendar': calendar,
-        'setupComplete': setupComplete,
-      };
+    'databasePath': databasePath,
+    'backupPath': backupPath,
+    'locale': locale,
+    'themeMode': themeMode,
+    'calendar': calendar,
+    'setupComplete': setupComplete,
+  };
 
   factory AppConfig.fromJson(Map<String, dynamic> j) => AppConfig(
-        databasePath: j['databasePath'] as String?,
-        backupPath: j['backupPath'] as String?,
-        locale: j['locale'] as String? ?? 'ps',
-        themeMode: j['themeMode'] as String? ?? 'system',
-        calendar: j['calendar'] as String? ?? 'jalali',
-        setupComplete: j['setupComplete'] as bool? ?? false,
-      );
+    databasePath: j['databasePath'] as String?,
+    backupPath: j['backupPath'] as String?,
+    locale: j['locale'] as String? ?? 'ps',
+    themeMode: j['themeMode'] as String? ?? 'system',
+    calendar: j['calendar'] as String? ?? 'jalali',
+    setupComplete: j['setupComplete'] as bool? ?? false,
+  );
 }
 
 /// د تنظیماتو د فایل لوستل او لیکل.

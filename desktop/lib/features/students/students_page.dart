@@ -184,10 +184,7 @@ class _StudentsPageState extends State<StudentsPage> {
                         ? '—'
                         : locale.num(r.student.phone!),
                     style: AppTheme.tabular(
-                      TextStyle(
-                        fontSize: 12.5,
-                        color: context.palette.inkSoft,
-                      ),
+                      TextStyle(fontSize: 12.5, color: context.palette.inkSoft),
                     ),
                   ),
                 ),
@@ -218,20 +215,20 @@ class _StudentsPageState extends State<StudentsPage> {
   }
 
   String _statusLabel(String status) => switch (status) {
-        'active' => 'فعال',
-        'graduated' => 'فارغ',
-        'transferred' => 'لېږدېدلی',
-        'dropped' => 'پرېښی',
-        'suspended' => 'ځنډول شوی',
-        _ => status,
-      };
+    'active' => 'فعال',
+    'graduated' => 'فارغ',
+    'transferred' => 'لېږدېدلی',
+    'dropped' => 'پرېښی',
+    'suspended' => 'ځنډول شوی',
+    _ => status,
+  };
 
   Color _statusColor(String status) => switch (status) {
-        'active' => AppColors.success,
-        'graduated' => AppColors.info,
-        'suspended' => AppColors.danger,
-        _ => AppColors.warning,
-      };
+    'active' => AppColors.success,
+    'graduated' => AppColors.info,
+    'suspended' => AppColors.danger,
+    _ => AppColors.warning,
+  };
 }
 
 // ═══════════════════════════════════════════════════════════

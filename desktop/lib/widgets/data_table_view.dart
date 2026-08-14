@@ -72,25 +72,25 @@ class DataTableView<T> extends StatelessWidget {
             child: loading
                 ? _Skeleton(columns: columns, count: skeletonRows)
                 : rows.isEmpty
-                    ? _Empty(
-                        icon: emptyIcon,
-                        title: emptyTitle ?? '',
-                        hint: emptyHint,
-                      )
-                    : ListView.separated(
-                        itemCount: rows.length,
-                        separatorBuilder: (_, __) =>
-                            Divider(height: 1, color: p.line),
-                        itemBuilder: (context, i) => FadeSlideIn.staggered(
-                          index: i,
-                          offsetY: 4,
-                          child: _BodyRow(
-                            columns: columns,
-                            row: rows[i],
-                            onTap: onRowTap,
-                          ),
-                        ),
+                ? _Empty(
+                    icon: emptyIcon,
+                    title: emptyTitle ?? '',
+                    hint: emptyHint,
+                  )
+                : ListView.separated(
+                    itemCount: rows.length,
+                    separatorBuilder: (_, __) =>
+                        Divider(height: 1, color: p.line),
+                    itemBuilder: (context, i) => FadeSlideIn.staggered(
+                      index: i,
+                      offsetY: 4,
+                      child: _BodyRow(
+                        columns: columns,
+                        row: rows[i],
+                        onTap: onRowTap,
                       ),
+                    ),
+                  ),
           ),
         ],
       ),
@@ -149,8 +149,9 @@ class _BodyRowState<T> extends State<_BodyRow<T>> {
   Widget build(BuildContext context) {
     final p = context.palette;
     return MouseRegion(
-      cursor:
-          widget.onTap == null ? MouseCursor.defer : SystemMouseCursors.click,
+      cursor: widget.onTap == null
+          ? MouseCursor.defer
+          : SystemMouseCursors.click,
       onEnter: (_) => setState(() => _hover = true),
       onExit: (_) => setState(() => _hover = false),
       child: GestureDetector(
@@ -272,11 +273,7 @@ class _SkeletonState<T> extends State<_Skeleton<T>>
                     child: Container(
                       height: 11,
                       decoration: BoxDecoration(
-                        color: Color.lerp(
-                          p.surfaceAlt,
-                          p.line,
-                          _c.value,
-                        ),
+                        color: Color.lerp(p.surfaceAlt, p.line, _c.value),
                         borderRadius: BorderRadius.circular(4),
                       ),
                     ),

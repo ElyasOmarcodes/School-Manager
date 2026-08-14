@@ -52,29 +52,32 @@ class AppDatabase extends _$AppDatabase {
   }
 
   /// د یادښت دننه ډیټابیس — یوازې د ازموینو لپاره.
-  factory AppDatabase.memory() =>
-      AppDatabase(NativeDatabase.memory(setup: (raw) {
+  factory AppDatabase.memory() => AppDatabase(
+    NativeDatabase.memory(
+      setup: (raw) {
         raw.execute('PRAGMA foreign_keys = ON;');
-      }));
+      },
+    ),
+  );
 
   @override
   int get schemaVersion => 1;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
-        onCreate: (m) async {
-          await m.createAll();
-          await _createIndexes();
-        },
-        onUpgrade: (m, from, to) async {
-          // راتلونکې نسخې دلته زیاتېږي:
-          //   if (from < 2) { await m.addColumn(...); }
-          await _createIndexes();
-        },
-        beforeOpen: (details) async {
-          await customStatement('PRAGMA foreign_keys = ON;');
-        },
-      );
+    onCreate: (m) async {
+      await m.createAll();
+      await _createIndexes();
+    },
+    onUpgrade: (m, from, to) async {
+      // راتلونکې نسخې دلته زیاتېږي:
+      //   if (from < 2) { await m.addColumn(...); }
+      await _createIndexes();
+    },
+    beforeOpen: (details) async {
+      await customStatement('PRAGMA foreign_keys = ON;');
+    },
+  );
 
   /// **دا هغه برخه ده چې د سرعت پرېکړه کوي** — نه ژبه.
   ///

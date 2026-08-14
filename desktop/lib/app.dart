@@ -5,6 +5,7 @@ import 'core/config/app_config.dart';
 import 'core/l10n/strings.dart';
 import 'core/theme/app_theme.dart';
 import 'data/db/database.dart';
+import 'data/repositories/academic_repository.dart';
 import 'data/repositories/student_repository.dart';
 import 'features/auth/auth_service.dart';
 import 'features/auth/login_page.dart';
@@ -53,10 +54,10 @@ class _SchoolManagerAppState extends State<SchoolManagerApp> {
   }
 
   ThemeMode get _themeMode => switch (_config.themeMode) {
-        'light' => ThemeMode.light,
-        'dark' => ThemeMode.dark,
-        _ => ThemeMode.system,
-      };
+    'light' => ThemeMode.light,
+    'dark' => ThemeMode.dark,
+    _ => ThemeMode.system,
+  };
 
   /// پیل: که تنظیمات بشپړ وي او ډیټابیس شتون ولري، ننوتلو ته ځو.
   /// که ډیټابیس نه وي (مثلاً USB ایستل شوی)، بېرته ویزارډ ته.
@@ -94,17 +95,31 @@ class _SchoolManagerAppState extends State<SchoolManagerApp> {
     var school = await db.select(db.schools).getSingleOrNull();
 
     if (school == null) {
-      await db.into(db.schools).insert(SchoolsCompanion.insert(
-            name: r.schoolName,
-            kind: Value(r.schoolKind),
-            address: Value(r.address),
-            phone: Value(r.phone),
-            dayStart: Value(r.dayStart),
-            dayEnd: Value(r.dayEnd),
-            lateAfterMinutes: Value(r.lateAfterMinutes),
-          ));
+      await db
+          .into(db.schools)
+          .insert(
+            SchoolsCompanion.insert(
+              name: r.schoolName,
+              kind: Value(r.schoolKind),
+              address: Value(r.address),
+              phone: Value(r.phone),
+              dayStart: Value(r.dayStart),
+              dayEnd: Value(r.dayEnd),
+              lateAfterMinutes: Value(r.lateAfterMinutes),
+            ),
+          );
       school = await db.select(db.schools).getSingleOrNull();
     }
+
+    // تلواله ټولګي (۱–۱۲، هر یو دوه بخشونه) او روان کال جوړوو.
+    // پرته له دې به نوی ښوونځی د داخلې پاڼه پرانیزي او هېڅ ټولګی
+    // ونه ویني. له تنظیماتو څخه بدلېدی شي.
+    final now = DateTime.now();
+    await AcademicRepository(db).seedDefaults(
+      yearLabel: '${now.year}',
+      startsOn: DateTime(now.year, 1, 1),
+      endsOn: DateTime(now.year, 12, 31),
+    );
 
     final auth = AuthService(db);
     // که موجود ډیټابیس پرانیستل شوی وي، مدیر لا شته — دوه ځله يې نه جوړوو.
@@ -185,10 +200,11 @@ class _SchoolManagerAppState extends State<SchoolManagerApp> {
     final db = _db;
     if (db == null) return DashboardStats.empty;
 
-    final students = await (db.select(db.students)
-          ..where((s) => s.deletedAt.isNull())
-          ..where((s) => s.status.equals('active')))
-        .get();
+    final students =
+        await (db.select(db.students)
+              ..where((s) => s.deletedAt.isNull())
+              ..where((s) => s.status.equals('active')))
+            .get();
 
     return DashboardStats(
       totalStudents: students.length,
@@ -213,36 +229,36 @@ class _SchoolManagerAppState extends State<SchoolManagerApp> {
         theme: AppTheme.build(Brightness.light),
         darkTheme: AppTheme.build(Brightness.dark),
         themeMode: _themeMode,
-        builder: (context, child) => Directionality(
-          textDirection: _locale.direction,
-          child: child!,
-        ),
+        builder: (context, child) =>
+            Directionality(textDirection: _locale.direction, child: child!),
         home: Builder(builder: (context) => _buildStage()),
       ),
     );
   }
 
   Widget _buildStage() => switch (_stage) {
-        _Stage.loading =>
-          const Scaffold(body: Center(child: CircularProgressIndicator())),
-        _Stage.setup => SetupWizard(
-            config: _config,
-            onLocaleChanged: _setLocale,
-            onComplete: _completeSetup,
-          ),
-        _Stage.login => LoginPage(
-            auth: _auth!,
-            schoolName: _schoolName,
-            onSignedIn: _onSignedIn,
-          ),
-        _Stage.ready => AppShell(
-            session: _session!,
-            schoolName: _schoolName,
-            stats: _stats,
-            studentRepo: StudentRepository(_db!),
-            themeMode: _themeMode,
-            onThemeChanged: _setTheme,
-            onSignOut: _signOut,
-          ),
-      };
+    _Stage.loading => const Scaffold(
+      body: Center(child: CircularProgressIndicator()),
+    ),
+    _Stage.setup => SetupWizard(
+      config: _config,
+      onLocaleChanged: _setLocale,
+      onComplete: _completeSetup,
+    ),
+    _Stage.login => LoginPage(
+      auth: _auth!,
+      schoolName: _schoolName,
+      onSignedIn: _onSignedIn,
+    ),
+    _Stage.ready => AppShell(
+      session: _session!,
+      schoolName: _schoolName,
+      stats: _stats,
+      studentRepo: StudentRepository(_db!),
+      academicRepo: AcademicRepository(_db!),
+      themeMode: _themeMode,
+      onThemeChanged: _setTheme,
+      onSignOut: _signOut,
+    ),
+  };
 }

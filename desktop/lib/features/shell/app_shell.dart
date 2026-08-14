@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import '../../core/l10n/strings.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_motion.dart';
+import '../../data/repositories/academic_repository.dart';
 import '../../data/repositories/student_repository.dart';
 import '../auth/auth_service.dart';
 import '../dashboard/dashboard_page.dart';
+import '../students/admission_wizard.dart';
 import '../students/students_page.dart';
 import 'nav_items.dart';
 import 'sidebar.dart';
@@ -19,6 +21,7 @@ class AppShell extends StatefulWidget {
   final ValueChanged<ThemeMode> onThemeChanged;
   final ThemeMode themeMode;
   final StudentRepository? studentRepo;
+  final AcademicRepository? academicRepo;
 
   const AppShell({
     super.key,
@@ -29,6 +32,7 @@ class AppShell extends StatefulWidget {
     required this.onThemeChanged,
     required this.themeMode,
     this.studentRepo,
+    this.academicRepo,
   });
 
   @override
@@ -38,6 +42,13 @@ class AppShell extends StatefulWidget {
 class _AppShellState extends State<AppShell> {
   String _route = '/dashboard';
   bool _expanded = true;
+
+  /// د شاګردانو پاڼه دوه حالته لري: لیست او د داخلې ویزارډ.
+  /// دا حالت دلته دی نه په پاڼه کې، چې د سایډبار بدلون يې پاک کړي.
+  bool _admitting = false;
+
+  /// د لیست د بیا-بارولو لپاره — کله چې نوی شاګرد ثبت شي.
+  int _studentsRevision = 0;
 
   NavItem? get _currentItem {
     for (final g in buildNav()) {
@@ -62,7 +73,10 @@ class _AppShellState extends State<AppShell> {
             expanded: _expanded,
             schoolName: widget.schoolName,
             onToggle: () => setState(() => _expanded = !_expanded),
-            onNavigate: (r) => setState(() => _route = r),
+            onNavigate: (r) => setState(() {
+              _route = r;
+              _admitting = false;
+            }),
           ),
           Expanded(
             child: Column(
@@ -84,10 +98,7 @@ class _AppShellState extends State<AppShell> {
                     // ټینګوي — پاڼه د خپل ځای اندازه اخلي او سکرول کوي.
                     layoutBuilder: (current, previous) => Stack(
                       fit: StackFit.expand,
-                      children: [
-                        ...previous,
-                        if (current != null) current,
-                      ],
+                      children: [...previous, if (current != null) current],
                     ),
                     transitionBuilder: (child, anim) => FadeTransition(
                       opacity: anim,
@@ -100,7 +111,7 @@ class _AppShellState extends State<AppShell> {
                       ),
                     ),
                     child: KeyedSubtree(
-                      key: ValueKey(_route),
+                      key: ValueKey('$_route/$_admitting'),
                       child: _buildPage(),
                     ),
                   ),
@@ -118,7 +129,35 @@ class _AppShellState extends State<AppShell> {
       return DashboardPage(stats: widget.stats);
     }
     if (_route == '/students' && widget.studentRepo != null) {
-      return StudentsPage(repo: widget.studentRepo!);
+      if (_admitting && widget.academicRepo != null) {
+        return AdmissionWizard(
+          students: widget.studentRepo!,
+          academic: widget.academicRepo!,
+          session: widget.session,
+          onCancel: () => setState(() => _admitting = false),
+          onAdmitted: (id, admissionNo) {
+            setState(() {
+              _admitting = false;
+              _studentsRevision++;
+            });
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                behavior: SnackBarBehavior.floating,
+                width: 420,
+                backgroundColor: AppColors.success,
+                content: Text('شاګرد ثبت شو — د داخلې نمبر $admissionNo'),
+              ),
+            );
+          },
+        );
+      }
+      return StudentsPage(
+        key: ValueKey('students-$_studentsRevision'),
+        repo: widget.studentRepo!,
+        onAddStudent: widget.academicRepo == null
+            ? null
+            : () => setState(() => _admitting = true),
+      );
     }
     // پاتې ماډلونه په راتلونکو پړاوونو کې جوړېږي — خو سایډبار
     // اوس هم ټول ښیي، چې د پرمختګ لار څرګنده وي.
@@ -284,9 +323,9 @@ class _IconSlot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-        child: child,
-      );
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+    child: child,
+  );
 }
 
 class _ComingSoon extends StatelessWidget {
@@ -311,8 +350,11 @@ class _ComingSoon extends StatelessWidget {
                 color: c.withValues(alpha: 0.11),
                 borderRadius: BorderRadius.circular(17),
               ),
-              child:
-                  Icon(item?.icon ?? Icons.widgets_rounded, size: 29, color: c),
+              child: Icon(
+                item?.icon ?? Icons.widgets_rounded,
+                size: 29,
+                color: c,
+              ),
             ),
             const SizedBox(height: 18),
             Text(

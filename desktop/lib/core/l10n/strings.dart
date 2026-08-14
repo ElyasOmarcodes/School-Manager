@@ -25,10 +25,10 @@ class S {
   static S of(BuildContext context) => LocaleScope.of(context).strings;
 
   String _pick(String ps, String fa, String en) => switch (locale) {
-        AppLocale.ps => ps,
-        AppLocale.fa => fa,
-        AppLocale.en => en,
-      };
+    AppLocale.ps => ps,
+    AppLocale.fa => fa,
+    AppLocale.en => en,
+  };
 
   // ── عمومي ───────────────────────────────────────────────
   String get appName =>
@@ -46,24 +46,27 @@ class S {
   // ── ویزارډ ──────────────────────────────────────────────
   String get welcome => _pick('ښه راغلاست', 'خوش آمدید', 'Welcome');
   String get welcomeSub => _pick(
-        'د پیل لپاره څو ګامونه — بیا سیسټم چمتو دی.',
-        'چند گام تا آماده شدن سیستم.',
-        'A few steps and the system is ready.',
-      );
+    'د پیل لپاره څو ګامونه — بیا سیسټم چمتو دی.',
+    'چند گام تا آماده شدن سیستم.',
+    'A few steps and the system is ready.',
+  );
   String get chooseLanguage =>
       _pick('ژبه غوره کړئ', 'زبان را انتخاب کنید', 'Choose language');
 
   String get stepDatabase =>
       _pick('د ډیټابیس ځای', 'محل دیتابیس', 'Database location');
   String get stepDatabaseSub => _pick(
-        'ټول معلومات په یوه فایل کې ساتل کېږي. هغه ډرایو وټاکئ چې تل شتون ولري.',
-        'تمام اطلاعات در یک فایل ذخیره می‌شود. درایوی را انتخاب کنید که همیشه موجود باشد.',
-        'All data lives in one file. Pick a drive that is always available.',
-      );
+    'ټول معلومات په یوه فایل کې ساتل کېږي. هغه ډرایو وټاکئ چې تل شتون ولري.',
+    'تمام اطلاعات در یک فایل ذخیره می‌شود. درایوی را انتخاب کنید که همیشه موجود باشد.',
+    'All data lives in one file. Pick a drive that is always available.',
+  );
   String get createNew =>
       _pick('نوی ډیټابیس جوړ کړه', 'دیتابیس جدید بساز', 'Create new database');
   String get openExisting => _pick(
-      'موجود ډیټابیس پرانیزه', 'دیتابیس موجود را باز کن', 'Open existing');
+    'موجود ډیټابیس پرانیزه',
+    'دیتابیس موجود را باز کن',
+    'Open existing',
+  );
   String get selectedFolder =>
       _pick('ټاکل شوې پوښۍ', 'پوشه انتخاب شده', 'Selected folder');
   String get freeSpace => _pick('پاتې ځای', 'فضای خالی', 'Free space');
@@ -95,24 +98,24 @@ class S {
 
   String get setupDone => _pick('چمتو دی', 'آماده است', 'All set');
   String get setupDoneSub => _pick(
-        'سیسټم جوړ شو. اوس کولی شئ ننوځئ.',
-        'سیستم آماده شد. اکنون وارد شوید.',
-        'The system is ready. You can sign in now.',
-      );
+    'سیسټم جوړ شو. اوس کولی شئ ننوځئ.',
+    'سیستم آماده شد. اکنون وارد شوید.',
+    'The system is ready. You can sign in now.',
+  );
 
   // ── ننوتل ───────────────────────────────────────────────
   String get signIn => _pick('ننوتل', 'ورود', 'Sign in');
   String get signOut => _pick('وتل', 'خروج', 'Sign out');
   String get wrongCredentials => _pick(
-        'کارن نوم یا پاسورډ سم نه دی.',
-        'نام کاربری یا رمز اشتباه است.',
-        'Wrong username or password.',
-      );
+    'کارن نوم یا پاسورډ سم نه دی.',
+    'نام کاربری یا رمز اشتباه است.',
+    'Wrong username or password.',
+  );
   String get accountLocked => _pick(
-        'حساب د ډېرو ناسمو هڅو له امله بند دی. لږ وروسته بیا هڅه وکړئ.',
-        'حساب به دلیل تلاش‌های ناموفق قفل شده است.',
-        'Account locked after too many attempts. Try again shortly.',
-      );
+    'حساب د ډېرو ناسمو هڅو له امله بند دی. لږ وروسته بیا هڅه وکړئ.',
+    'حساب به دلیل تلاش‌های ناموفق قفل شده است.',
+    'Account locked after too many attempts. Try again shortly.',
+  );
 
   // ── سایډبار ─────────────────────────────────────────────
   String get dashboard => _pick('ډاشبورډ', 'داشبورد', 'Dashboard');
@@ -157,33 +160,36 @@ class S {
 
   // ── تېروتنې ─────────────────────────────────────────────
   String get pathCannotCreate => _pick(
-        'دا پوښۍ جوړه نه شوه. بل ځای وټاکئ.',
-        'این پوشه ساخته نشد. جای دیگری انتخاب کنید.',
-        'Could not create that folder. Pick another location.',
-      );
+    'دا پوښۍ جوړه نه شوه. بل ځای وټاکئ.',
+    'این پوشه ساخته نشد. جای دیگری انتخاب کنید.',
+    'Could not create that folder. Pick another location.',
+  );
   String get pathNotWritable => _pick(
-        'په دې پوښۍ کې د لیکلو اجازه نشته. بل ځای وټاکئ.',
-        'اجازه نوشتن در این پوشه وجود ندارد.',
-        'No permission to write here. Pick another location.',
-      );
+    'په دې پوښۍ کې د لیکلو اجازه نشته. بل ځای وټاکئ.',
+    'اجازه نوشتن در این پوشه وجود ندارد.',
+    'No permission to write here. Pick another location.',
+  );
   String get fieldRequired => _pick(
-      'دا خانه اړینه ده.', 'این خانه لازم است.', 'This field is required.');
+    'دا خانه اړینه ده.',
+    'این خانه لازم است.',
+    'This field is required.',
+  );
   String get passwordTooShort => _pick(
-        'پاسورډ باید لږ تر لږه ۸ توري ولري.',
-        'رمز باید حداقل ۸ حرف باشد.',
-        'Password must be at least 8 characters.',
-      );
+    'پاسورډ باید لږ تر لږه ۸ توري ولري.',
+    'رمز باید حداقل ۸ حرف باشد.',
+    'Password must be at least 8 characters.',
+  );
   String get passwordMismatch => _pick(
-        'دواړه پاسورډونه یو شان نه دي.',
-        'رمزها یکسان نیستند.',
-        'Passwords do not match.',
-      );
+    'دواړه پاسورډونه یو شان نه دي.',
+    'رمزها یکسان نیستند.',
+    'Passwords do not match.',
+  );
 
   String errorFor(String key) => switch (key) {
-        'pathCannotCreate' => pathCannotCreate,
-        'pathNotWritable' => pathNotWritable,
-        _ => key,
-      };
+    'pathCannotCreate' => pathCannotCreate,
+    'pathNotWritable' => pathNotWritable,
+    _ => key,
+  };
 }
 
 /// ژبه ټول ونې ته رسوي.

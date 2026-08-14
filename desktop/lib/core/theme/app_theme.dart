@@ -21,10 +21,12 @@ class AppTheme {
 
   static TextTheme _text(Brightness b) {
     final p = AppPalette.from(b);
-    final base = ThemeData(brightness: b).textTheme.apply(
-          fontFamily: fontFamily,
-        );
-    return base.apply(bodyColor: p.ink, displayColor: p.ink).copyWith(
+    final base = ThemeData(
+      brightness: b,
+    ).textTheme.apply(fontFamily: fontFamily);
+    return base
+        .apply(bodyColor: p.ink, displayColor: p.ink)
+        .copyWith(
           displaySmall: base.displaySmall?.copyWith(
             fontWeight: FontWeight.w800,
             letterSpacing: -0.5,
@@ -43,14 +45,8 @@ class AppTheme {
             fontWeight: FontWeight.w600,
             color: p.ink,
           ),
-          bodyMedium: base.bodyMedium?.copyWith(
-            height: 1.7,
-            color: p.inkSoft,
-          ),
-          bodySmall: base.bodySmall?.copyWith(
-            height: 1.6,
-            color: p.muted,
-          ),
+          bodyMedium: base.bodyMedium?.copyWith(height: 1.7, color: p.inkSoft),
+          bodySmall: base.bodySmall?.copyWith(height: 1.6, color: p.muted),
           labelSmall: base.labelSmall?.copyWith(
             letterSpacing: 0.4,
             color: p.muted,
@@ -60,8 +56,8 @@ class AppTheme {
 
   /// د شمېرو لپاره — چې په جدولونو کې ستنې سمې ولاړې وي.
   static TextStyle tabular(TextStyle? s) => (s ?? const TextStyle()).copyWith(
-        fontFeatures: const [FontFeature.tabularFigures()],
-      );
+    fontFeatures: const [FontFeature.tabularFigures()],
+  );
 
   static ThemeData build(Brightness brightness) {
     final p = AppPalette.from(brightness);
@@ -75,20 +71,17 @@ class AppTheme {
       canvasColor: p.surface,
       extensions: [p],
       textTheme: _text(brightness),
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: AppColors.primary,
-        brightness: brightness,
-      ).copyWith(
-        primary: isDark ? AppColors.primaryLight : AppColors.primary,
-        secondary: AppColors.accent,
-        error: AppColors.danger,
-        surface: p.surface,
-      ),
-      dividerTheme: DividerThemeData(
-        color: p.line,
-        thickness: 1,
-        space: 1,
-      ),
+      colorScheme:
+          ColorScheme.fromSeed(
+            seedColor: AppColors.primary,
+            brightness: brightness,
+          ).copyWith(
+            primary: isDark ? AppColors.primaryLight : AppColors.primary,
+            secondary: AppColors.accent,
+            error: AppColors.danger,
+            surface: p.surface,
+          ),
+      dividerTheme: DividerThemeData(color: p.line, thickness: 1, space: 1),
       // `cardTheme` دلته نشته. پروژه د Material `Card` ویجیټ نه کاروي —
       // پینلونه او جدولونه خپل `Container` لري چې د پالېټ ټوکنونه کاروي.
       // یو ناکارېدونکی تنظیم به یوازې د Flutter د نسخې د بدلون خطر و:
@@ -96,8 +89,10 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: p.surfaceAlt,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 14,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(radiusSm),
           borderSide: BorderSide(color: p.line),

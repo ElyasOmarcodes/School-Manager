@@ -15,9 +15,11 @@ import 'package:school_manager/data/db/database.dart';
 import 'package:school_manager/features/auth/auth_service.dart';
 import 'package:school_manager/features/auth/login_page.dart';
 import 'package:school_manager/features/dashboard/dashboard_page.dart';
+import 'package:school_manager/data/repositories/academic_repository.dart';
 import 'package:school_manager/data/repositories/student_repository.dart';
 import 'package:school_manager/features/setup/setup_wizard.dart';
 import 'package:school_manager/features/shell/app_shell.dart';
+import 'package:school_manager/features/students/admission_wizard.dart';
 import 'package:school_manager/features/students/students_page.dart';
 
 /// د UI سکرین‌شاټونه — پرته له دې چې پروګرام په ویندوز کې وځغلوو.
@@ -132,6 +134,75 @@ void main() {
       name: '08-students-empty',
       settle: const Duration(milliseconds: 400),
       child: Scaffold(body: StudentsPage(repo: StudentRepository(db))),
+    );
+  });
+
+  testWidgets('09 — د داخلې ویزارډ (شاګرد)', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await _seedSchool(db);
+
+    await _shoot(
+      tester,
+      name: '09-admission-student',
+      settle: const Duration(milliseconds: 500),
+      child: Scaffold(body: _wizard(db)),
+    );
+  });
+
+  testWidgets('10 — د داخلې ویزارډ (ټولګی)', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await _seedSchool(db);
+
+    await _shoot(
+      tester,
+      name: '10-admission-class',
+      settle: const Duration(milliseconds: 500),
+      child: Scaffold(body: _wizard(db)),
+      after: (tester) async {
+        // نوم او د پلار نوم ډکوو، بیا دوه ګامه مخکې ځو.
+        final fields = find.byType(TextField);
+        await tester.enterText(fields.at(0), 'احمد');
+        await tester.enterText(fields.at(2), 'محمود');
+        await tester.pumpAndSettle();
+        for (var i = 0; i < 2; i++) {
+          await tester.tap(find.text('بل'));
+          await tester.pumpAndSettle();
+        }
+      },
+    );
+  });
+
+  testWidgets('11 — د داخلې ویزارډ (بیاکتنه)', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await _seedSchool(db);
+
+    await _shoot(
+      tester,
+      name: '11-admission-review',
+      settle: const Duration(milliseconds: 500),
+      child: Scaffold(body: _wizard(db)),
+      after: (tester) async {
+        final fields = find.byType(TextField);
+        await tester.enterText(fields.at(0), 'احمد');
+        await tester.enterText(fields.at(1), 'ولي');
+        await tester.enterText(fields.at(2), 'محمود');
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('بل'));
+        await tester.pumpAndSettle();
+        // د سرپرست تلیفون، بیا ټولګي ګام ته.
+        await tester.enterText(find.byType(TextField).at(1), '0701234567');
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('بل'));
+        await tester.pumpAndSettle();
+        // یو بخش وټاکه، بیا بیاکتنې ته.
+        await tester.tap(find.text('لسم — الف'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('بل'));
+        await tester.pumpAndSettle();
+      },
     );
   });
 
@@ -358,3 +429,11 @@ Future<void> _seedSchool(AppDatabase db) async {
         );
   }
 }
+
+Widget _wizard(AppDatabase db) => AdmissionWizard(
+      students: StudentRepository(db),
+      academic: AcademicRepository(db),
+      session: _session,
+      onAdmitted: (_, __) {},
+      onCancel: () {},
+    );

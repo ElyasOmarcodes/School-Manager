@@ -19,10 +19,10 @@ class StudentRow {
   });
 
   String get fullName => [
-        student.firstName,
-        if (student.lastName != null && student.lastName!.isNotEmpty)
-          student.lastName,
-      ].join(' ');
+    student.firstName,
+    if (student.lastName != null && student.lastName!.isNotEmpty)
+      student.lastName,
+  ].join(' ');
 
   String get className => gradeName == null
       ? '—'
@@ -120,28 +120,28 @@ LEFT JOIN grades g ON g.id = sec.grade_id
 ''';
     final whereSql = 'WHERE ${where.join(' AND ')}';
 
-    final countRow = await db.customSelect(
-      'SELECT COUNT(*) AS c $from $whereSql',
-      variables: args,
-      readsFrom: {db.students, db.enrollments, db.sections, db.grades},
-    ).getSingle();
+    final countRow = await db
+        .customSelect(
+          'SELECT COUNT(*) AS c $from $whereSql',
+          variables: args,
+          readsFrom: {db.students, db.enrollments, db.sections, db.grades},
+        )
+        .getSingle();
     final total = countRow.read<int>('c');
 
-    final rows = await db.customSelect(
-      '''
+    final rows = await db
+        .customSelect(
+          '''
 SELECT s.*, g.name AS grade_name, sec.name AS section_name, e.roll_no AS roll_no
 $from
 $whereSql
 ORDER BY g.level, sec.name, e.roll_no, s.first_name
 LIMIT ? OFFSET ?
 ''',
-      variables: [
-        ...args,
-        Variable<int>(limit),
-        Variable<int>(offset),
-      ],
-      readsFrom: {db.students, db.enrollments, db.sections, db.grades},
-    ).get();
+          variables: [...args, Variable<int>(limit), Variable<int>(offset)],
+          readsFrom: {db.students, db.enrollments, db.sections, db.grades},
+        )
+        .get();
 
     return Paged(
       rows
@@ -171,15 +171,17 @@ LIMIT ? OFFSET ?
   /// بڼه: `<کال>-<۴ ګنې>`، لکه `1405-0043`. د کال مختاړی ځکه دی
   /// چې د کلونو ترمنځ نمبرونه ونه لګېږي.
   Future<String> nextAdmissionNo(String yearPrefix) async {
-    final row = await db.customSelect(
-      '''
+    final row = await db
+        .customSelect(
+          '''
 SELECT admission_no FROM students
 WHERE admission_no LIKE ?
 ORDER BY admission_no DESC LIMIT 1
 ''',
-      variables: [Variable<String>('$yearPrefix-%')],
-      readsFrom: {db.students},
-    ).getSingleOrNull();
+          variables: [Variable<String>('$yearPrefix-%')],
+          readsFrom: {db.students},
+        )
+        .getSingleOrNull();
 
     var next = 1;
     if (row != null) {
@@ -208,7 +210,9 @@ ORDER BY admission_no DESC LIMIT 1
 
       for (var i = 0; i < guardians.length; i++) {
         final gid = await db.into(db.guardians).insert(guardians[i]);
-        await db.into(db.studentGuardians).insert(
+        await db
+            .into(db.studentGuardians)
+            .insert(
               StudentGuardiansCompanion.insert(
                 studentId: studentId,
                 guardianId: gid,
@@ -218,7 +222,9 @@ ORDER BY admission_no DESC LIMIT 1
       }
 
       if (sectionId != null && academicYearId != null) {
-        await db.into(db.enrollments).insert(
+        await db
+            .into(db.enrollments)
+            .insert(
               EnrollmentsCompanion.insert(
                 studentId: studentId,
                 sectionId: sectionId,
@@ -228,7 +234,9 @@ ORDER BY admission_no DESC LIMIT 1
             );
       }
 
-      await db.into(db.auditLogs).insert(
+      await db
+          .into(db.auditLogs)
+          .insert(
             AuditLogsCompanion.insert(
               action: 'create',
               entity: 'students',
@@ -251,7 +259,9 @@ ORDER BY admission_no DESC LIMIT 1
     await db.transaction(() async {
       await (db.update(db.students)..where((s) => s.id.equals(studentId)))
           .write(StudentsCompanion(deletedAt: Value(DateTime.now())));
-      await db.into(db.auditLogs).insert(
+      await db
+          .into(db.auditLogs)
+          .insert(
             AuditLogsCompanion.insert(
               action: 'delete',
               entity: 'students',

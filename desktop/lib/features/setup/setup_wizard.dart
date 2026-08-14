@@ -171,11 +171,11 @@ class _SetupWizardState extends State<SetupWizard> {
   }
 
   bool get _stepValid => switch (_step) {
-        0 => _openExisting ? _existingFile != null : _folder != null,
-        1 => _schoolName.text.trim().isNotEmpty,
-        2 => _validateAdmin() == null,
-        _ => true,
-      };
+    0 => _openExisting ? _existingFile != null : _folder != null,
+    1 => _schoolName.text.trim().isNotEmpty,
+    2 => _validateAdmin() == null,
+    _ => true,
+  };
 
   String? _validateAdmin() {
     final s = S.of(context);
@@ -198,21 +198,23 @@ class _SetupWizardState extends State<SetupWizard> {
         ? _existingFile!
         : p.join(_folder!, DatabaseFile.fileName);
 
-    await widget.onComplete(SetupResult(
-      databasePath: dbPath,
-      openedExisting: _openExisting,
-      schoolName: _schoolName.text.trim(),
-      schoolKind: _kind,
-      address: _address.text.trim().isEmpty ? null : _address.text.trim(),
-      phone: _phone.text.trim().isEmpty ? null : _phone.text.trim(),
-      calendar: _calendar,
-      dayStart: _dayStart,
-      dayEnd: _dayEnd,
-      lateAfterMinutes: _lateAfter,
-      adminFullName: _adminName.text.trim(),
-      adminUsername: _adminUser.text.trim(),
-      adminPassword: _adminPass.text,
-    ));
+    await widget.onComplete(
+      SetupResult(
+        databasePath: dbPath,
+        openedExisting: _openExisting,
+        schoolName: _schoolName.text.trim(),
+        schoolKind: _kind,
+        address: _address.text.trim().isEmpty ? null : _address.text.trim(),
+        phone: _phone.text.trim().isEmpty ? null : _phone.text.trim(),
+        calendar: _calendar,
+        dayStart: _dayStart,
+        dayEnd: _dayEnd,
+        lateAfterMinutes: _lateAfter,
+        adminFullName: _adminName.text.trim(),
+        adminUsername: _adminUser.text.trim(),
+        adminPassword: _adminPass.text,
+      ),
+    );
 
     if (mounted) setState(() => _submitting = false);
   }
@@ -276,11 +278,11 @@ class _SetupWizardState extends State<SetupWizard> {
   }
 
   Widget _buildStep() => switch (_step) {
-        0 => _dbStep(),
-        1 => _schoolStep(),
-        2 => _adminStep(),
-        _ => _doneStep(),
-      };
+    0 => _dbStep(),
+    1 => _schoolStep(),
+    2 => _adminStep(),
+    _ => _doneStep(),
+  };
 
   Widget _buildButtons() {
     final s = S.of(context);
@@ -309,7 +311,9 @@ class _SetupWizardState extends State<SetupWizard> {
                   width: 18,
                   height: 18,
                   child: CircularProgressIndicator(
-                      strokeWidth: 2, color: Colors.white),
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
                 )
               : Text(_step == 2 ? s.finish : s.next),
         ),
@@ -394,16 +398,20 @@ class _SetupWizardState extends State<SetupWizard> {
             decoration: BoxDecoration(
               color: AppColors.success.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(AppTheme.radiusSm),
-              border:
-                  Border.all(color: AppColors.success.withValues(alpha: 0.3)),
+              border: Border.all(
+                color: AppColors.success.withValues(alpha: 0.3),
+              ),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.check_circle_rounded,
-                        size: 16, color: AppColors.success),
+                    const Icon(
+                      Icons.check_circle_rounded,
+                      size: 16,
+                      color: AppColors.success,
+                    ),
                     const SizedBox(width: 8),
                     Text(
                       _openExisting ? s.openExisting : s.selectedFolder,
@@ -479,10 +487,7 @@ class _SetupWizardState extends State<SetupWizard> {
               child: _Dropdown<String>(
                 label: s.calendar,
                 value: _calendar,
-                items: {
-                  'jalali': s.calJalali,
-                  'gregorian': s.calGregorian,
-                },
+                items: {'jalali': s.calJalali, 'gregorian': s.calGregorian},
                 onChanged: (v) => setState(() => _calendar = v),
               ),
             ),
@@ -584,8 +589,11 @@ class _SetupWizardState extends State<SetupWizard> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const Icon(Icons.check_circle_rounded,
-            size: 62, color: AppColors.success),
+        const Icon(
+          Icons.check_circle_rounded,
+          size: 62,
+          color: AppColors.success,
+        ),
         const SizedBox(height: 18),
         _StepHeader(title: s.setupDone, subtitle: s.setupDoneSub),
       ],
@@ -635,8 +643,11 @@ class _WizardSidebar extends StatelessWidget {
                 color: Colors.white.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(15),
               ),
-              child: const Icon(Icons.auto_stories_rounded,
-                  color: Colors.white, size: 28),
+              child: const Icon(
+                Icons.auto_stories_rounded,
+                color: Colors.white,
+                size: 28,
+              ),
             ),
             const SizedBox(height: 22),
             Text(
@@ -781,11 +792,7 @@ class _Banner extends StatelessWidget {
   final Color color;
   final IconData icon;
   final String text;
-  const _Banner({
-    required this.color,
-    required this.icon,
-    required this.text,
-  });
+  const _Banner({required this.color, required this.icon, required this.text});
 
   @override
   Widget build(BuildContext context) {
@@ -801,10 +808,7 @@ class _Banner extends StatelessWidget {
           Icon(icon, size: 17, color: color),
           const SizedBox(width: 10),
           Expanded(
-            child: Text(
-              text,
-              style: TextStyle(fontSize: 12.5, color: color),
-            ),
+            child: Text(text, style: TextStyle(fontSize: 12.5, color: color)),
           ),
         ],
       ),

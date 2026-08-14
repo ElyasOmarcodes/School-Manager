@@ -101,8 +101,11 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ],
                       ),
-                      child: const Icon(Icons.auto_stories_rounded,
-                          color: Colors.white, size: 32),
+                      child: const Icon(
+                        Icons.auto_stories_rounded,
+                        color: Colors.white,
+                        size: 32,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 22),
@@ -129,8 +132,10 @@ class _LoginPageState extends State<LoginPage> {
                     onSubmitted: (_) => _passFocus.requestFocus(),
                     decoration: InputDecoration(
                       labelText: s.username,
-                      prefixIcon:
-                          const Icon(Icons.person_outline_rounded, size: 19),
+                      prefixIcon: const Icon(
+                        Icons.person_outline_rounded,
+                        size: 19,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 14),
@@ -141,8 +146,10 @@ class _LoginPageState extends State<LoginPage> {
                     onSubmitted: (_) => _submit(),
                     decoration: InputDecoration(
                       labelText: s.password,
-                      prefixIcon:
-                          const Icon(Icons.lock_outline_rounded, size: 19),
+                      prefixIcon: const Icon(
+                        Icons.lock_outline_rounded,
+                        size: 19,
+                      ),
                     ),
                   ),
                   AnimatedSize(
@@ -154,8 +161,11 @@ class _LoginPageState extends State<LoginPage> {
                             padding: const EdgeInsets.only(top: 14),
                             child: Row(
                               children: [
-                                const Icon(Icons.error_outline_rounded,
-                                    size: 16, color: AppColors.danger),
+                                const Icon(
+                                  Icons.error_outline_rounded,
+                                  size: 16,
+                                  color: AppColors.danger,
+                                ),
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
@@ -178,7 +188,9 @@ class _LoginPageState extends State<LoginPage> {
                             width: 18,
                             height: 18,
                             child: CircularProgressIndicator(
-                                strokeWidth: 2, color: Colors.white),
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
                           )
                         : Text(s.signIn),
                   ),

@@ -63,8 +63,8 @@ class AppUsers extends Table {
 
   @override
   List<Set<Column>> get uniqueKeys => [
-        {username}
-      ];
+    {username},
+  ];
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -160,8 +160,8 @@ class Students extends Table {
 
   @override
   List<Set<Column>> get uniqueKeys => [
-        {admissionNo}
-      ];
+    {admissionNo},
+  ];
 }
 
 class Guardians extends Table {
@@ -221,8 +221,8 @@ class Teachers extends Table {
 
   @override
   List<Set<Column>> get uniqueKeys => [
-        {employeeNo}
-      ];
+    {employeeNo},
+  ];
 }
 
 /// هغه کارمندان چې استاد نه دي — سرایدار، محاسب، ساتونکی.
@@ -241,8 +241,8 @@ class StaffMembers extends Table {
 
   @override
   List<Set<Column>> get uniqueKeys => [
-        {employeeNo}
-      ];
+    {employeeNo},
+  ];
 }
 
 /// شاګرد په کوم کال او کوم بخش کې دی — تاریخچه ساتي.
@@ -295,8 +295,8 @@ class Attendances extends Table {
 
   @override
   List<Set<Column>> get uniqueKeys => [
-        {studentId, date}
-      ];
+    {studentId, date},
+  ];
 }
 
 class LeaveRequests extends Table {

@@ -48,19 +48,17 @@ class AuthService {
   static const Duration _lockFor = Duration(minutes: 10);
 
   Future<SignInResult> signIn(String username, String password) async {
-    final user = await (db.select(db.appUsers)
-          ..where((u) => u.username.equals(username.trim()))
-          ..where((u) => u.isActive.equals(true))
-          ..limit(1))
-        .getSingleOrNull();
+    final user =
+        await (db.select(db.appUsers)
+              ..where((u) => u.username.equals(username.trim()))
+              ..where((u) => u.isActive.equals(true))
+              ..limit(1))
+            .getSingleOrNull();
 
     if (user == null) {
       // د وخت هماغه لګښت چې د موجود کارن لپاره لګېږي — چې د ځواب
       // له چټکتیا معلومه نه شي چې دا کارن نوم شته که نه.
-      Password.hash(
-        password: password,
-        salt: Password.newSalt(),
-      );
+      Password.hash(password: password, salt: Password.newSalt());
       return const SignInWrong();
     }
 
@@ -78,47 +76,59 @@ class AuthService {
 
     if (!ok) {
       final attempts = user.failedAttempts + 1;
-      await (db.update(db.appUsers)..where((u) => u.id.equals(user.id)))
-          .write(AppUsersCompanion(
-        failedAttempts: Value(attempts),
-        lockedUntil: Value(
-          attempts >= _maxAttempts ? DateTime.now().add(_lockFor) : null,
+      await (db.update(db.appUsers)..where((u) => u.id.equals(user.id))).write(
+        AppUsersCompanion(
+          failedAttempts: Value(attempts),
+          lockedUntil: Value(
+            attempts >= _maxAttempts ? DateTime.now().add(_lockFor) : null,
+          ),
         ),
-      ));
+      );
       return const SignInWrong();
     }
 
-    await (db.update(db.appUsers)..where((u) => u.id.equals(user.id)))
-        .write(AppUsersCompanion(
-      failedAttempts: const Value(0),
-      lockedUntil: const Value(null),
-      lastLoginAt: Value(DateTime.now()),
-    ));
+    await (db.update(db.appUsers)..where((u) => u.id.equals(user.id))).write(
+      AppUsersCompanion(
+        failedAttempts: const Value(0),
+        lockedUntil: const Value(null),
+        lastLoginAt: Value(DateTime.now()),
+      ),
+    );
 
-    await db.into(db.auditLogs).insert(AuditLogsCompanion.insert(
-          action: 'login',
-          entity: 'app_users',
-          userId: Value(user.id),
-          userName: Value(user.username),
-          entityId: Value(user.id),
-        ));
+    await db
+        .into(db.auditLogs)
+        .insert(
+          AuditLogsCompanion.insert(
+            action: 'login',
+            entity: 'app_users',
+            userId: Value(user.id),
+            userName: Value(user.username),
+            entityId: Value(user.id),
+          ),
+        );
 
-    return SignInOk(Session(
-      userId: user.id,
-      username: user.username,
-      fullName: user.fullName,
-      role: user.role,
-    ));
+    return SignInOk(
+      Session(
+        userId: user.id,
+        username: user.username,
+        fullName: user.fullName,
+        role: user.role,
+      ),
+    );
   }
 
   Future<void> signOut(Session s) async {
-    await db.into(db.auditLogs).insert(AuditLogsCompanion.insert(
-          action: 'logout',
-          entity: 'app_users',
-          userId: Value(s.userId),
-          userName: Value(s.username),
-          entityId: Value(s.userId),
-        ));
+    await db
+        .into(db.auditLogs)
+        .insert(
+          AuditLogsCompanion.insert(
+            action: 'logout',
+            entity: 'app_users',
+            userId: Value(s.userId),
+            userName: Value(s.username),
+            entityId: Value(s.userId),
+          ),
+        );
   }
 
   /// د لومړي مدیر جوړول — یوازې د ویزارډ له خوا بلل کېږي.
@@ -129,12 +139,16 @@ class AuthService {
     required String role,
   }) async {
     final salt = Password.newSalt();
-    return db.into(db.appUsers).insert(AppUsersCompanion.insert(
-          username: username,
-          fullName: fullName,
-          passwordHash: Password.hash(password: password, salt: salt),
-          passwordSalt: salt,
-          role: role,
-        ));
+    return db
+        .into(db.appUsers)
+        .insert(
+          AppUsersCompanion.insert(
+            username: username,
+            fullName: fullName,
+            passwordHash: Password.hash(password: password, salt: salt),
+            passwordSalt: salt,
+            role: role,
+          ),
+        );
   }
 }

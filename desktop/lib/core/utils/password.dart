@@ -51,11 +51,7 @@ class Password {
     required String expectedHash,
     int iterations = defaultIterations,
   }) {
-    final actual = hash(
-      password: password,
-      salt: salt,
-      iterations: iterations,
-    );
+    final actual = hash(password: password, salt: salt, iterations: iterations);
     return _constantTimeEquals(actual, expectedHash);
   }
 

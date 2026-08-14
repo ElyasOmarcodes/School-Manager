@@ -104,8 +104,11 @@ class _Brand extends StatelessWidget {
               ),
               borderRadius: BorderRadius.circular(11),
             ),
-            child: const Icon(Icons.auto_stories_rounded,
-                color: Colors.white, size: 21),
+            child: const Icon(
+              Icons.auto_stories_rounded,
+              color: Colors.white,
+              size: 21,
+            ),
           ),
           if (expanded) ...[
             const SizedBox(width: 11),
@@ -217,8 +220,8 @@ class _NavTileState extends State<_NavTile> {
             color: active
                 ? c.withValues(alpha: 0.12)
                 : _hover
-                    ? p.surfaceAlt
-                    : Colors.transparent,
+                ? p.surfaceAlt
+                : Colors.transparent,
             borderRadius: BorderRadius.circular(10),
           ),
           child: Row(
@@ -301,8 +304,11 @@ class _CollapseButton extends StatelessWidget {
               duration: AppMotion.normal,
               curve: AppMotion.standard,
               turns: expanded ? 0 : 0.5,
-              child:
-                  Icon(Icons.chevron_right_rounded, size: 20, color: p.muted),
+              child: Icon(
+                Icons.chevron_right_rounded,
+                size: 20,
+                color: p.muted,
+              ),
             ),
           ],
         ),
