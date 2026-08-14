@@ -89,15 +89,10 @@ class AppTheme {
         thickness: 1,
         space: 1,
       ),
-      cardTheme: CardTheme(
-        color: p.surface,
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(radius),
-          side: BorderSide(color: p.line),
-        ),
-        margin: EdgeInsets.zero,
-      ),
+      // `cardTheme` دلته نشته. پروژه د Material `Card` ویجیټ نه کاروي —
+      // پینلونه او جدولونه خپل `Container` لري چې د پالېټ ټوکنونه کاروي.
+      // یو ناکارېدونکی تنظیم به یوازې د Flutter د نسخې د بدلون خطر و:
+      // `CardTheme` په ۳.۳۲ کې `CardThemeData` شو.
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: p.surfaceAlt,

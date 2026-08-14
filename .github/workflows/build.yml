@@ -7,14 +7,25 @@ on:
   pull_request:
   workflow_dispatch:
 
-# د Flutter نسخه **ټاکل شوې** ده، نه `stable`.
+# د Flutter کانال `stable` دی — **نسخه نه ده تړل شوې**.
 #
-# ولې؟ ځکه چې `stable` هره څو اونۍ بدلېږي او د Flutter د API بدلونونه
-# کوډ ماتوي — بېلګه: په ۳.۳۲ کې `CardTheme` د `CardThemeData` په نوم
-# شو. که نسخه ونه تړل شي، یوه ورځ به build پرته له دې چې موږ څه بدل
-# کړي وي، سور شي. د پورته کولو پرېکړه باید زموږ وي، نه د تصادف.
+# لومړی ځل مې ۳.۲۹.۰ وتړله چې د API بدلونونه کوډ مات نه کړي. هغه
+# پرېکړه سمدستي ناکامه شوه، او دلیل يې دا و:
+#
+#   د ویندوز رنر اوس **Visual Studio 2026 (v18)** لري. Flutter ۳.۲۹
+#   يې *ویني* (`flutter doctor` ✓ ښیي)، خو د CMake د generator په
+#   جدول کې يې v18 نشته، نو `Visual Studio 16 2019` ته راګرځي — چې
+#   نصب نه دی. پایله:
+#     CMake Error: Generator "Visual Studio 16 2019"
+#     could not find any instance of Visual Studio.
+#
+# د ډیسکټاپ build د رنر پر toolchain تکیه کوي، او رنر پرمخ ځي. نو
+# Flutter باید ورسره پرمخ ولاړ شي. د API د بدلون خطر په دوو لارو
+# کنټرولېږي: (۱) د ناکارېدونکو تنظیماتو نه ساتل — مثلاً `cardTheme`
+# لرې شو ځکه چې پروژه `Card` نه کاروي؛ (۲) `--no-fatal-infos` چې د
+# ناسپارل شویو (deprecated) APIs خبرداری build ونه دروي، خو ریښتینې
+# تېروتنې او خبرتیاوې لا هم دروي.
 env:
-  FLUTTER_VERSION: "3.29.0"
   DESKTOP_DIR: desktop
   MOBILE_DIR: mobile
 
@@ -38,7 +49,6 @@ jobs:
 
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
           cache: true
 
@@ -55,23 +65,21 @@ jobs:
       - run: flutter pub get
         working-directory: ${{ env.DESKTOP_DIR }}
 
-      # د drift تولید شوی کوډ په ګټ کې ساتل شوی، نو `build_runner` دلته
-      # اړین نه دی. خو دا ګام ډاډ ورکوي چې تولید شوی کوډ له سکیما سره
-      # همغږی دی — که څوک سکیما بدله کړي او تولید هېر کړي، دلته نیول کېږي.
-      - name: Verify generated code is up to date
+      # د drift کوډ له سره تولیدېږي — د ګټ نسخه یوازې د IDE د اسانتیا
+      # لپاره ده.
+      #
+      # لومړی مې دلته د بایټ-په-بایټ پرتله ایښې وه («تولید شوی کوډ له
+      # سکیما سره سم دی؟»). هغه غلطه وه: `drift_dev` د Dart د نسخې له
+      # مخې بېل کوډ تولیدوي — د ۳.۲۹ او ۳.۴۷ ترمنځ ۸,۶۶۹ کرښې توپیر و،
+      # سره له دې چې سکیما هماغه وه. له `stable` کانال سره به هغه پرتله
+      # هر ځل بې‌ځایه سره شوې وای. اوس یوازې تولیدوو.
+      - name: Generate database code
         working-directory: ${{ env.DESKTOP_DIR }}
-        run: |
-          dart run build_runner build
-          if ! git diff --quiet -- lib/data/db/database.g.dart; then
-            echo "::error::database.g.dart له سکیما سره سم نه دی."
-            echo "ځایي ماشین کې دا وځغلوئ: dart run build_runner build"
-            git diff --stat -- lib/data/db/database.g.dart
-            exit 1
-          fi
+        run: dart run build_runner build
 
       - name: Analyze
         working-directory: ${{ env.DESKTOP_DIR }}
-        run: flutter analyze
+        run: flutter analyze --no-fatal-infos
 
       # د عکسونو ازموینه پرېښودل کېږي — د گولډن عکس پرتله د ماشین د
       # فونټ رینډر پورې اړه لري، نو په بل ماشین کې بې‌ځایه سره کېږي.
@@ -90,7 +98,6 @@ jobs:
 
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
           cache: true
 
@@ -102,6 +109,12 @@ jobs:
 
       - run: flutter pub get
         working-directory: ${{ env.DESKTOP_DIR }}
+
+      # د ازموینې دندې په څېر له سره تولیدوو، چې دواړه پر یوه کوډ ولاړې
+      # وي — نه چې ازموینې پر تازه او build پر کهنه کوډ وځغلي.
+      - name: Generate database code
+        working-directory: ${{ env.DESKTOP_DIR }}
+        run: dart run build_runner build
 
       - name: Build Windows (release)
         working-directory: ${{ env.DESKTOP_DIR }}
@@ -164,14 +177,13 @@ jobs:
 
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
           cache: true
 
       - run: flutter pub get
         working-directory: ${{ env.MOBILE_DIR }}
 
-      - run: flutter analyze
+      - run: flutter analyze --no-fatal-infos
         working-directory: ${{ env.MOBILE_DIR }}
 
       - run: flutter test
