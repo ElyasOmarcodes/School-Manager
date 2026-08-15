@@ -14,6 +14,7 @@ import '../../data/repositories/leave_repository.dart';
 import '../../data/repositories/message_repository.dart';
 import '../../data/repositories/notification_repository.dart';
 import '../../data/repositories/payroll_repository.dart';
+import '../../data/repositories/report_repository.dart';
 import '../../data/repositories/staff_repository.dart';
 import '../../data/repositories/student_repository.dart';
 import '../../data/repositories/teacher_repository.dart';
@@ -31,6 +32,7 @@ import '../fees/fees_page.dart';
 import '../id_cards/id_cards_page.dart';
 import '../messages/messages_page.dart';
 import '../payroll/payroll_page.dart';
+import '../reports/reports_page.dart';
 import '../settings/settings_page.dart';
 import '../staff/staff_page.dart';
 import '../students/students_page.dart';
@@ -72,6 +74,7 @@ class AppShell extends StatefulWidget {
   final FeeRepository? feeRepo;
   final PayrollRepository? payrollRepo;
   final UserRepository? userRepo;
+  final ReportRepository? reportRepo;
 
   const AppShell({
     super.key,
@@ -99,6 +102,7 @@ class AppShell extends StatefulWidget {
     this.feeRepo,
     this.payrollRepo,
     this.userRepo,
+    this.reportRepo,
   });
 
   @override
@@ -302,6 +306,17 @@ class _AppShellState extends State<AppShell> {
     }
     if (_route == '/users' && widget.userRepo != null) {
       return UsersPage(users: widget.userRepo!, session: widget.session);
+    }
+    if (_route == '/reports' &&
+        widget.reportRepo != null &&
+        academic != null &&
+        widget.examRepo != null) {
+      return ReportsPage(
+        reports: widget.reportRepo!,
+        academic: academic,
+        exams: widget.examRepo!,
+        schoolName: widget.schoolName,
+      );
     }
     if (_route == '/settings' &&
         widget.db != null &&

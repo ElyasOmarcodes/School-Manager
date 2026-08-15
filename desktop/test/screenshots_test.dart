@@ -36,7 +36,9 @@ import 'package:school_manager/data/repositories/fee_repository.dart';
 import 'package:school_manager/data/repositories/payroll_repository.dart';
 import 'package:school_manager/data/repositories/user_repository.dart';
 import 'package:school_manager/features/exams/exams_page.dart';
+import 'package:school_manager/data/repositories/report_repository.dart';
 import 'package:school_manager/features/fees/fees_page.dart';
+import 'package:school_manager/features/reports/reports_page.dart';
 import 'package:school_manager/features/payroll/payroll_page.dart';
 import 'package:school_manager/features/users/users_page.dart';
 import 'package:school_manager/features/exams/mark_sheet.dart';
@@ -683,6 +685,82 @@ void main() {
           session: _session,
         ),
       ),
+    );
+  });
+
+  testWidgets('32 — د حاضرۍ رپوټ', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await _seedSchool(db);
+    await _seedAbsences(db);
+
+    await _shoot(
+      tester,
+      name: '32-report-attendance',
+      settle: const Duration(milliseconds: 700),
+      child: Scaffold(
+        body: ReportsPage(
+          reports: ReportRepository(db),
+          academic: AcademicRepository(db),
+          exams: ExamRepository(db),
+          schoolName: 'د نور لیسه',
+          onPrint: (_) async {},
+          onExport: (_, _) async {},
+        ),
+      ),
+    );
+  });
+
+  testWidgets('33 — د شاګردانو رپوټ', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await _seedSchool(db);
+
+    await _shoot(
+      tester,
+      name: '33-report-enrollment',
+      settle: const Duration(milliseconds: 700),
+      child: Scaffold(
+        body: ReportsPage(
+          reports: ReportRepository(db),
+          academic: AcademicRepository(db),
+          exams: ExamRepository(db),
+          schoolName: 'د نور لیسه',
+          onPrint: (_) async {},
+          onExport: (_, _) async {},
+        ),
+      ),
+      after: (tester) async {
+        await tester.tap(find.text('د شاګردانو شمېرې'));
+        await tester.pumpAndSettle();
+      },
+    );
+  });
+
+  testWidgets('34 — د فیس رپوټ', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await _seedSchool(db);
+    await _seedFees(db);
+
+    await _shoot(
+      tester,
+      name: '34-report-fees',
+      settle: const Duration(milliseconds: 700),
+      child: Scaffold(
+        body: ReportsPage(
+          reports: ReportRepository(db),
+          academic: AcademicRepository(db),
+          exams: ExamRepository(db),
+          schoolName: 'د نور لیسه',
+          onPrint: (_) async {},
+          onExport: (_, _) async {},
+        ),
+      ),
+      after: (tester) async {
+        await tester.tap(find.text('د فیس د راټولولو رپوټ'));
+        await tester.pumpAndSettle();
+      },
     );
   });
 

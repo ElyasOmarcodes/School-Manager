@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:file_selector/file_selector.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/config/app_config.dart';
@@ -9,6 +10,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_motion.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/numerals.dart';
+import '../../data/db/backup.dart';
 import '../../data/db/database.dart';
 import '../../data/repositories/device_repository.dart';
 import '../../server/local_server.dart';
@@ -55,6 +57,7 @@ class _SettingsPageState extends State<SettingsPage> {
   List<PairingCode> _codes = const [];
   List<LanEndpoint> _endpoints = const [];
   List<Guardian> _guardians = const [];
+  List<BackupFile> _backups = const [];
   bool _loading = true;
   bool _busy = false;
 
@@ -74,6 +77,9 @@ class _SettingsPageState extends State<SettingsPage> {
         : widget.lanLookup!(port));
     final guardians =
         await (widget.db.select(widget.db.guardians)..limit(500)).get();
+    final backups = widget.config.backupPath == null
+        ? const <BackupFile>[]
+        : await DatabaseBackup.list(widget.config.backupPath!);
 
     if (!mounted) return;
     setState(() {
@@ -81,6 +87,7 @@ class _SettingsPageState extends State<SettingsPage> {
       _codes = codes;
       _endpoints = endpoints;
       _guardians = guardians;
+      _backups = backups;
       _loading = false;
     });
   }
@@ -118,6 +125,56 @@ class _SettingsPageState extends State<SettingsPage> {
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+
+  /// د بیک‌اپ پوښۍ ټاکل — USB، د شبکې ډرایو، یا هر ځای.
+  Future<void> _pickBackupDir() async {
+    final dir = await getDirectoryPath();
+    if (dir == null || !mounted) return;
+    widget.onConfigChanged(widget.config.copyWith(backupPath: dir));
+    // د تنظیماتو بدلون د پورته له لارې راځي، نو یوازې لیست تازه کوو.
+    final backups = await DatabaseBackup.list(dir);
+    if (mounted) setState(() => _backups = backups);
+  }
+
+  Future<void> _backupNow() async {
+    final dir = widget.config.backupPath;
+    final dbPath = widget.config.databasePath;
+    if (dir == null || dbPath == null) {
+      _say('لومړی د بیک‌اپ ځای وټاکئ.', AppColors.warning);
+      return;
+    }
+
+    setState(() => _busy = true);
+    final result = await DatabaseBackup.create(
+      db: widget.db,
+      databasePath: dbPath,
+      targetDir: dir,
+    );
+    await DatabaseBackup.prune(dir);
+    if (!mounted) return;
+    setState(() => _busy = false);
+    await _load();
+    if (!mounted) return;
+
+    switch (result) {
+      case BackupOk(file: final f):
+        _say('بیک‌اپ واخیستل شو — ${f.name} (${f.sizeLabel})',
+            AppColors.success);
+      case BackupFailed(reason: final r):
+        _say('بیک‌اپ ونه شو: $r', AppColors.danger);
+    }
+  }
+
+  void _say(String text, Color color) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        width: 560,
+        backgroundColor: color,
+        content: Text(text),
+      ),
+    );
   }
 
   Future<void> _toggleServer() async {
@@ -845,18 +902,153 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
         const SizedBox(height: 14),
         _Card(
-          title: 'د بیک‌اپ دویم ځای',
-          hint: 'USB یا د شبکې پوښۍ — د اونۍ په پای کې کاپي هلته ځي.',
-          child: SelectableText(
-            widget.config.backupPath ?? 'نه دی ټاکل شوی',
-            style: AppTheme.tabular(
-              TextStyle(fontSize: 12.5, color: p.inkSoft),
-            ),
+          title: 'بیک‌اپ',
+          hint:
+              'دا هغه یوازینی شی دی چې ستاسو ښوونځی له بشپړ زیان څخه '
+              'ژغوري. USB یا د شبکې پوښۍ وټاکئ او هره ورځ يې واخلئ. '
+              'وروستي ${_keepLabel()} بیک‌اپونه ساتل کېږي، پاتې پخپله '
+              'پاکېږي.',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      height: 44,
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      alignment: AlignmentDirectional.centerStart,
+                      decoration: BoxDecoration(
+                        color: p.surfaceAlt,
+                        borderRadius: BorderRadius.circular(
+                          AppTheme.radiusSm,
+                        ),
+                        border: Border.all(color: p.line),
+                      ),
+                      child: Text(
+                        widget.config.backupPath ?? 'ځای نه دی ټاکل شوی',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTheme.tabular(
+                          TextStyle(
+                            fontSize: 12.5,
+                            color: widget.config.backupPath == null
+                                ? AppColors.warning
+                                : p.inkSoft,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  OutlinedButton.icon(
+                    onPressed: _busy ? null : _pickBackupDir,
+                    icon: const Icon(Icons.folder_open_rounded, size: 17),
+                    label: const Text('ځای وټاکه'),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size(0, 44),
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  FilledButton.icon(
+                    onPressed: _busy ? null : _backupNow,
+                    icon: _busy
+                        ? const SizedBox(
+                            width: 15,
+                            height: 15,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(Icons.backup_rounded, size: 17),
+                    label: const Text('اوس واخله'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.modSettings,
+                      minimumSize: const Size(0, 44),
+                      padding: const EdgeInsets.symmetric(horizontal: 18),
+                      textStyle: const TextStyle(
+                        fontFamily: AppTheme.fontFamily,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13.5,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              if (_backups.isEmpty) ...[
+                const SizedBox(height: 14),
+                const Row(
+                  children: [
+                    Icon(
+                      Icons.warning_amber_rounded,
+                      size: 16,
+                      color: AppColors.warning,
+                    ),
+                    SizedBox(width: 9),
+                    Expanded(
+                      child: Text(
+                        'لا هېڅ بیک‌اپ نشته. که د کمپیوټر هارډ خراب '
+                        'شي، ټول معلومات له منځه ځي.',
+                        style: TextStyle(
+                          fontSize: 12,
+                          height: 1.7,
+                          color: AppColors.warning,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ] else ...[
+                const SizedBox(height: 16),
+                Text(
+                  'وروستي بیک‌اپونه',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: p.muted,
+                  ),
+                ),
+                const SizedBox(height: 9),
+                for (final b in _backups.take(6))
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.inventory_2_rounded,
+                          size: 15,
+                          color: AppColors.success,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            b.name,
+                            style: AppTheme.tabular(
+                              TextStyle(fontSize: 12, color: p.inkSoft),
+                            ),
+                          ),
+                        ),
+                        Text(
+                          b.sizeLabel,
+                          style: AppTheme.tabular(
+                            TextStyle(fontSize: 11.5, color: p.faint),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ],
           ),
         ),
       ],
     );
   }
+
+  String _keepLabel() => S.of(context).locale.num(30);
 
   static String _stamp(DateTime t) =>
       '${t.month.toString().padLeft(2, '0')}/${t.day.toString().padLeft(2, '0')}'

@@ -15,6 +15,7 @@ import 'data/repositories/leave_repository.dart';
 import 'data/repositories/message_repository.dart';
 import 'data/repositories/notification_repository.dart';
 import 'data/repositories/payroll_repository.dart';
+import 'data/repositories/report_repository.dart';
 import 'data/repositories/staff_repository.dart';
 import 'data/repositories/student_repository.dart';
 import 'data/repositories/teacher_repository.dart';
@@ -327,6 +328,7 @@ class _SchoolManagerAppState extends State<SchoolManagerApp> {
       feeRepo: FeeRepository(_db!),
       payrollRepo: PayrollRepository(_db!),
       userRepo: UserRepository(_db!),
+      reportRepo: ReportRepository(_db!),
       server: _server,
       db: _db,
       config: _config,
