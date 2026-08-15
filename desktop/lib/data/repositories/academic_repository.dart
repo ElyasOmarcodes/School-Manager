@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 
+import '../../core/data/madrasa_curriculum.dart';
 import '../db/database.dart';
 
 /// یو بخش له خپل ټولګي سره — د غوره کولو لیستونو لپاره.
@@ -27,10 +28,29 @@ class SectionOption {
   int get freeSeats => capacity - enrolledCount;
 }
 
+/// یو ټولګی/درجه له خپلو بخشونو سره — د ټولګیو د پاڼې لپاره.
+class GradeWithSections {
+  final Grade grade;
+  final List<SectionOption> sections;
+  const GradeWithSections(this.grade, this.sections);
+
+  int get capacity => sections.fold(0, (a, b) => a + b.capacity);
+  int get enrolled => sections.fold(0, (a, b) => a + b.enrolledCount);
+  double get fillPercent => capacity == 0 ? 0 : (enrolled / capacity) * 100;
+}
+
 /// د ټولګیو، بخشونو او د زده‌کړې کلونو ذخیره.
 class AcademicRepository {
   final AppDatabase db;
   AcademicRepository(this.db);
+
+  Future<School?> school() => db.select(db.schools).getSingleOrNull();
+
+  /// ایا دا مدرسه ده؟ — د نصاب، د جدول بڼې او د ظرفیت پرېکړې پرې دي.
+  Future<bool> isMadrasa() async {
+    final s = await school();
+    return s != null && (s.kind == 'madrasa' || s.kind == 'both');
+  }
 
   Future<AcademicYear?> currentYear() {
     return (db.select(db.academicYears)
@@ -105,9 +125,24 @@ ORDER BY g.level, sec.name
     int fromLevel = 1,
     int toLevel = 12,
     List<String> sectionNames = const ['الف', 'ب'],
+
+    /// که مدرسه وي، د ټولګیو پر ځای درجې جوړېږي — او د هرې درجې
+    /// خپل کتابونه. دا هغه توپیر دی چې د پوهنې وزارت نصاب ټاکي.
+    bool madrasa = false,
+    int? capacity,
   }) async {
     final existing = await db.select(db.academicYears).get();
     if (existing.isNotEmpty) return;
+
+    if (madrasa) {
+      return seedMadrasaStructure(
+        yearLabel: yearLabel,
+        startsOn: startsOn,
+        endsOn: endsOn,
+        sectionNames: sectionNames,
+        capacity: capacity ?? madrasaDefaultCapacity,
+      );
+    }
 
     await db.transaction(() async {
       final yearId = await db
@@ -154,12 +189,277 @@ ORDER BY g.level, sec.name
                   gradeId: gradeId,
                   academicYearId: yearId,
                   name: s,
+                  capacity: Value(capacity ?? 40),
                 ),
               );
         }
       }
     });
   }
+
+  /// **د مدرسې تلواله ظرفیت له مکتب څخه لوړ دی.**
+  ///
+  /// یو صنف په مکتب کې ۴۰ کسه دی؛ یوه درجه په مدرسه کې ډېره وخت
+  /// له شپېتو ډېره وي. که ۴۰ پاتې وای، هره درجه به د لومړۍ ورځې
+  /// «ډکه» ښکارېده او مدیر به يې هره یوه په لاس لوړوله.
+  static const int madrasaDefaultCapacity = 80;
+
+  /// د مدرسې بشپړ جوړښت — درې‌ولس درجې، د هرې یوې مضامین او کتابونه.
+  Future<void> seedMadrasaStructure({
+    required String yearLabel,
+    required DateTime startsOn,
+    required DateTime endsOn,
+    List<String> sectionNames = const ['الف'],
+    int capacity = madrasaDefaultCapacity,
+  }) async {
+    await db.transaction(() async {
+      var yearId = (await currentYear())?.id;
+      yearId ??= await db
+          .into(db.academicYears)
+          .insert(
+            AcademicYearsCompanion.insert(
+              label: yearLabel,
+              startsOn: startsOn,
+              endsOn: endsOn,
+              isCurrent: const Value(true),
+            ),
+          );
+
+      final existingGrades = {
+        for (final g in await db.select(db.grades).get()) g.name: g.id,
+      };
+
+      for (final lvl in madrasaCurriculum) {
+        var gradeId = existingGrades[lvl.name];
+        gradeId ??= await db
+            .into(db.grades)
+            .insert(
+              GradesCompanion.insert(
+                name: lvl.name,
+                level: lvl.level,
+                sortOrder: Value(lvl.level),
+              ),
+            );
+
+        // یوه درجه معمولاً یو بخش لري — مدرسه «الف/ب» نه ویشي مګر
+        // چې شمېر ډېر شي. نو یوازې یو جوړېږي، پاتې يې مدیر زیاتوي.
+        final hasSection =
+            await (db.select(db.sections)
+                  ..where((s) => s.gradeId.equals(gradeId!))
+                  ..limit(1))
+                .getSingleOrNull() !=
+            null;
+        if (!hasSection) {
+          for (final s in sectionNames) {
+            await db
+                .into(db.sections)
+                .insert(
+                  SectionsCompanion.insert(
+                    gradeId: gradeId,
+                    academicYearId: yearId,
+                    name: s,
+                    capacity: Value(capacity),
+                  ),
+                );
+          }
+        }
+
+        var order = 0;
+        for (final sub in lvl.subjects) {
+          final already =
+              await (db.select(db.subjects)
+                    ..where((t) => t.gradeId.equals(gradeId!))
+                    ..where((t) => t.name.equals(sub.name))
+                    ..limit(1))
+                  .getSingleOrNull();
+          if (already != null) continue;
+
+          await db
+              .into(db.subjects)
+              .insert(
+                SubjectsCompanion.insert(
+                  name: sub.name,
+                  gradeId: Value(gradeId),
+                  book: Value(sub.book),
+                  // **د مدرسې ټول فنون دیني ګڼل کېږي مګر څو یو.**
+                  // حساب، خط او انګلیسي عصري دي؛ پاتې ټول دیني.
+                  isReligious: Value(!_worldlyFans.contains(sub.name)),
+                  sortOrder: Value(order++),
+                ),
+              );
+        }
+      }
+
+      await db
+          .update(db.schools)
+          .write(
+            SchoolsCompanion(
+              timetableMode: const Value('daily'),
+              classesView: const Value('grid'),
+              defaultCapacity: Value(capacity),
+            ),
+          );
+    });
+  }
+
+  static const _worldlyFans = {
+    'حساب',
+    'ریاضي',
+    'خط',
+    'انګلیسي',
+    'کمپیوټر',
+    'ساینس',
+    'جغرافیه',
+  };
+
+  // ── ټولګي او بخشونه ─────────────────────────────────────
+
+  Future<List<Grade>> grades() =>
+      (db.select(db.grades)..orderBy([
+            (g) => OrderingTerm.asc(g.sortOrder),
+            (g) => OrderingTerm.asc(g.level),
+          ]))
+          .get();
+
+  /// ټولګي له بخشونو سره — د پاڼې د دواړو بڼو (کتار او ګریډ) لپاره.
+  Future<List<GradeWithSections>> gradesWithSections({
+    int? academicYearId,
+  }) async {
+    final all = await sections(academicYearId: academicYearId);
+    final byGrade = <int, List<SectionOption>>{};
+    for (final s in all) {
+      (byGrade[s.gradeId] ??= []).add(s);
+    }
+    final list = await grades();
+    return [
+      for (final g in list) GradeWithSections(g, byGrade[g.id] ?? const []),
+    ];
+  }
+
+  Future<int> addGrade({required String name, int? level}) async {
+    final existing = await grades();
+    final nextLevel =
+        level ??
+        (existing.isEmpty
+            ? 1
+            : existing.map((g) => g.level).reduce((a, b) => a > b ? a : b) + 1);
+    return db
+        .into(db.grades)
+        .insert(
+          GradesCompanion.insert(
+            name: name,
+            level: nextLevel,
+            sortOrder: Value(nextLevel),
+          ),
+        );
+  }
+
+  Future<void> renameGrade(int id, String name) =>
+      (db.update(db.grades)..where((g) => g.id.equals(id))).write(
+        GradesCompanion(name: Value(name)),
+      );
+
+  /// یو ټولګی یوازې هغه وخت ړنګېږي چې تش وي.
+  ///
+  /// **ولې؟** ځکه چې د ټولګي ړنګول به د هغه د بخشونو، ثبتونو، نمرو
+  /// او حاضرۍ تړاو مات کړ. یوه غلطه کېکاږنه به د یوه کال ډیټا
+  /// له منځه وړه. نو مخکې له ړنګولو شمېر کتل کېږي.
+  Future<String?> deleteGrade(int id) async {
+    final secs = await (db.select(
+      db.sections,
+    )..where((s) => s.gradeId.equals(id))).get();
+
+    for (final s in secs) {
+      final n = await _enrolledCount(s.id);
+      if (n > 0) return 'دې ټولګي کې لا شاګردان شته — لومړی يې بل ځای ته واړوه.';
+    }
+
+    await db.transaction(() async {
+      for (final s in secs) {
+        await (db.delete(db.sections)..where((t) => t.id.equals(s.id))).go();
+      }
+      await (db.delete(db.grades)..where((g) => g.id.equals(id))).go();
+    });
+    return null;
+  }
+
+  Future<int> _enrolledCount(int sectionId) async {
+    final row = await db
+        .customSelect(
+          'SELECT COUNT(*) AS c FROM enrollments '
+          'WHERE section_id = ? AND is_active = 1',
+          variables: [Variable<int>(sectionId)],
+          readsFrom: {db.enrollments},
+        )
+        .getSingle();
+    return row.read<int>('c');
+  }
+
+  Future<int> addSection({
+    required int gradeId,
+    required String name,
+    int? capacity,
+    String? room,
+    int? headTeacherId,
+  }) async {
+    final year = await currentYear();
+    if (year == null) throw StateError('د زده‌کړې کال نشته');
+    final school = await this.school();
+    return db
+        .into(db.sections)
+        .insert(
+          SectionsCompanion.insert(
+            gradeId: gradeId,
+            academicYearId: year.id,
+            name: name,
+            capacity: Value(capacity ?? school?.defaultCapacity ?? 40),
+            room: Value(room),
+            headTeacherId: Value(headTeacherId),
+          ),
+        );
+  }
+
+  Future<void> updateSection({
+    required int id,
+    String? name,
+    int? capacity,
+    String? room,
+    int? headTeacherId,
+    bool clearHeadTeacher = false,
+  }) {
+    return (db.update(db.sections)..where((s) => s.id.equals(id))).write(
+      SectionsCompanion(
+        name: name == null ? const Value.absent() : Value(name),
+        capacity: capacity == null ? const Value.absent() : Value(capacity),
+        room: room == null ? const Value.absent() : Value(room),
+        headTeacherId: clearHeadTeacher
+            ? const Value(null)
+            : (headTeacherId == null
+                  ? const Value.absent()
+                  : Value(headTeacherId)),
+      ),
+    );
+  }
+
+  Future<String?> deleteSection(int id) async {
+    if (await _enrolledCount(id) > 0) {
+      return 'دې بخش کې لا شاګردان شته — لومړی يې بل بخش ته واړوه.';
+    }
+    await (db.delete(db.sections)..where((s) => s.id.equals(id))).go();
+    return null;
+  }
+
+  /// د ټولګیو د پاڼې بڼه — `rows` یا `grid`. په ښوونځي کې ساتل کېږي
+  /// چې د پروګرام په بیا-پرانیستو کې هماغه پاتې شي.
+  Future<void> setClassesView(String view) =>
+      db.update(db.schools).write(SchoolsCompanion(classesView: Value(view)));
+
+  Future<void> setDefaultCapacity(int capacity) => db
+      .update(db.schools)
+      .write(SchoolsCompanion(defaultCapacity: Value(capacity)));
+
+  Future<void> setTimetableMode(String mode) =>
+      db.update(db.schools).write(SchoolsCompanion(timetableMode: Value(mode)));
 
   // ── مضمونونه ────────────────────────────────────────────
 
@@ -177,14 +477,32 @@ ORDER BY g.level, sec.name
     return q.get();
   }
 
+  /// د یوه مضمون بشپړ حال — نوم، کتاب، سختوالی او ټولګی.
+  Future<Subject?> subject(int id) => (db.select(
+    db.subjects,
+  )..where((s) => s.id.equals(id))).getSingleOrNull();
+
   Future<int> addSubject({
     required String name,
     String? code,
     int? gradeId,
+    String? book,
+    String difficulty = 'medium',
     int fullMark = 100,
     int passMark = 40,
     bool isReligious = false,
-  }) {
+  }) async {
+    // د دې ټولګي په پای کې کېښودل شي، نه په سر کې — چې د نصاب
+    // ترتیب خراب نه شي.
+    final row = await db
+        .customSelect(
+          'SELECT COALESCE(MAX(sort_order), -1) AS m FROM subjects '
+          '${gradeId == null ? 'WHERE grade_id IS NULL' : 'WHERE grade_id = ?'}',
+          variables: [if (gradeId != null) Variable<int>(gradeId)],
+          readsFrom: {db.subjects},
+        )
+        .getSingle();
+
     return db
         .into(db.subjects)
         .insert(
@@ -192,15 +510,96 @@ ORDER BY g.level, sec.name
             name: name,
             code: Value(code),
             gradeId: Value(gradeId),
+            book: Value(book),
+            difficulty: Value(difficulty),
             fullMark: Value(fullMark),
             passMark: Value(passMark),
             isReligious: Value(isReligious),
+            sortOrder: Value(row.read<int>('m') + 1),
           ),
         );
   }
 
-  Future<void> removeSubject(int id) =>
-      (db.delete(db.subjects)..where((s) => s.id.equals(id))).go();
+  Future<void> updateSubject({
+    required int id,
+    String? name,
+    String? code,
+    int? gradeId,
+    bool clearGrade = false,
+    String? book,
+    String? difficulty,
+    int? fullMark,
+    int? passMark,
+    bool? isReligious,
+  }) {
+    return (db.update(db.subjects)..where((s) => s.id.equals(id))).write(
+      SubjectsCompanion(
+        name: name == null ? const Value.absent() : Value(name),
+        code: code == null ? const Value.absent() : Value(code),
+        gradeId: clearGrade
+            ? const Value(null)
+            : (gradeId == null ? const Value.absent() : Value(gradeId)),
+        book: book == null ? const Value.absent() : Value(book),
+        difficulty: difficulty == null
+            ? const Value.absent()
+            : Value(difficulty),
+        fullMark: fullMark == null ? const Value.absent() : Value(fullMark),
+        passMark: passMark == null ? const Value.absent() : Value(passMark),
+        isReligious: isReligious == null
+            ? const Value.absent()
+            : Value(isReligious),
+      ),
+    );
+  }
+
+  /// **مضمون یوازې هغه وخت ړنګېږي چې نمرې ورسره نه وي تړلې.**
+  ///
+  /// که ړنګ شي، د تېر کال د کارنامو کرښې به بې‌نومه پاتې شوې —
+  /// یو رپوټ چې «۸۷ نمرې» ښیي خو نه پوهېږي د څه. نو مخکې کتل کېږي.
+  Future<String?> removeSubject(int id) async {
+    final row = await db
+        .customSelect(
+          'SELECT COUNT(*) AS c FROM exam_subjects WHERE subject_id = ?',
+          variables: [Variable<int>(id)],
+          readsFrom: {db.examSubjects},
+        )
+        .getSingle();
+    if (row.read<int>('c') > 0) {
+      return 'دا مضمون په ازموینو کې کارېدلی — ړنګېدی نه شي، خو نوم يې بدلولی شې.';
+    }
+
+    await (db.delete(db.timetableEntries)..where((t) => t.subjectId.equals(id)))
+        .go();
+    await (db.delete(db.subjects)..where((s) => s.id.equals(id))).go();
+    return null;
+  }
+
+  /// د یوه ټولګي/درجې لپاره د نوم وړاندیزونه.
+  ///
+  /// مدرسه: د هماغې درجې رسمي فنون له کتابونو سره. مکتب: عام
+  /// مضمونونه. په دواړو حالتونو کې کارن خپل نوم هم لیکلی شي —
+  /// وړاندیز دی، نه بندیز.
+  Future<List<({String name, String? book, bool religious})>> subjectSuggestions(
+    String? gradeName,
+  ) async {
+    if (await isMadrasa() && gradeName != null) {
+      final fans = madrasaSubjectsOf(gradeName);
+      if (fans.isNotEmpty) {
+        return [
+          for (final f in fans)
+            (
+              name: f.name,
+              book: f.book,
+              religious: !_worldlyFans.contains(f.name),
+            ),
+        ];
+      }
+    }
+    return [
+      for (final s in schoolSubjectSuggestions)
+        (name: s.name, book: null, religious: s.religious),
+    ];
+  }
 
   /// د افغانستان د ښوونځیو عام مضمونونه.
   ///
@@ -210,6 +609,10 @@ ORDER BY g.level, sec.name
   Future<void> seedDefaultSubjects() async {
     final existing = await db.select(db.subjects).get();
     if (existing.isNotEmpty) return;
+
+    // مدرسه خپل نصاب لري — د هرې درجې خپل کتابونه. هغه د
+    // `seedMadrasaStructure` په ترڅ کې ثبتېږي، نو دلته څه نه کوو.
+    if (await isMadrasa()) return;
 
     const list = [
       ('قرآن کریم', 'QRN', true),

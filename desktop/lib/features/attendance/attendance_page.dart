@@ -6,9 +6,14 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_motion.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/numerals.dart';
+import '../../core/utils/tone.dart';
+import '../../core/widgets/panel.dart';
+import '../../data/db/database.dart';
 import '../../data/repositories/academic_repository.dart';
 import '../../data/repositories/attendance_repository.dart';
+import '../../data/repositories/attendance_session_repository.dart';
 import '../auth/auth_service.dart';
+import 'manual_roster.dart';
 import 'scan_feedback.dart';
 
 /// د حاضرۍ پاڼه — د دروازې پرده.
@@ -25,6 +30,13 @@ class AttendancePage extends StatefulWidget {
   final AcademicRepository academic;
   final Session session;
 
+  /// کومې ناستې لپاره حاضري اخیستل کېږي. `null` = د ورځې عمومي.
+  final AttendanceSession? attendanceSession;
+  final AttendanceSessionRepository? sessions;
+
+  /// بېرته د ناستو لیست ته — که له لیست څخه راغلی وي.
+  final VoidCallback? onBack;
+
   /// د ازموینې لپاره — چې «نن» ثابته وي.
   final DateTime Function() clock;
 
@@ -33,6 +45,9 @@ class AttendancePage extends StatefulWidget {
     required this.attendance,
     required this.academic,
     required this.session,
+    this.attendanceSession,
+    this.sessions,
+    this.onBack,
     this.clock = DateTime.now,
   });
 
@@ -50,6 +65,13 @@ class _AttendancePageState extends State<AttendancePage> {
   final List<CheckInResult> _recent = [];
   bool _busy = false;
   bool _locking = false;
+
+  /// `scan` یا `list` — سکینر یا لاسي لیست.
+  String _tab = 'scan';
+
+  /// **د تلوالې ناستې حاضري د صفر لاندې ثبتېږي** — نه د هغې د
+  /// کرښې id لاندې. `storageId` همدا پرېکړه یو ځای ساتي.
+  int get _sessionId => widget.attendanceSession?.storageId ?? 0;
 
   @override
   void initState() {
@@ -73,7 +95,10 @@ class _AttendancePageState extends State<AttendancePage> {
   }
 
   Future<void> _refresh() async {
-    final s = await widget.attendance.summary(widget.clock());
+    final s = await widget.attendance.summary(
+      widget.clock(),
+      sessionId: _sessionId,
+    );
     if (!mounted) return;
     setState(() => _summary = s);
   }
@@ -87,7 +112,18 @@ class _AttendancePageState extends State<AttendancePage> {
       now: widget.clock(),
       byUserId: widget.session.userId,
       withRules: _rules,
+      sessionId: _sessionId,
     );
+
+    // **غږ — ځکه چې شاګرد سکرین ته نه ګوري.**
+    // هغه کارت وهي او ژر تېرېږي. که یوازې رنګ بدل شي، د غلط کارت
+    // خاوند به سبا «غیرحاضر» ولیدل او نه به پوهېده ولې.
+    await Tone.play(switch (result) {
+      CheckInOk() => Tone.accept,
+      CheckInCheckedOut() => Tone.accept,
+      CheckInOnLeave() || CheckInAlreadyDone() => Tone.warn,
+      _ => Tone.error,
+    });
 
     if (!mounted) return;
     setState(() {
@@ -130,6 +166,7 @@ class _AttendancePageState extends State<AttendancePage> {
     final n = await widget.attendance.lockDay(
       date: widget.clock(),
       byUserId: widget.session.userId,
+      sessionId: _sessionId,
     );
     if (!mounted) return;
     await _refresh();
@@ -157,15 +194,95 @@ class _AttendancePageState extends State<AttendancePage> {
     final locale = S.of(context).locale;
     final p = context.palette;
 
+    final s = S.of(context);
+    final session = widget.attendanceSession;
+    final live =
+        session == null ||
+        AttendanceSessionRepository.isLiveAt(session, widget.clock());
+
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // ── د ناستې سرلیک ─────────────────────────────────
+          Row(
+            children: [
+              if (widget.onBack != null)
+                IconButton(
+                  tooltip: 'بېرته',
+                  onPressed: widget.onBack,
+                  icon: const Icon(Icons.arrow_forward_rounded, size: 19),
+                ),
+              Text(
+                session?.name ?? 'د ورځې حاضري',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: p.ink,
+                ),
+              ),
+              const SizedBox(width: 10),
+              if (session != null)
+                Pill(
+                  color: live ? AppColors.success : p.faint,
+                  filled: live,
+                  icon: live
+                      ? Icons.sensors_rounded
+                      : Icons.schedule_rounded,
+                  text: live
+                      ? s.live
+                      : '${locale.num(session.startTime)}–'
+                            '${locale.num(session.endTime)}',
+                ),
+              const Spacer(),
+              SegmentedChoice<String>(
+                value: _tab,
+                color: AppColors.modAttendance,
+                options: const [
+                  (
+                    value: 'scan',
+                    label: 'سکینر',
+                    icon: Icons.qr_code_scanner_rounded,
+                  ),
+                  (
+                    value: 'list',
+                    label: 'لیست',
+                    icon: Icons.checklist_rounded,
+                  ),
+                ],
+                onChanged: (v) {
+                  setState(() => _tab = v);
+                  if (v == 'scan') _focus.requestFocus();
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+
           FadeSlideIn(
             child: _SummaryRow(summary: _summary, locale: locale),
           ),
           const SizedBox(height: 18),
+
+          if (_tab == 'list')
+            Expanded(
+              child: widget.sessions == null
+                  ? const EmptyState(
+                      icon: Icons.checklist_rounded,
+                      text: 'لاسي لیست شتون نه لري.',
+                    )
+                  : ManualRoster(
+                      sessions: widget.sessions!,
+                      attendance: widget.attendance,
+                      academic: widget.academic,
+                      session: session,
+                      user: widget.session,
+                      clock: widget.clock,
+                      onChanged: _refresh,
+                    ),
+            )
+          else
           Expanded(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,

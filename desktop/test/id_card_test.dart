@@ -98,6 +98,7 @@ void main() {
         firstName: 'زوړ',
         fatherName: 'شاګرد',
         gender: 'male',
+        residency: 'day',
         admittedOn: DateTime(2025),
         status: 'active',
         cardVersion: 1,

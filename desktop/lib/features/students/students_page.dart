@@ -2,19 +2,32 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../core/data/afghanistan.dart';
 import '../../core/l10n/strings.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_motion.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/numerals.dart';
+import '../../core/widgets/panel.dart';
+import '../../core/widgets/typeahead_field.dart';
+import '../../data/db/database.dart';
+import '../../data/repositories/academic_repository.dart';
 import '../../data/repositories/student_repository.dart';
 import '../../widgets/data_table_view.dart';
 
 class StudentsPage extends StatefulWidget {
   final StudentRepository repo;
+  final AcademicRepository? academic;
   final VoidCallback? onAddStudent;
+  final ValueChanged<int>? onOpenStudent;
 
-  const StudentsPage({super.key, required this.repo, this.onAddStudent});
+  const StudentsPage({
+    super.key,
+    required this.repo,
+    this.academic,
+    this.onAddStudent,
+    this.onOpenStudent,
+  });
 
   @override
   State<StudentsPage> createState() => _StudentsPageState();
@@ -31,10 +44,29 @@ class _StudentsPageState extends State<StudentsPage> {
   bool _loading = true;
   Paged<StudentRow> _page = const Paged([], 0);
 
+  /// د پرمختللو فلټرونو تخته — د اړتیا پر مهال خلاصېږي، چې پورتنۍ
+  /// کرښه ساده پاتې شي.
+  bool _showFilters = false;
+  List<Grade> _grades = const [];
+  bool _madrasa = false;
+
   @override
   void initState() {
     super.initState();
     _load();
+    _loadGrades();
+  }
+
+  Future<void> _loadGrades() async {
+    final a = widget.academic;
+    if (a == null) return;
+    final grades = await a.grades();
+    final madrasa = await a.isMadrasa();
+    if (!mounted) return;
+    setState(() {
+      _grades = grades;
+      _madrasa = madrasa;
+    });
   }
 
   @override
@@ -98,13 +130,37 @@ class _StudentsPageState extends State<StudentsPage> {
               onFilterChanged: _setFilter,
               onAdd: widget.onAddStudent,
               total: _page.total,
+              filtersOpen: _showFilters,
+              onToggleFilters: () =>
+                  setState(() => _showFilters = !_showFilters),
             ),
+          ),
+          // د تختې پرانیستل/بندول په نرمۍ سره — جدول ښکته ښویېږي،
+          // نه چې ټوپ ووهي.
+          AnimatedSize(
+            duration: AppMotion.normal,
+            curve: AppMotion.standard,
+            alignment: Alignment.topCenter,
+            child: _showFilters
+                ? Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: _FilterPanel(
+                      filter: _filter,
+                      grades: _grades,
+                      madrasa: _madrasa,
+                      onChanged: _setFilter,
+                    ),
+                  )
+                : const SizedBox(width: double.infinity),
           ),
           const SizedBox(height: 16),
           Expanded(
             child: DataTableView<StudentRow>(
               loading: _loading,
               rows: _page.items,
+              onRowTap: widget.onOpenStudent == null
+                  ? null
+                  : (r) => widget.onOpenStudent!(r.student.id),
               emptyIcon: Icons.school_rounded,
               emptyTitle: _filter.query.isEmpty
                   ? 'لا هېڅ شاګرد نه دی ثبت شوی'
@@ -242,6 +298,8 @@ class _Toolbar extends StatelessWidget {
   final ValueChanged<StudentFilter> onFilterChanged;
   final VoidCallback? onAdd;
   final int total;
+  final bool filtersOpen;
+  final VoidCallback onToggleFilters;
 
   const _Toolbar({
     required this.controller,
@@ -250,6 +308,8 @@ class _Toolbar extends StatelessWidget {
     required this.onFilterChanged,
     required this.onAdd,
     required this.total,
+    required this.filtersOpen,
+    required this.onToggleFilters,
   });
 
   @override
@@ -304,6 +364,15 @@ class _Toolbar extends StatelessWidget {
                 : filter.copyWith(status: v),
           ),
         ),
+        const SizedBox(width: 8),
+
+        // **د پرمختللو فلټرونو تڼۍ خپل شمېر وړي.** پرته له دې،
+        // کارن به تختې ته اړ و چې وګوري ولې لیست دومره لنډ دی.
+        _FilterToggle(
+          open: filtersOpen,
+          count: filter.activeCount,
+          onTap: onToggleFilters,
+        ),
         const Spacer(),
         Text(
           '${s.locale.grouped(total)} ${s.students}',
@@ -319,6 +388,234 @@ class _Toolbar extends StatelessWidget {
           label: const Text('نوی شاګرد'),
         ),
       ],
+    );
+  }
+}
+
+class _FilterToggle extends StatelessWidget {
+  final bool open;
+  final int count;
+  final VoidCallback onTap;
+
+  const _FilterToggle({
+    required this.open,
+    required this.count,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final s = S.of(context);
+    final p = context.palette;
+    final active = count > 0;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: AppMotion.fast,
+        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
+        decoration: BoxDecoration(
+          color: active || open
+              ? AppColors.primary.withValues(alpha: 0.09)
+              : p.surface,
+          borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+          border: Border.all(
+            color: active || open
+                ? AppColors.primary.withValues(alpha: 0.4)
+                : p.line,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.tune_rounded,
+              size: 16,
+              color: active || open ? AppColors.primary : p.muted,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              s.filters,
+              style: TextStyle(
+                fontSize: 12.5,
+                fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+                color: active || open ? AppColors.primary : p.inkSoft,
+              ),
+            ),
+            if (active) ...[
+              const SizedBox(width: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 6,
+                  vertical: 1,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(9),
+                ),
+                child: Text(
+                  s.locale.num(count),
+                  style: const TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// د پرمختللو فلټرونو تخته.
+///
+/// **ولې دومره فلټرونه؟** ځکه چې د اته سوو شاګردانو په لیست کې د
+/// یوه موندل د نوم په لیکلو کېږي — خو د یوې **ډلې** موندل نه.
+/// «د پکتیا د زرمت هغه لیلیه شاګردان چې پروفایل يې نیمګړی دی» —
+/// دا هغه پوښتنه ده چې مدیر يې ورځ کوي، او پرته له دې فلټرونو،
+/// ځواب يې د اته سوو کرښو په لاسي کتلو کې و.
+class _FilterPanel extends StatelessWidget {
+  final StudentFilter filter;
+  final List<Grade> grades;
+  final bool madrasa;
+  final ValueChanged<StudentFilter> onChanged;
+
+  const _FilterPanel({
+    required this.filter,
+    required this.grades,
+    required this.madrasa,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final s = S.of(context);
+    final p = context.palette;
+
+    return Panel(
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              if (grades.isNotEmpty)
+                SizedBox(
+                  width: 200,
+                  child: DropdownButtonFormField<int?>(
+                    initialValue: filter.gradeId,
+                    isDense: true,
+                    isExpanded: true,
+                    decoration: InputDecoration(
+                      labelText: madrasa ? 'درجه' : s.grade,
+                      isDense: true,
+                    ),
+                    items: [
+                      DropdownMenuItem(value: null, child: Text(s.all)),
+                      for (final g in grades)
+                        DropdownMenuItem(value: g.id, child: Text(g.name)),
+                    ],
+                    onChanged: (v) => onChanged(
+                      v == null
+                          ? filter.copyWith(clearGrade: true)
+                          : filter.copyWith(gradeId: v),
+                    ),
+                  ),
+                ),
+              SizedBox(
+                width: 200,
+                child: TypeAheadField(
+                  label: s.province,
+                  icon: Icons.map_rounded,
+                  value: filter.province,
+                  options: provinceNames,
+                  onChanged: (v) => onChanged(
+                    v == null
+                        ? filter.copyWith(clearProvince: true)
+                        : filter.copyWith(province: v, clearDistrict: true),
+                  ),
+                ),
+              ),
+              SizedBox(
+                width: 200,
+                child: TypeAheadField(
+                  label: s.district,
+                  icon: Icons.place_rounded,
+                  // ولسوالۍ د ولایت پرته معنا نه لري — نو تر هغې بنده ده.
+                  enabled: filter.province != null,
+                  hint: filter.province == null ? 'لومړی ولایت وټاکئ' : null,
+                  value: filter.district,
+                  options: districtsOf(filter.province),
+                  onChanged: (v) => onChanged(
+                    v == null
+                        ? filter.copyWith(clearDistrict: true)
+                        : filter.copyWith(district: v),
+                  ),
+                ),
+              ),
+              SegmentedChoice<String?>(
+                value: filter.residency,
+                options: [
+                  (value: null, label: s.all, icon: null),
+                  (
+                    value: 'day',
+                    label: s.dayScholar,
+                    icon: Icons.wb_sunny_rounded,
+                  ),
+                  (
+                    value: 'boarding',
+                    label: s.boarder,
+                    icon: Icons.night_shelter_rounded,
+                  ),
+                ],
+                onChanged: (v) => onChanged(
+                  v == null
+                      ? filter.copyWith(clearResidency: true)
+                      : filter.copyWith(residency: v),
+                ),
+              ),
+              SegmentedChoice<bool>(
+                value: filter.onlyIncomplete,
+                color: AppColors.warning,
+                options: [
+                  (value: false, label: 'ټول پروفایلونه', icon: null),
+                  (
+                    value: true,
+                    label: s.incompleteProfile,
+                    icon: Icons.report_problem_rounded,
+                  ),
+                ],
+                onChanged: (v) => onChanged(filter.copyWith(onlyIncomplete: v)),
+              ),
+            ],
+          ),
+          if (filter.activeCount > 0) ...[
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Text(
+                  '${s.locale.num(filter.activeCount)} فلټرونه فعال دي',
+                  style: TextStyle(fontSize: 12, color: p.muted),
+                ),
+                const Spacer(),
+                TextButton.icon(
+                  onPressed: () => onChanged(
+                    const StudentFilter().copyWith(query: filter.query),
+                  ),
+                  icon: const Icon(Icons.clear_all_rounded, size: 16),
+                  label: Text(s.clearFilters),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
     );
   }
 }

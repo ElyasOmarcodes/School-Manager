@@ -26,11 +26,22 @@ class TimetableCell {
   final String subjectName;
   final String? teacherName;
 
+  /// هغه کتاب چې مضمون پرې لوستل کېږي — د مدرسې لپاره.
+  ///
+  /// **دا ولې د استاد نوم پر ځای ښکاري؟** ځکه چې یوه مدرسه د
+  /// «فقه» پر ځای «قدوري (صلوة)» ښیي — د درجې تر منځ توپیر کتاب
+  /// دی، نه فن. که یوازې فن ښودل کېده، درې درجې به یو شان ښکارېدې.
+  final String? book;
+
   const TimetableCell({
     required this.entry,
     required this.subjectName,
     this.teacherName,
+    this.book,
   });
+
+  /// د خانې دویمه کرښه — کتاب که وي، که نه استاد.
+  String? get detail => book ?? teacherName;
 }
 
 /// د یوه بخش بشپړ اونیز جدول.
@@ -54,6 +65,43 @@ class TimetableGrid {
   /// څومره خانې باید ډکې شي — تفریح نه شمېرل کېږي.
   int get capacity => days.length * slots.where((s) => !s.isBreak).length;
 }
+
+/// **د مدرسې جدول** — درجې (کتارونه) × ساعتونه (ستنې).
+///
+/// **ولې دا له اونیز جدول بېل دی؟**
+/// یو مکتب هره ورځ بېل مهالویش لري: د شنبې لومړی ساعت ریاضي، د
+/// یکشنبې لومړی ساعت پښتو. یوه مدرسه داسې نه ده — د یوې درجې
+/// ترتیب یو ځل جوړېږي او **هره ورځ هماغه** تدریسېږي. که د مدرسې
+/// لپاره اونیز جدول کارېده، مدیر به یو ترتیب اوه ځله لیکه، او د
+/// یوه کتاب بدلون به يې اوه ځایه سمولو ته اړ کړ.
+///
+/// نو د مدرسې کرښې «ورځې» نه دي — «درجې» دي. په ډیټابیس کې دا
+/// د `day_of_week = 0` په بڼه ساتل کېږي، یعنې «هره ورځ».
+class DailyGrid {
+  final List<TimeSlot> slots;
+
+  /// هر کتار — یوه درجه او د هغې بخش.
+  final List<({int sectionId, String label, int sortOrder})> rows;
+
+  /// `[sectionId][slotId]` → خانه.
+  final Map<int, Map<int, TimetableCell>> cells;
+
+  const DailyGrid({
+    required this.slots,
+    required this.rows,
+    required this.cells,
+  });
+
+  TimetableCell? at(int sectionId, int slotId) => cells[sectionId]?[slotId];
+
+  int get filled => cells.values.fold(0, (a, m) => a + m.length);
+
+  int get capacity => rows.length * slots.where((s) => !s.isBreak).length;
+}
+
+/// **د مدرسې جدول د «هرې ورځې» شمېره.** یو نومول شوی ثابت دی نه
+/// یو خام صفر، چې د کوډ لوستونکی ونه ګڼي دا یو تېروتنی دی.
+const int everyDay = 0;
 
 /// یو ټکر — یو استاد په یوه وخت کې په دوو ځایونو کې.
 class TimetableConflict {
@@ -177,13 +225,18 @@ class TimetableRepository {
     final rows = await db
         .customSelect(
           '''
-SELECT t.*, sub.name AS subject_name, tea.full_name AS teacher_name
+SELECT t.*, sub.name AS subject_name, sub.book AS book,
+       tea.full_name AS teacher_name
 FROM timetable_entries t
 JOIN subjects sub ON sub.id = t.subject_id
 LEFT JOIN teachers tea ON tea.id = t.teacher_id
-WHERE t.section_id = ?
+WHERE t.section_id = ? AND t.day_of_week <> ?
 ''',
-          variables: [Variable<int>(sectionId)],
+          // **د مدرسې کرښې (`day_of_week = 0`) دلته نه راځي.**
+          // که راغلې وای، اونیز جدول به يې په هېڅ ستنه کې نه ښودلې
+          // خو په «څو خانې ډکې دي» شمېر کې به شمېرل شوې وې — یو
+          // شمېر چې له هغه څه سره نه برابرېده چې سترګه يې ویني.
+          variables: [Variable<int>(sectionId), const Variable<int>(everyDay)],
           readsFrom: {db.timetableEntries, db.subjects, db.teachers},
         )
         .get();
@@ -199,6 +252,7 @@ WHERE t.section_id = ?
               entry: entry,
               subjectName: r.read<String>('subject_name'),
               teacherName: r.data['teacher_name'] as String?,
+              book: r.data['book'] as String?,
             ),
           );
     }
@@ -208,6 +262,83 @@ WHERE t.section_id = ?
       days: days ?? defaultTeachingDays,
       cells: cells,
     );
+  }
+
+  /// د مدرسې جدول — ټولې درجې په یوه پاڼه کې.
+  Future<DailyGrid> dailyGrid({int? academicYearId}) async {
+    final allSlots = await slots();
+
+    final sectionRows = await db
+        .customSelect(
+          '''
+SELECT sec.id AS section_id, sec.name AS section_name,
+       g.name AS grade_name, g.sort_order AS sort_order, g.level AS level
+FROM sections sec
+JOIN grades g ON g.id = sec.grade_id
+${academicYearId == null ? '' : 'WHERE sec.academic_year_id = ?'}
+ORDER BY g.sort_order, g.level, sec.name
+''',
+          variables: [
+            if (academicYearId != null) Variable<int>(academicYearId),
+          ],
+          readsFrom: {db.sections, db.grades},
+        )
+        .get();
+
+    final rows = [
+      for (final r in sectionRows)
+        (
+          sectionId: r.read<int>('section_id'),
+          // که یوه درجه یوازې یو بخش ولري، د بخش نوم بې‌ګټې تکرار
+          // دی — «درجه رابعه — الف» له «درجه رابعه» څخه اوږد دی او
+          // څه نه زیاتوي. خو کله چې دوه بخشونه وي، توپیر پکار دی.
+          label: sectionRows
+                          .where(
+                            (x) =>
+                                x.read<String>('grade_name') ==
+                                r.read<String>('grade_name'),
+                          )
+                          .length >
+                      1
+              ? '${r.read<String>('grade_name')} — '
+                    '${r.read<String>('section_name')}'
+              : r.read<String>('grade_name'),
+          sortOrder: r.read<int>('sort_order') * 1000 + r.read<int>('level'),
+        ),
+    ];
+
+    final entryRows = await db
+        .customSelect(
+          '''
+SELECT t.*, sub.name AS subject_name, sub.book AS book,
+       tea.full_name AS teacher_name
+FROM timetable_entries t
+JOIN subjects sub ON sub.id = t.subject_id
+LEFT JOIN teachers tea ON tea.id = t.teacher_id
+WHERE t.day_of_week = ?
+''',
+          variables: [const Variable<int>(everyDay)],
+          readsFrom: {db.timetableEntries, db.subjects, db.teachers},
+        )
+        .get();
+
+    final cells = <int, Map<int, TimetableCell>>{};
+    for (final r in entryRows) {
+      final entry = db.timetableEntries.map(r.data);
+      cells
+          .putIfAbsent(entry.sectionId, () => {})
+          .putIfAbsent(
+            entry.slotId,
+            () => TimetableCell(
+              entry: entry,
+              subjectName: r.read<String>('subject_name'),
+              teacherName: r.data['teacher_name'] as String?,
+              book: r.data['book'] as String?,
+            ),
+          );
+    }
+
+    return DailyGrid(slots: allSlots, rows: rows, cells: cells);
   }
 
   /// یوه خانه ډکوي — **مخکې له ذخیره کولو ټکر ګوري**.

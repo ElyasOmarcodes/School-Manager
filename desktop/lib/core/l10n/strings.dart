@@ -185,6 +185,69 @@ class S {
     'Passwords do not match.',
   );
 
+  // ── فرعي سایډبار او نوې پاڼې ────────────────────────────
+  String get subjects => _pick('مضامین', 'مضامین', 'Subjects');
+  String get newEnrolment =>
+      _pick('نوې نوم لیکنه', 'نام‌نویسی جدید', 'New enrolment');
+  String get attendanceTaking =>
+      _pick('حاضري اخیستل', 'گرفتن حاضری', 'Take attendance');
+  String get newSession => _pick(
+    'د نوې حاضري جوړول',
+    'ایجاد حاضری جدید',
+    'New attendance session',
+  );
+  String get sessionSettings =>
+      _pick('د حاضریانو تنظیمات', 'تنظیمات حاضری‌ها', 'Attendance settings');
+  String get newLeave => _pick(
+    'د اجازت نامې جوړول',
+    'ایجاد اجازه‌نامه',
+    'New leave',
+  );
+
+  // ── ګډ ────────────────────────────────────────────────
+  String get edit => _pick('سمون', 'ویرایش', 'Edit');
+  String get delete => _pick('ړنګول', 'حذف', 'Delete');
+  String get add => _pick('زیاتول', 'افزودن', 'Add');
+  String get close => _pick('بندول', 'بستن', 'Close');
+  String get filters => _pick('فلټرونه', 'فیلترها', 'Filters');
+  String get clearFilters => _pick('پاک کړه', 'پاک کن', 'Clear');
+  String get all => _pick('ټول', 'همه', 'All');
+  String get individual => _pick('فردي', 'فردی', 'Individual');
+  String get bulk => _pick('ډله ایز', 'گروهی', 'Bulk');
+  String get profile => _pick('پروفایل', 'پروفایل', 'Profile');
+  String get grade => _pick('درجه/ټولګی', 'درجه/صنف', 'Grade');
+  String get section => _pick('بخش', 'بخش', 'Section');
+  String get province => _pick('ولایت', 'ولایت', 'Province');
+  String get district => _pick('ولسوالۍ', 'ولسوالی', 'District');
+  String get village => _pick('کلی / ناحیه', 'قریه / ناحیه', 'Village');
+  String get residency => _pick('استوګنه', 'اقامت', 'Residency');
+  String get dayScholar => _pick('نهاري', 'نهاری', 'Day scholar');
+  String get boarder => _pick('لیلیه', 'لیلیه', 'Boarder');
+  String get photo => _pick('انځور', 'عکس', 'Photo');
+  String get fromFile => _pick('له فایل څخه', 'از فایل', 'From file');
+  String get fromCamera => _pick('له کیمرې څخه', 'از دوربین', 'From camera');
+  String get fingerprint => _pick('د ګوتې نښه', 'اثر انگشت', 'Fingerprint');
+  String get incompleteProfile =>
+      _pick('نیمګړی پروفایل', 'پروفایل ناقص', 'Incomplete profile');
+  String get completeProfile =>
+      _pick('بشپړ پروفایل', 'پروفایل کامل', 'Complete profile');
+  String get book => _pick('کتاب', 'کتاب', 'Book');
+  String get difficulty => _pick('سختوالی', 'سختی', 'Difficulty');
+  String get diffEasy => _pick('اسان', 'آسان', 'Easy');
+  String get diffMedium => _pick('متوسط', 'متوسط', 'Medium');
+  String get diffHard => _pick('سخت', 'سخت', 'Hard');
+  String get capacity => _pick('ظرفیت', 'ظرفیت', 'Capacity');
+  String get viewRows => _pick('کتاري بڼه', 'نمای سطری', 'Rows');
+  String get viewGrid => _pick('ګریډ بڼه', 'نمای شبکه‌ای', 'Grid');
+  String get present => _pick('حاضر', 'حاضر', 'Present');
+  String get absent => _pick('غیرحاضر', 'غایب', 'Absent');
+  String get late => _pick('ناوخته', 'تأخیر', 'Late');
+  String get onLeave => _pick('رخصت', 'رخصت', 'On leave');
+  String get unmarked => _pick('نه‌نښه‌شوی', 'ثبت‌نشده', 'Unmarked');
+  String get live => _pick('ژوندی', 'زنده', 'Live');
+  String get nothingHere =>
+      _pick('دلته لا هېڅ نشته.', 'هنوز چیزی اینجا نیست.', 'Nothing here yet.');
+
   String errorFor(String key) => switch (key) {
     'pathCannotCreate' => pathCannotCreate,
     'pathNotWritable' => pathNotWritable,

@@ -31,6 +31,11 @@ class TimetableEntries extends Table {
   IntColumn get sectionId => integer().references(Sections, #id)();
 
   /// ۱ = دوشنبه … ۷ = یکشنبه (د Dart `DateTime.weekday` په څېر).
+  ///
+  /// **د مدرسې په حالت کې دا تل `0` دی** — «هره ورځ». مدرسه یو
+  /// ترتیب لري چې هره ورځ تکرارېږي، نو د ورځې ستنه معنا نه لري.
+  /// یوه جلا کرښه د اوونۍ د اوو ورځو لپاره اوه ځله لیکل بې‌ګټې
+  /// تکرار و، او د یوه بدلون سره به اوه ځایه سمون ته اړتیا وه.
   IntColumn get dayOfWeek => integer()();
   IntColumn get slotId => integer().references(TimeSlots, #id)();
 
@@ -45,6 +50,50 @@ class TimetableEntries extends Table {
   List<Set<Column>> get uniqueKeys => [
     {sectionId, dayOfWeek, slotId},
   ];
+}
+
+// ═══════════════════════════════════════════════════════════
+//  د حاضرۍ ناستې
+// ═══════════════════════════════════════════════════════════
+
+/// یوه د حاضرۍ ناسته — «د لیلیه شاګردانو د شپې حاضري».
+///
+/// **دا ولې پکار ده؟** ځکه چې یو ښوونځی یوه حاضري نه لري. مدرسه
+/// سهار د ټولو حاضري اخلي، بیا د شپې ۸:۰۰ بجې یوازې د لیلیه
+/// شاګردانو. که یوه حاضري وای، د شپې سکین به د سهار ریکارډ بدل
+/// کړ — او د لیلیه شاګرد به دوه ځله شمېرل کېده.
+class AttendanceSessions extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get name => text()();
+
+  /// څوک يې هدف دی: `all` | `day` (نهاري) | `boarding` (لیلیه)
+  /// | `section` | `grade`
+  TextColumn get target => text().withDefault(const Constant('all'))();
+
+  /// که `target` بخش یا ټولګی وي — کوم یو.
+  IntColumn get sectionId => integer().nullable().references(Sections, #id)();
+  IntColumn get gradeId => integer().nullable().references(Grades, #id)();
+
+  /// د اخیستلو کړکۍ — «HH:mm». له `startTime` مخکې او له `endTime`
+  /// وروسته سکینر د دې ناستې لپاره نه کار کوي.
+  TextColumn get startTime => text().withDefault(const Constant('07:00'))();
+  TextColumn get endTime => text().withDefault(const Constant('08:30'))();
+
+  /// د اونۍ کومې ورځې — «6,7,1,2,3».
+  TextColumn get days => text().withDefault(const Constant('6,7,1,2,3'))();
+
+  /// د دې ناستې خپل قواعد — که تش وي، د ښوونځي عام قواعد.
+  IntColumn get lateAfterMinutes => integer().nullable()();
+  IntColumn get absentAfterMinutes => integer().nullable()();
+
+  BoolColumn get isActive => boolean().withDefault(const Constant(true))();
+
+  /// **تلواله ناسته** — هغه چې د ورځې عمومي حاضري ده. یوه ښوونځی
+  /// تل لږ تر لږه یوه لري، نو د لومړي ران پر مهال پخپله جوړېږي.
+  BoolColumn get isDefault => boolean().withDefault(const Constant(false))();
+
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
 }
 
 // ═══════════════════════════════════════════════════════════

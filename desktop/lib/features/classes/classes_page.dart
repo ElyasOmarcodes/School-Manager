@@ -5,22 +5,28 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_motion.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/numerals.dart';
+import '../../core/widgets/panel.dart';
 import '../../data/db/database.dart';
 import '../../data/repositories/academic_repository.dart';
 import '../../data/repositories/teacher_repository.dart';
 
 /// د ټولګیو او بخشونو اداره.
 ///
-/// هر بخش یو کارت دی چې ډک‌والی او مشر استاد ښیي. د ډک‌والي کرښه
-/// هغه څه ده چې مدیر يې د داخلې پر مهال ګوري — «کوم بخش لا ځای لري؟»
+/// **دوه بڼې لري، او دا اتفاقي نه ده.** یو مکتب دوولس ټولګي لري چې
+/// هر یو څو بخشونه لري — هلته «هر ټولګی یو کتار» سم دی، ځکه چې د
+/// یوه ټولګي بخشونه سره پرتله کېږي. یوه مدرسه درې‌ولس درجې لري چې
+/// هره یوه یو بخش لري — هلته د کتارونو بڼه یوه اوږده تشه پاڼه جوړوي.
+/// نو مدرسه ګریډ ته ځي، مکتب کتارونو ته، او دواړه بدلېدی شي.
 class ClassesPage extends StatefulWidget {
   final AcademicRepository academic;
   final TeacherRepository teachers;
+  final bool canEdit;
 
   const ClassesPage({
     super.key,
     required this.academic,
     required this.teachers,
+    this.canEdit = true,
   });
 
   @override
@@ -28,11 +34,14 @@ class ClassesPage extends StatefulWidget {
 }
 
 class _ClassesPageState extends State<ClassesPage> {
-  List<SectionOption> _sections = const [];
+  List<GradeWithSections> _grades = const [];
   List<Teacher> _teacherList = const [];
   Map<int, int?> _homeroom = {};
   bool _loading = true;
+  bool _madrasa = false;
   String _yearLabel = '';
+  String _view = 'rows';
+  int _defaultCapacity = 40;
 
   @override
   void initState() {
@@ -41,23 +50,24 @@ class _ClassesPageState extends State<ClassesPage> {
   }
 
   Future<void> _load() async {
-    setState(() => _loading = true);
     final year = await widget.academic.currentYear();
-    final sections = await widget.academic.sections();
+    final grades = await widget.academic.gradesWithSections();
     final teachers = await widget.teachers.activeTeachers();
+    final school = await widget.academic.school();
 
-    // د هر بخش مشر استاد — له `sections` جدول څخه مستقیم.
     final rows = await widget.academic.db
         .select(widget.academic.db.sections)
         .get();
-    final map = {for (final r in rows) r.id: r.headTeacherId};
 
     if (!mounted) return;
     setState(() {
       _yearLabel = year?.label ?? '';
-      _sections = sections;
+      _grades = grades;
       _teacherList = teachers;
-      _homeroom = map;
+      _homeroom = {for (final r in rows) r.id: r.headTeacherId};
+      _madrasa = school?.kind == 'madrasa' || school?.kind == 'both';
+      _view = school?.classesView ?? (_madrasa ? 'grid' : 'rows');
+      _defaultCapacity = school?.defaultCapacity ?? 40;
       _loading = false;
     });
   }
@@ -70,117 +80,728 @@ class _ClassesPageState extends State<ClassesPage> {
     setState(() => _homeroom[sectionId] = teacherId);
   }
 
+  Future<void> _setView(String v) async {
+    setState(() => _view = v);
+    await widget.academic.setClassesView(v);
+  }
+
+  void _toast(String text, Color color) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        width: 460,
+        backgroundColor: color,
+        content: Text(text),
+      ),
+    );
+  }
+
+  Future<void> _addGrade() async {
+    final name = await _promptText(
+      context,
+      title: _madrasa ? 'نوې درجه' : 'نوی ټولګی',
+      label: 'نوم',
+    );
+    if (name == null || name.trim().isEmpty) return;
+    final gradeId = await widget.academic.addGrade(name: name.trim());
+    // یو ټولګی پرته له بخشه بې‌ګټې دی — هېڅ شاګرد پکې نه ثبتېږي.
+    // نو لومړی بخش پخپله جوړېږي.
+    await widget.academic.addSection(gradeId: gradeId, name: 'الف');
+    await _load();
+  }
+
+  Future<void> _renameGrade(Grade g) async {
+    final name = await _promptText(
+      context,
+      title: 'نوم بدلول',
+      label: 'نوم',
+      initial: g.name,
+    );
+    if (name == null || name.trim().isEmpty) return;
+    await widget.academic.renameGrade(g.id, name.trim());
+    await _load();
+  }
+
+  Future<void> _deleteGrade(GradeWithSections g) async {
+    final ok = await _confirm(
+      context,
+      title: '«${g.grade.name}» ړنګ شي؟',
+      body: 'د دې ټولګي ټول بخشونه هم ړنګېږي. که پکې شاګردان وي، '
+          'ړنګېدی نه شي.',
+    );
+    if (ok != true) return;
+    final err = await widget.academic.deleteGrade(g.grade.id);
+    if (!mounted) return;
+    if (err != null) {
+      _toast(err, AppColors.warning);
+      return;
+    }
+    await _load();
+  }
+
+  Future<void> _addSection(GradeWithSections g) async {
+    // راتلونکی نوم پخپله وړاندیزېږي — الف، ب، ج…
+    const alphabet = ['الف', 'ب', 'ج', 'د', 'هـ', 'و', 'ز'];
+    final used = g.sections.map((s) => s.sectionName).toSet();
+    final next = alphabet.firstWhere(
+      (a) => !used.contains(a),
+      orElse: () => '${g.sections.length + 1}',
+    );
+
+    final result = await showDialog<({String name, int capacity})>(
+      context: context,
+      builder: (_) => _SectionDialog(
+        title: 'نوی بخش — ${g.grade.name}',
+        initialName: next,
+        initialCapacity: _defaultCapacity,
+      ),
+    );
+    if (result == null) return;
+    await widget.academic.addSection(
+      gradeId: g.grade.id,
+      name: result.name,
+      capacity: result.capacity,
+    );
+    await _load();
+  }
+
+  Future<void> _editSection(SectionOption s) async {
+    final result = await showDialog<({String name, int capacity})>(
+      context: context,
+      builder: (_) => _SectionDialog(
+        title: 'د بخش سمون — ${s.label}',
+        initialName: s.sectionName,
+        initialCapacity: s.capacity,
+        minCapacity: s.enrolledCount,
+      ),
+    );
+    if (result == null) return;
+    await widget.academic.updateSection(
+      id: s.sectionId,
+      name: result.name,
+      capacity: result.capacity,
+    );
+    await _load();
+  }
+
+  Future<void> _deleteSection(SectionOption s) async {
+    final ok = await _confirm(
+      context,
+      title: '«${s.label}» ړنګ شي؟',
+      body: 'که پکې شاګردان وي، ړنګېدی نه شي.',
+    );
+    if (ok != true) return;
+    final err = await widget.academic.deleteSection(s.sectionId);
+    if (!mounted) return;
+    if (err != null) {
+      _toast(err, AppColors.warning);
+      return;
+    }
+    await _load();
+  }
+
+  Future<void> _editDefaultCapacity() async {
+    final v = await _promptText(
+      context,
+      title: 'تلواله ظرفیت',
+      label: 'د نوي بخش ظرفیت',
+      initial: '$_defaultCapacity',
+      helper: _madrasa
+          ? 'مدرسې لوی ټولګي لري — تلواله ${AcademicRepository.madrasaDefaultCapacity} ده.'
+          : null,
+    );
+    final n = int.tryParse(Numerals.toLatin(v ?? ''));
+    if (n == null || n <= 0) return;
+    await widget.academic.setDefaultCapacity(n);
+    setState(() => _defaultCapacity = n);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final locale = S.of(context).locale;
+    if (_loading) return const Center(child: CircularProgressIndicator());
+
+    final s = S.of(context);
+    final locale = s.locale;
     final p = context.palette;
 
-    if (_loading) {
-      return const Center(child: CircularProgressIndicator());
-    }
+    final allSections = [for (final g in _grades) ...g.sections];
+    final totalSeats = allSections.fold<int>(0, (a, x) => a + x.capacity);
+    final taken = allSections.fold<int>(0, (a, x) => a + x.enrolledCount);
 
-    // د ټولګي په کچه ډله‌بندي — چې «لسم» او بخشونه يې یو ځای ښکاره شي.
-    final byGrade = <String, List<SectionOption>>{};
-    for (final s in _sections) {
-      byGrade.putIfAbsent(s.gradeName, () => []).add(s);
-    }
-
-    final totalSeats = _sections.fold<int>(0, (a, s) => a + s.capacity);
-    final taken = _sections.fold<int>(0, (a, s) => a + s.enrolledCount);
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          FadeSlideIn(
-            child: Row(
-              children: [
-                Text(
-                  'د زده‌کړې کال ${locale.num(_yearLabel)}',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: p.ink,
-                  ),
-                ),
-                const Spacer(),
-                _Pill(
-                  icon: Icons.meeting_room_rounded,
-                  color: AppColors.modClasses,
-                  text: '${locale.num(_sections.length)} بخشونه',
-                ),
-                const SizedBox(width: 8),
-                _Pill(
-                  icon: Icons.event_seat_rounded,
-                  color: taken >= totalSeats
-                      ? AppColors.danger
-                      : AppColors.success,
-                  text:
-                      '${locale.num(taken)} له ${locale.num(totalSeats)} ځایونو',
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 22),
-
-          if (_sections.isEmpty)
-            const _Empty(text: 'لا هېڅ ټولګی نه دی جوړ شوی.')
-          else
-            for (final entry in byGrade.entries) ...[
-              FadeSlideIn(
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: 10, top: 4),
-                  child: Text(
-                    entry.key,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: p.muted,
-                    ),
-                  ),
+    return Column(
+      children: [
+        // ── پورتنۍ کرښه ────────────────────────────────────
+        Padding(
+          padding: const EdgeInsets.fromLTRB(24, 18, 24, 12),
+          child: Row(
+            children: [
+              Text(
+                'د زده‌کړې کال ${locale.num(_yearLabel)}',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: p.ink,
                 ),
               ),
-              Wrap(
-                spacing: 12,
-                runSpacing: 12,
+              const SizedBox(width: 12),
+              Pill(
+                icon: Icons.meeting_room_rounded,
+                color: AppColors.modClasses,
+                text: _madrasa
+                    ? '${locale.num(_grades.length)} درجې'
+                    : '${locale.num(allSections.length)} بخشونه',
+              ),
+              const SizedBox(width: 8),
+              Pill(
+                icon: Icons.event_seat_rounded,
+                color: taken >= totalSeats
+                    ? AppColors.danger
+                    : AppColors.success,
+                text:
+                    '${locale.num(taken)} له ${locale.num(totalSeats)} ځایونو',
+              ),
+              const Spacer(),
+              SegmentedChoice<String>(
+                value: _view,
+                color: AppColors.modClasses,
+                options: [
+                  (
+                    value: 'rows',
+                    label: s.viewRows,
+                    icon: Icons.view_agenda_rounded,
+                  ),
+                  (
+                    value: 'grid',
+                    label: s.viewGrid,
+                    icon: Icons.grid_view_rounded,
+                  ),
+                ],
+                onChanged: _setView,
+              ),
+              if (widget.canEdit) ...[
+                const SizedBox(width: 10),
+                IconButton(
+                  tooltip: 'تلواله ظرفیت — ${locale.num(_defaultCapacity)}',
+                  onPressed: _editDefaultCapacity,
+                  icon: const Icon(Icons.tune_rounded, size: 18),
+                ),
+                const SizedBox(width: 4),
+                FilledButton.icon(
+                  onPressed: _addGrade,
+                  icon: const Icon(Icons.add_rounded, size: 17),
+                  label: Text(_madrasa ? 'نوې درجه' : 'نوی ټولګی'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.modClasses,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+
+        Expanded(
+          child: _grades.isEmpty
+              ? EmptyState(
+                  icon: Icons.meeting_room_rounded,
+                  text: 'لا هېڅ ټولګی نه دی جوړ شوی.',
+                  action: widget.canEdit
+                      ? FilledButton.icon(
+                          onPressed: _addGrade,
+                          icon: const Icon(Icons.add_rounded, size: 17),
+                          label: Text(_madrasa ? 'نوې درجه' : 'نوی ټولګی'),
+                        )
+                      : null,
+                )
+              // **`AnimatedSwitcher` دلته د ښکلا لپاره نه دی.** د بڼې
+              // بدلون د ټولې پاڼې جوړښت بدلوي؛ پرته له نرم تېرېدو،
+              // سترګه به ورک شوې وه چې څه پیښ شول.
+              : AnimatedSwitcher(
+                  duration: AppMotion.normal,
+                  switchInCurve: AppMotion.standard,
+                  child: _view == 'grid'
+                      ? _GridView(
+                          key: const ValueKey('grid'),
+                          grades: _grades,
+                          locale: locale,
+                          madrasa: _madrasa,
+                          canEdit: widget.canEdit,
+                          onRename: _renameGrade,
+                          onDeleteGrade: _deleteGrade,
+                          onAddSection: _addSection,
+                          onEditSection: _editSection,
+                        )
+                      : _RowsView(
+                          key: const ValueKey('rows'),
+                          grades: _grades,
+                          locale: locale,
+                          teachers: _teacherList,
+                          homeroom: _homeroom,
+                          canEdit: widget.canEdit,
+                          onAssign: _assign,
+                          onRename: _renameGrade,
+                          onDeleteGrade: _deleteGrade,
+                          onAddSection: _addSection,
+                          onEditSection: _editSection,
+                          onDeleteSection: _deleteSection,
+                        ),
+                ),
+        ),
+      ],
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  کتاري بڼه — هر ټولګی یو کتار، هر بخش یو کارت
+// ═══════════════════════════════════════════════════════════
+
+class _RowsView extends StatelessWidget {
+  final List<GradeWithSections> grades;
+  final AppLocale locale;
+  final List<Teacher> teachers;
+  final Map<int, int?> homeroom;
+  final bool canEdit;
+  final void Function(int, int?) onAssign;
+  final ValueChanged<Grade> onRename;
+  final ValueChanged<GradeWithSections> onDeleteGrade;
+  final ValueChanged<GradeWithSections> onAddSection;
+  final ValueChanged<SectionOption> onEditSection;
+  final ValueChanged<SectionOption> onDeleteSection;
+
+  const _RowsView({
+    super.key,
+    required this.grades,
+    required this.locale,
+    required this.teachers,
+    required this.homeroom,
+    required this.canEdit,
+    required this.onAssign,
+    required this.onRename,
+    required this.onDeleteGrade,
+    required this.onAddSection,
+    required this.onEditSection,
+    required this.onDeleteSection,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(24, 4, 24, 30),
+      children: [
+        for (var i = 0; i < grades.length; i++)
+          FadeSlideIn.staggered(
+            index: i,
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 22),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  for (final s in entry.value)
-                    _SectionCard(
-                      option: s,
-                      locale: locale,
-                      teachers: _teacherList,
-                      headTeacherId: _homeroom[s.sectionId],
-                      onAssign: (id) => _assign(s.sectionId, id),
+                  Row(
+                    children: [
+                      Text(
+                        grades[i].grade.name,
+                        style: TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w700,
+                          color: p.ink,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '${locale.num(grades[i].enrolled)} / '
+                        '${locale.num(grades[i].capacity)}',
+                        style: AppTheme.tabular(
+                          TextStyle(fontSize: 11.5, color: p.faint),
+                        ),
+                      ),
+                      if (canEdit) ...[
+                        const SizedBox(width: 4),
+                        _MiniButton(
+                          icon: Icons.edit_rounded,
+                          tooltip: 'نوم بدلول',
+                          onTap: () => onRename(grades[i].grade),
+                        ),
+                        _MiniButton(
+                          icon: Icons.add_rounded,
+                          tooltip: 'نوی بخش',
+                          onTap: () => onAddSection(grades[i]),
+                        ),
+                        _MiniButton(
+                          icon: Icons.delete_outline_rounded,
+                          tooltip: 'ړنګول',
+                          color: AppColors.danger,
+                          onTap: () => onDeleteGrade(grades[i]),
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  if (grades[i].sections.isEmpty)
+                    Text(
+                      'بخش نشته.',
+                      style: TextStyle(fontSize: 12, color: p.faint),
+                    )
+                  else
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 12,
+                      children: [
+                        for (final sec in grades[i].sections)
+                          _SectionCard(
+                            option: sec,
+                            locale: locale,
+                            teachers: teachers,
+                            headTeacherId: homeroom[sec.sectionId],
+                            canEdit: canEdit,
+                            onAssign: (id) => onAssign(sec.sectionId, id),
+                            onEdit: () => onEditSection(sec),
+                            onDelete: () => onDeleteSection(sec),
+                          ),
+                      ],
                     ),
                 ],
               ),
-              const SizedBox(height: 20),
-            ],
-        ],
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  ګریډ بڼه — څو ټولګي په یوه کتار کې
+// ═══════════════════════════════════════════════════════════
+
+class _GridView extends StatelessWidget {
+  final List<GradeWithSections> grades;
+  final AppLocale locale;
+  final bool madrasa;
+  final bool canEdit;
+  final ValueChanged<Grade> onRename;
+  final ValueChanged<GradeWithSections> onDeleteGrade;
+  final ValueChanged<GradeWithSections> onAddSection;
+  final ValueChanged<SectionOption> onEditSection;
+
+  const _GridView({
+    super.key,
+    required this.grades,
+    required this.locale,
+    required this.madrasa,
+    required this.canEdit,
+    required this.onRename,
+    required this.onDeleteGrade,
+    required this.onAddSection,
+    required this.onEditSection,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GridView.builder(
+      padding: const EdgeInsets.fromLTRB(24, 4, 24, 30),
+      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: 250,
+        mainAxisExtent: 152,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+      ),
+      itemCount: grades.length,
+      itemBuilder: (context, i) => FadeSlideIn.staggered(
+        index: i,
+        child: _GradeTile(
+          data: grades[i],
+          locale: locale,
+          madrasa: madrasa,
+          canEdit: canEdit,
+          onRename: () => onRename(grades[i].grade),
+          onDelete: () => onDeleteGrade(grades[i]),
+          onAddSection: () => onAddSection(grades[i]),
+          onEditSection: onEditSection,
+        ),
       ),
     );
   }
 }
 
-class _SectionCard extends StatelessWidget {
+class _GradeTile extends StatefulWidget {
+  final GradeWithSections data;
+  final AppLocale locale;
+  final bool madrasa;
+  final bool canEdit;
+  final VoidCallback onRename;
+  final VoidCallback onDelete;
+  final VoidCallback onAddSection;
+  final ValueChanged<SectionOption> onEditSection;
+
+  const _GradeTile({
+    required this.data,
+    required this.locale,
+    required this.madrasa,
+    required this.canEdit,
+    required this.onRename,
+    required this.onDelete,
+    required this.onAddSection,
+    required this.onEditSection,
+  });
+
+  @override
+  State<_GradeTile> createState() => _GradeTileState();
+}
+
+class _GradeTileState extends State<_GradeTile> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final d = widget.data;
+    final ratio = d.capacity == 0 ? 0.0 : d.enrolled / d.capacity;
+    final color = ratio >= 1
+        ? AppColors.danger
+        : ratio >= 0.85
+        ? AppColors.warning
+        : AppColors.success;
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: AnimatedContainer(
+        duration: AppMotion.fast,
+        padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+        decoration: BoxDecoration(
+          color: p.surface,
+          borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+          border: Border.all(color: _hover ? color : p.line),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: AppColors.modClasses.withValues(alpha: 0.13),
+                    borderRadius: BorderRadius.circular(9),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    widget.locale.num(d.grade.level),
+                    style: AppTheme.tabular(
+                      const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.modClasses,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 9),
+                Expanded(
+                  child: Text(
+                    d.grade.name,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: p.ink,
+                      height: 1.25,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const Spacer(),
+
+            // بخشونه — د یوه نظر لپاره وړې نښې.
+            Wrap(
+              spacing: 5,
+              runSpacing: 5,
+              children: [
+                for (final sec in d.sections)
+                  Tooltip(
+                    message:
+                        '${sec.sectionName} — '
+                        '${widget.locale.num(sec.enrolledCount)}/'
+                        '${widget.locale.num(sec.capacity)}',
+                    child: GestureDetector(
+                      onTap: widget.canEdit
+                          ? () => widget.onEditSection(sec)
+                          : null,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: sec.isFull
+                              ? AppColors.danger.withValues(alpha: 0.12)
+                              : p.surfaceAlt,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          sec.sectionName,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: sec.isFull ? AppColors.danger : p.muted,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                if (widget.canEdit)
+                  GestureDetector(
+                    onTap: widget.onAddSection,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 7,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: p.line),
+                      ),
+                      child: Icon(
+                        Icons.add_rounded,
+                        size: 13,
+                        color: p.faint,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 10),
+
+            Row(
+              children: [
+                Text(
+                  '${widget.locale.num(d.enrolled)} / '
+                  '${widget.locale.num(d.capacity)}',
+                  style: AppTheme.tabular(
+                    TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w700,
+                      color: color,
+                    ),
+                  ),
+                ),
+                const Spacer(),
+                if (widget.canEdit)
+                  AnimatedOpacity(
+                    duration: AppMotion.fast,
+                    opacity: _hover ? 1 : 0,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _MiniButton(
+                          icon: Icons.edit_rounded,
+                          tooltip: 'نوم بدلول',
+                          onTap: widget.onRename,
+                        ),
+                        _MiniButton(
+                          icon: Icons.delete_outline_rounded,
+                          tooltip: 'ړنګول',
+                          color: AppColors.danger,
+                          onTap: widget.onDelete,
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(3),
+              child: TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0, end: ratio.clamp(0.0, 1.0)),
+                duration: AppMotion.slow,
+                curve: AppMotion.emphasized,
+                builder: (context, v, _) => LinearProgressIndicator(
+                  value: v,
+                  minHeight: 5,
+                  backgroundColor: p.surfaceAlt,
+                  valueColor: AlwaysStoppedAnimation(color),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  ګډ ټوټې
+// ═══════════════════════════════════════════════════════════
+
+class _MiniButton extends StatelessWidget {
+  final IconData icon;
+  final String tooltip;
+  final Color? color;
+  final VoidCallback onTap;
+
+  const _MiniButton({
+    required this.icon,
+    required this.tooltip,
+    required this.onTap,
+    this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(6),
+        child: Padding(
+          padding: const EdgeInsets.all(5),
+          child: Icon(icon, size: 15, color: color ?? p.faint),
+        ),
+      ),
+    );
+  }
+}
+
+class _SectionCard extends StatefulWidget {
   final SectionOption option;
   final AppLocale locale;
   final List<Teacher> teachers;
   final int? headTeacherId;
+  final bool canEdit;
   final ValueChanged<int?> onAssign;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
 
   const _SectionCard({
     required this.option,
     required this.locale,
     required this.teachers,
     required this.headTeacherId,
+    required this.canEdit,
     required this.onAssign,
+    required this.onEdit,
+    required this.onDelete,
   });
+
+  @override
+  State<_SectionCard> createState() => _SectionCardState();
+}
+
+class _SectionCardState extends State<_SectionCard> {
+  bool _hover = false;
 
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
+    final option = widget.option;
+    final locale = widget.locale;
     final ratio = option.capacity == 0
         ? 0.0
         : option.enrolledCount / option.capacity;
@@ -190,173 +811,310 @@ class _SectionCard extends StatelessWidget {
         ? AppColors.warning
         : AppColors.success;
 
-    return Container(
-      width: 268,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: p.surface,
-        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
-        border: Border.all(color: p.line),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 34,
-                height: 34,
-                decoration: BoxDecoration(
-                  color: AppColors.modClasses.withValues(alpha: 0.13),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  option.sectionName,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.modClasses,
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: Container(
+        width: 268,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: p.surface,
+          borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+          border: Border.all(color: p.line),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 34,
+                  height: 34,
+                  decoration: BoxDecoration(
+                    color: AppColors.modClasses.withValues(alpha: 0.13),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    option.sectionName,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.modClasses,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 11),
-              Expanded(
-                child: Text(
-                  option.label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: p.ink,
+                const SizedBox(width: 11),
+                Expanded(
+                  child: Text(
+                    option.label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: p.ink,
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
+                if (widget.canEdit)
+                  AnimatedOpacity(
+                    duration: AppMotion.fast,
+                    opacity: _hover ? 1 : 0,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _MiniButton(
+                          icon: Icons.edit_rounded,
+                          tooltip: 'سمون',
+                          onTap: widget.onEdit,
+                        ),
+                        _MiniButton(
+                          icon: Icons.delete_outline_rounded,
+                          tooltip: 'ړنګول',
+                          color: AppColors.danger,
+                          onTap: widget.onDelete,
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 14),
 
-          // د ډک‌والي کرښه
-          Row(
-            children: [
-              Text(
-                '${locale.num(option.enrolledCount)} / ${locale.num(option.capacity)}',
-                style: AppTheme.tabular(
-                  TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: color,
+            Row(
+              children: [
+                Text(
+                  '${locale.num(option.enrolledCount)} / '
+                  '${locale.num(option.capacity)}',
+                  style: AppTheme.tabular(
+                    TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: color,
+                    ),
                   ),
                 ),
-              ),
-              const Spacer(),
-              Text(
-                option.isFull ? 'ډک' : '${locale.num(option.freeSeats)} خالي',
-                style: TextStyle(fontSize: 11.5, color: p.muted),
-              ),
-            ],
-          ),
-          const SizedBox(height: 7),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: TweenAnimationBuilder<double>(
-              tween: Tween(begin: 0, end: ratio.clamp(0.0, 1.0)),
-              duration: AppMotion.slow,
-              curve: AppMotion.emphasized,
-              builder: (context, v, _) => LinearProgressIndicator(
-                value: v,
-                minHeight: 6,
-                backgroundColor: p.surfaceAlt,
-                valueColor: AlwaysStoppedAnimation(color),
+                const Spacer(),
+                Text(
+                  option.isFull ? 'ډک' : '${locale.num(option.freeSeats)} خالي',
+                  style: TextStyle(fontSize: 11.5, color: p.muted),
+                ),
+              ],
+            ),
+            const SizedBox(height: 7),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0, end: ratio.clamp(0.0, 1.0)),
+                duration: AppMotion.slow,
+                curve: AppMotion.emphasized,
+                builder: (context, v, _) => LinearProgressIndicator(
+                  value: v,
+                  minHeight: 6,
+                  backgroundColor: p.surfaceAlt,
+                  valueColor: AlwaysStoppedAnimation(color),
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 14),
+            const SizedBox(height: 14),
 
-          // مشر استاد
-          DropdownButtonFormField<int?>(
-            initialValue: headTeacherId,
-            isExpanded: true,
-            isDense: true,
-            decoration: const InputDecoration(
-              labelText: 'مشر استاد',
+            DropdownButtonFormField<int?>(
+              initialValue: widget.headTeacherId,
+              isExpanded: true,
               isDense: true,
-              contentPadding: EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 12,
-              ),
-            ),
-            items: [
-              const DropdownMenuItem(
-                value: null,
-                child: Text('نه دی ټاکل شوی'),
-              ),
-              for (final t in teachers)
-                DropdownMenuItem(
-                  value: t.id,
-                  child: Text(t.fullName, overflow: TextOverflow.ellipsis),
+              decoration: const InputDecoration(
+                labelText: 'مشر استاد',
+                isDense: true,
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 12,
                 ),
-            ],
-            onChanged: onAssign,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Pill extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  final String text;
-
-  const _Pill({required this.icon, required this.color, required this.text});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 15, color: color),
-          const SizedBox(width: 7),
-          Text(
-            text,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: color,
+              ),
+              items: [
+                const DropdownMenuItem(
+                  value: null,
+                  child: Text('نه دی ټاکل شوی'),
+                ),
+                for (final t in widget.teachers)
+                  DropdownMenuItem(
+                    value: t.id,
+                    child: Text(t.fullName, overflow: TextOverflow.ellipsis),
+                  ),
+              ],
+              onChanged: widget.canEdit ? widget.onAssign : null,
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 }
 
-class _Empty extends StatelessWidget {
-  final String text;
-  const _Empty({required this.text});
+// ═══════════════════════════════════════════════════════════
+//  ډیالوګونه
+// ═══════════════════════════════════════════════════════════
+
+class _SectionDialog extends StatefulWidget {
+  final String title;
+  final String initialName;
+  final int initialCapacity;
+  final int minCapacity;
+
+  const _SectionDialog({
+    required this.title,
+    required this.initialName,
+    required this.initialCapacity,
+    this.minCapacity = 0,
+  });
+
+  @override
+  State<_SectionDialog> createState() => _SectionDialogState();
+}
+
+class _SectionDialogState extends State<_SectionDialog> {
+  late final _name = TextEditingController(text: widget.initialName);
+  late final _cap = TextEditingController(text: '${widget.initialCapacity}');
+  String? _error;
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _cap.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final name = _name.text.trim();
+    final cap = int.tryParse(Numerals.toLatin(_cap.text)) ?? 0;
+    if (name.isEmpty) {
+      setState(() => _error = 'نوم اړین دی.');
+      return;
+    }
+    // **ظرفیت له اوسنیو شاګردانو کم نه شي.** که شوی وای، بخش به
+    // سمدستي «ډک څخه ډېر» شوی و او د داخلې ویزارډ به يې پټ کړ.
+    if (cap < widget.minCapacity) {
+      setState(
+        () => _error =
+            'ظرفیت له اوسنیو ${widget.minCapacity} شاګردانو کم نه شي.',
+      );
+      return;
+    }
+    Navigator.pop(context, (name: name, capacity: cap));
+  }
 
   @override
   Widget build(BuildContext context) {
-    final p = context.palette;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 60),
-      child: Column(
-        children: [
-          Icon(Icons.meeting_room_rounded, size: 40, color: p.faint),
-          const SizedBox(height: 12),
-          Text(text, style: TextStyle(fontSize: 13, color: p.muted)),
-        ],
+    final s = S.of(context);
+    return AlertDialog(
+      title: Text(
+        widget.title,
+        style: const TextStyle(fontSize: 15.5, fontWeight: FontWeight.w700),
       ),
+      content: SizedBox(
+        width: 380,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _name,
+              autofocus: true,
+              decoration: const InputDecoration(
+                labelText: 'د بخش نوم',
+                isDense: true,
+              ),
+            ),
+            const SizedBox(height: 14),
+            TextField(
+              controller: _cap,
+              decoration: InputDecoration(
+                labelText: s.capacity,
+                isDense: true,
+                errorText: _error,
+              ),
+              onSubmitted: (_) => _submit(),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(s.cancel),
+        ),
+        FilledButton(onPressed: _submit, child: Text(s.save)),
+      ],
     );
   }
+}
+
+Future<String?> _promptText(
+  BuildContext context, {
+  required String title,
+  required String label,
+  String? initial,
+  String? helper,
+}) {
+  final c = TextEditingController(text: initial ?? '');
+  return showDialog<String>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: Text(
+        title,
+        style: const TextStyle(fontSize: 15.5, fontWeight: FontWeight.w700),
+      ),
+      content: SizedBox(
+        width: 360,
+        child: TextField(
+          controller: c,
+          autofocus: true,
+          decoration: InputDecoration(
+            labelText: label,
+            helperText: helper,
+            isDense: true,
+          ),
+          onSubmitted: (v) => Navigator.pop(ctx, v),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx),
+          child: Text(S.of(ctx).cancel),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(ctx, c.text),
+          child: Text(S.of(ctx).save),
+        ),
+      ],
+    ),
+  );
+}
+
+Future<bool?> _confirm(
+  BuildContext context, {
+  required String title,
+  required String body,
+}) {
+  return showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: Text(
+        title,
+        style: const TextStyle(fontSize: 15.5, fontWeight: FontWeight.w700),
+      ),
+      content: Text(body),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx, false),
+          child: Text(S.of(ctx).cancel),
+        ),
+        FilledButton(
+          style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
+          onPressed: () => Navigator.pop(ctx, true),
+          child: Text(S.of(ctx).delete),
+        ),
+      ],
+    ),
+  );
 }

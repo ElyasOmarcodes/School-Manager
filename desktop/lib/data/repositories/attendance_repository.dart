@@ -184,6 +184,8 @@ class AttendanceRepository {
     required DateTime now,
     required int byUserId,
     AttendanceRules? withRules,
+    int sessionId = 0,
+    String method = 'qr',
   }) async {
     final text = input.trim();
     if (text.isEmpty) return CheckInUnknown(text);
@@ -225,6 +227,8 @@ class AttendanceRepository {
       byUserId: byUserId,
       rules: withRules ?? await rules(),
       scannedVersion: scannedVersion,
+      sessionId: sessionId,
+      method: method,
     );
   }
 
@@ -234,6 +238,8 @@ class AttendanceRepository {
     required int byUserId,
     required AttendanceRules rules,
     int? scannedVersion,
+    int sessionId = 0,
+    String method = 'qr',
   }) async {
     final day = dateOnly(now);
 
@@ -241,6 +247,7 @@ class AttendanceRepository {
         await (db.select(db.attendances)
               ..where((a) => a.studentId.equals(student.id))
               ..where((a) => a.date.equals(day))
+              ..where((a) => a.sessionId.equals(sessionId))
               ..limit(1))
             .getSingleOrNull();
 
@@ -259,6 +266,7 @@ class AttendanceRepository {
                 date: day,
                 status: 'leave',
                 method: const Value('auto'),
+                sessionId: Value(sessionId),
                 leaveRequestId: Value(leave.id),
                 recordedByUserId: Value(byUserId),
               ),
@@ -276,7 +284,8 @@ class AttendanceRepository {
               studentId: student.id,
               date: day,
               status: status,
-              method: const Value('qr'),
+              method: Value(method),
+              sessionId: Value(sessionId),
               checkInAt: Value(now),
               recordedByUserId: Value(byUserId),
             ),
@@ -325,6 +334,7 @@ class AttendanceRepository {
   Future<List<RosterEntry>> roster({
     required int sectionId,
     required DateTime date,
+    int sessionId = 0,
   }) async {
     final day = dateOnly(date);
 
@@ -341,6 +351,7 @@ SELECT s.*,
 FROM enrollments e
 JOIN students s ON s.id = e.student_id AND s.deleted_at IS NULL
 LEFT JOIN attendances a ON a.student_id = s.id AND a.date = ?
+                       AND a.session_id = ?
 WHERE e.section_id = ? AND e.is_active = 1
 ORDER BY e.roll_no, s.first_name
 ''',
@@ -348,6 +359,7 @@ ORDER BY e.roll_no, s.first_name
             Variable<DateTime>(day),
             Variable<DateTime>(day),
             Variable<DateTime>(day),
+            Variable<int>(sessionId),
             Variable<int>(sectionId),
           ],
           readsFrom: {
@@ -382,18 +394,55 @@ ORDER BY e.roll_no, s.first_name
   /// کړي خو اجازه ولري، «رخصت» ثبتېږي. استاد ښايي د اجازې نه وي
   /// خبر؛ سیسټم دی چې پوهېږي.
   Future<int> markRoster({
-    required int sectionId,
+    int? sectionId,
     required DateTime date,
     required Map<int, String> statusByStudentId,
     required int byUserId,
+    int sessionId = 0,
+    String method = 'roster',
+
+    /// کله چې مدیر په لاس «رخصت» نښه کړي، هغه باید د اجازت‌نامو په
+    /// ډیټابیس کې هم ولیکل شي. که نه وای، د میاشتې د اجازو رپوټ به
+    /// له حاضرۍ سره ټکر خوړ — یو ځای «رخصت»، بل ځای هېڅ.
+    bool recordLeave = false,
+    DateTime? now,
   }) async {
     final day = dateOnly(date);
+    final stamp = now ?? DateTime.now();
     var written = 0;
 
     await db.transaction(() async {
       for (final entry in statusByStudentId.entries) {
-        final leave = await approvedLeaveOn(entry.key, day);
-        final status = leave != null ? 'leave' : entry.value;
+        var leave = await approvedLeaveOn(entry.key, day);
+        final wanted = entry.value;
+
+        // د منل‌شوې اجازې لومړیتوب — پرته له یوې استثنا: که مدیر
+        // په څرګنده بل حالت وټاکي، د هغه پرېکړه منل کېږي، ځکه چې
+        // ښايي شاګرد د اجازې سره سره راغلی وي.
+        final status = (leave != null && wanted == 'absent') ? 'leave' : wanted;
+
+        if (status == 'leave' && leave == null && recordLeave) {
+          final leaveId = await db
+              .into(db.leaveRequests)
+              .insert(
+                LeaveRequestsCompanion.insert(
+                  studentId: entry.key,
+                  reasonType: 'other',
+                  reasonText: const Value('له حاضرۍ څخه په لاس نښه شوې'),
+                  fromDate: day,
+                  toDate: day,
+                  status: const Value('approved'),
+                  requestedVia: const Value('reception'),
+                  requestedByUserId: Value(byUserId),
+                  decidedByUserId: Value(byUserId),
+                  decidedAt: Value(stamp),
+                  createdAt: Value(stamp),
+                ),
+              );
+          leave = await (db.select(
+            db.leaveRequests,
+          )..where((l) => l.id.equals(leaveId))).getSingle();
+        }
 
         await db
             .into(db.attendances)
@@ -403,8 +452,9 @@ ORDER BY e.roll_no, s.first_name
                 date: day,
                 status: status,
                 sectionId: Value(sectionId),
-                method: const Value('roster'),
-                leaveRequestId: Value(leave?.id),
+                sessionId: Value(sessionId),
+                method: Value(method),
+                leaveRequestId: Value(status == 'leave' ? leave?.id : null),
                 recordedByUserId: Value(byUserId),
               ),
               // **`target` دلته اړین دی.** `insertOnConflictUpdate`
@@ -415,12 +465,16 @@ ORDER BY e.roll_no, s.first_name
                 (_) => AttendancesCompanion(
                   status: Value(status),
                   sectionId: Value(sectionId),
-                  method: const Value('roster'),
-                  leaveRequestId: Value(leave?.id),
+                  method: Value(method),
+                  leaveRequestId: Value(status == 'leave' ? leave?.id : null),
                   recordedByUserId: Value(byUserId),
-                  recordedAt: Value(DateTime.now()),
+                  recordedAt: Value(stamp),
                 ),
-                target: [db.attendances.studentId, db.attendances.date],
+                target: [
+                  db.attendances.studentId,
+                  db.attendances.date,
+                  db.attendances.sessionId,
+                ],
               ),
             );
         written++;
@@ -433,7 +487,11 @@ ORDER BY e.roll_no, s.first_name
   /// د ورځې بندول — هغه چې نه دي ثبت شوي، غیرحاضر ګڼل کېږي.
   ///
   /// د غیرحاضرو شمېر راګرځوي — هماغه چې د مدیر اپ ته خبرتیا کې ځي.
-  Future<int> lockDay({required DateTime date, required int byUserId}) async {
+  Future<int> lockDay({
+    required DateTime date,
+    required int byUserId,
+    int sessionId = 0,
+  }) async {
     final day = dateOnly(date);
     var marked = 0;
 
@@ -448,9 +506,10 @@ LEFT JOIN enrollments e ON e.student_id = s.id AND e.is_active = 1
 WHERE s.deleted_at IS NULL AND s.status = 'active'
   AND NOT EXISTS (
     SELECT 1 FROM attendances a WHERE a.student_id = s.id AND a.date = ?
+      AND a.session_id = ?
   )
 ''',
-            variables: [Variable<DateTime>(day)],
+            variables: [Variable<DateTime>(day), Variable<int>(sessionId)],
             readsFrom: {db.students, db.enrollments, db.attendances},
           )
           .get();
@@ -467,6 +526,7 @@ WHERE s.deleted_at IS NULL AND s.status = 'active'
                 date: day,
                 status: leave != null ? 'leave' : 'absent',
                 sectionId: Value(row.data['section_id'] as int?),
+                sessionId: Value(sessionId),
                 method: const Value('auto'),
                 leaveRequestId: Value(leave?.id),
                 recordedByUserId: Value(byUserId),
@@ -491,7 +551,7 @@ WHERE s.deleted_at IS NULL AND s.status = 'active'
   }
 
   /// د یوې ورځې لنډیز.
-  Future<DaySummary> summary(DateTime date) async {
+  Future<DaySummary> summary(DateTime date, {int sessionId = 0}) async {
     final day = dateOnly(date);
 
     final totalRow = await db
@@ -505,8 +565,8 @@ WHERE s.deleted_at IS NULL AND s.status = 'active'
     final rows = await db
         .customSelect(
           'SELECT status, COUNT(*) AS c FROM attendances '
-          'WHERE date = ? GROUP BY status',
-          variables: [Variable<DateTime>(day)],
+          'WHERE date = ? AND session_id = ? GROUP BY status',
+          variables: [Variable<DateTime>(day), Variable<int>(sessionId)],
           readsFrom: {db.attendances},
         )
         .get();

@@ -4,6 +4,23 @@ import '../../core/l10n/strings.dart';
 import '../../core/theme/app_colors.dart';
 import '../../data/repositories/user_repository.dart';
 
+/// د یوه فرعي توکي تعریف — «شاګردان»، «نوې نوم لیکنه».
+///
+/// **دا ولې خپل ټولګی لري او نه بل `NavItem`؟** ځکه چې فرعي توکی
+/// خپل رنګ نه لري — د مور توکي رنګ اخلي. که `NavItem` وای، هر یو
+/// به رنګ او د اجازو کلی غوښت، او سایډبار به رنګارنګ شوی و.
+class NavSubItem {
+  final String route;
+  final IconData icon;
+  final String Function(S) label;
+
+  const NavSubItem({
+    required this.route,
+    required this.icon,
+    required this.label,
+  });
+}
+
 /// د سایډبار د یوه توکي تعریف.
 class NavItem {
   final String route;
@@ -14,20 +31,34 @@ class NavItem {
   /// که `null` وي، هر رول يې ویني.
   final Set<String>? roles;
 
+  /// فرعي توکي — که وي، پر توکي کېکاږل يې خلاصوي.
+  final List<NavSubItem> children;
+
   const NavItem({
     required this.route,
     required this.icon,
     required this.color,
     required this.label,
     this.roles,
+    this.children = const [],
   });
+
+  bool get hasChildren => children.isNotEmpty;
+
+  /// ایا دا لار د دې توکي (یا د یوه فرعي توکي) ده؟
+  bool owns(String r) => r == route || children.any((c) => c.route == r);
 
   /// د اجازو ماډل کلی — «/students» → «students».
   ///
   /// ځینې لارې (ډاشبورډ، آی‌ډي کارتونه) د اجازو په لیست کې نشته —
   /// هغه هر څوک ویني، ځکه چې یوازې هغه څه ښیي چې کارن يې لا وړاندې
   /// لیدلی شي.
-  String get moduleKey => route.replaceFirst('/', '').replaceAll('-', '_');
+  String get moduleKey => moduleKeyOf(route);
+
+  /// «/students/new» → «students». فرعي لارې د مور ماډل اجازې لري —
+  /// که نه، هر نوی فرعي توکی به نوې اجازې ته اړ و.
+  static String moduleKeyOf(String route) =>
+      route.split('/').where((e) => e.isNotEmpty).first.replaceAll('-', '_');
 
   bool visibleTo(Permissions perms) {
     final known = permModules.any((m) => m.key == moduleKey);
@@ -51,6 +82,16 @@ const _all = 'admin';
 const _staffRoles = {'admin', 'deputy'};
 const _financeRoles = {'admin', 'accountant'};
 
+// د فرعي توکو نومونه — `const` لیستونه یوازې `const` فعالیتونه مني،
+// نو د لامبډا پر ځای نومول شوي فعالیتونه دي.
+String _lblStudentList(S s) => s.students;
+String _lblNewEnrolment(S s) => s.newEnrolment;
+String _lblTakeAttendance(S s) => s.attendanceTaking;
+String _lblNewSession(S s) => s.newSession;
+String _lblSessionSettings(S s) => s.sessionSettings;
+String _lblLeaveList(S s) => s.leaveRequests;
+String _lblNewLeave(S s) => s.newLeave;
+
 List<NavGroup> buildNav() => [
   NavGroup((s) => '', [
     NavItem(
@@ -66,24 +107,71 @@ List<NavGroup> buildNav() => [
       icon: Icons.school_rounded,
       color: AppColors.modStudents,
       label: (s) => s.students,
+      children: const [
+        NavSubItem(
+          route: '/students',
+          icon: Icons.groups_rounded,
+          label: _lblStudentList,
+        ),
+        NavSubItem(
+          route: '/students/enroll',
+          icon: Icons.person_add_alt_1_rounded,
+          label: _lblNewEnrolment,
+        ),
+      ],
     ),
     NavItem(
       route: '/attendance',
       icon: Icons.fact_check_rounded,
       color: AppColors.modAttendance,
       label: (s) => s.attendance,
+      children: const [
+        NavSubItem(
+          route: '/attendance',
+          icon: Icons.how_to_reg_rounded,
+          label: _lblTakeAttendance,
+        ),
+        NavSubItem(
+          route: '/attendance/new',
+          icon: Icons.add_task_rounded,
+          label: _lblNewSession,
+        ),
+        NavSubItem(
+          route: '/attendance/settings',
+          icon: Icons.tune_rounded,
+          label: _lblSessionSettings,
+        ),
+      ],
     ),
     NavItem(
       route: '/leave',
       icon: Icons.event_available_rounded,
       color: AppColors.modLeave,
       label: (s) => s.leaveRequests,
+      children: const [
+        NavSubItem(
+          route: '/leave',
+          icon: Icons.rule_folder_rounded,
+          label: _lblLeaveList,
+        ),
+        NavSubItem(
+          route: '/leave/new',
+          icon: Icons.note_add_rounded,
+          label: _lblNewLeave,
+        ),
+      ],
     ),
     NavItem(
       route: '/classes',
       icon: Icons.meeting_room_rounded,
       color: AppColors.modClasses,
       label: (s) => s.classes,
+    ),
+    NavItem(
+      route: '/subjects',
+      icon: Icons.menu_book_rounded,
+      color: AppColors.modSubjects,
+      label: (s) => s.subjects,
     ),
     NavItem(
       route: '/timetable',

@@ -81,6 +81,7 @@ LIMIT ? OFFSET ?
           lastName: r.data['last_name'] as String?,
           fatherName: r.read<String>('father_name'),
           gender: r.read<String>('gender'),
+          residency: 'day',
           status: r.read<String>('s_status'),
           cardVersion: r.read<int>('card_version'),
           admittedOn: r.read<DateTime>('admitted_on'),
@@ -119,6 +120,90 @@ LIMIT ? OFFSET ?
             requestedByUserId: Value(requestedByUserId),
           ),
         );
+  }
+
+  /// ډله‌ییزه اجازه — یوه غوښتنه، څو شاګردان.
+  ///
+  /// **دا ولې پکار ده؟** ځکه چې یوه ډله د یوه کار لپاره ځي — د
+  /// اختر رخصتي، یو سفر، د یوه کلي شاګردان چې واده لري. که هره
+  /// یوه په لاس جوړېدله، مدیر به څلوېښت ځله هماغه سبب لیکه.
+  ///
+  /// د جوړو شویو غوښتنو شمېر راګرځوي.
+  Future<int> requestBulk({
+    required List<int> studentIds,
+    required String reasonType,
+    String? reasonText,
+    required DateTime fromDate,
+    required DateTime toDate,
+    String requestedVia = 'reception',
+    int? requestedByUserId,
+
+    /// که مدیر پخپله جوړوي، اړتیا نشته چې بیا يې تصویب کړي.
+    bool autoApprove = false,
+    String? byUserName,
+    DateTime? now,
+  }) async {
+    if (studentIds.isEmpty) return 0;
+    final from = dateOnly(fromDate);
+    final to = dateOnly(toDate);
+    final stamp = now ?? DateTime.now();
+
+    return db.transaction(() async {
+      for (final id in studentIds) {
+        final leaveId = await db
+            .into(db.leaveRequests)
+            .insert(
+              LeaveRequestsCompanion.insert(
+                studentId: id,
+                reasonType: reasonType,
+                reasonText: Value(reasonText),
+                fromDate: from,
+                toDate: to,
+                status: Value(autoApprove ? 'approved' : 'pending'),
+                requestedVia: Value(requestedVia),
+                requestedByUserId: Value(requestedByUserId),
+                decidedByUserId: Value(autoApprove ? requestedByUserId : null),
+                decidedAt: Value(autoApprove ? stamp : null),
+                createdAt: Value(stamp),
+              ),
+            );
+
+        // د تصویب په صورت کې، د هغو ورځو غیرحاضري «رخصت» ته اوړي —
+        // هماغه څه چې `decide()` کوي، خو په یوه ګام کې.
+        if (autoApprove) {
+          await db.customUpdate(
+            "UPDATE attendances SET status = 'leave', leave_request_id = ? "
+            'WHERE student_id = ? AND date >= ? AND date <= ? '
+            "AND status IN ('absent', 'late')",
+            variables: [
+              Variable<int>(leaveId),
+              Variable<int>(id),
+              Variable<DateTime>(from),
+              Variable<DateTime>(to),
+            ],
+            updates: {db.attendances},
+          );
+        }
+      }
+
+      await db
+          .into(db.auditLogs)
+          .insert(
+            AuditLogsCompanion.insert(
+              action: 'create',
+              entity: 'leave_requests',
+              userId: Value(requestedByUserId),
+              userName: Value(byUserName),
+              at: Value(stamp),
+              changesJson: Value(
+                '{"bulk":${studentIds.length},'
+                '"approved":$autoApprove}',
+              ),
+            ),
+          );
+
+      return studentIds.length;
+    });
   }
 
   /// تصویب یا ردول.

@@ -28,6 +28,7 @@ class AppColors {
   static const Color modTeachers = Color(0xFFEC4899);
   static const Color modStaff = Color(0xFF8B5CF6);
   static const Color modClasses = Color(0xFFF97316);
+  static const Color modSubjects = Color(0xFFB45309);
   static const Color modTimetable = Color(0xFF06B6D4);
   static const Color modExams = Color(0xFFEF4444);
   static const Color modReports = Color(0xFF14B8A6);

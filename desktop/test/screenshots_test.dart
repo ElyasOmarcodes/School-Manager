@@ -52,6 +52,13 @@ import 'package:school_manager/server/local_server.dart';
 import 'package:school_manager/features/teachers/teachers_page.dart';
 import 'package:school_manager/features/students/admission_wizard.dart';
 import 'package:school_manager/features/students/students_page.dart';
+import 'package:school_manager/features/students/enroll_page.dart';
+import 'package:school_manager/features/students/student_profile_page.dart';
+import 'package:school_manager/features/subjects/subjects_page.dart';
+import 'package:school_manager/features/attendance/manual_roster.dart';
+import 'package:school_manager/features/attendance/sessions_page.dart';
+import 'package:school_manager/features/leave/leave_create_page.dart';
+import 'package:school_manager/data/repositories/attendance_session_repository.dart';
 
 /// د UI سکرین‌شاټونه — پرته له دې چې پروګرام په ویندوز کې وځغلوو.
 ///
@@ -221,6 +228,9 @@ void main() {
         await tester.enterText(fields.at(1), 'ولي');
         await tester.enterText(fields.at(2), 'محمود');
         await tester.pumpAndSettle();
+        await tester.tap(find.text('بل'));
+        await tester.pumpAndSettle();
+        // د سکونت ګام — ټول اختیاري دی، نو ترې تېرېږو.
         await tester.tap(find.text('بل'));
         await tester.pumpAndSettle();
         // د سرپرست تلیفون، بیا ټولګي ګام ته.
@@ -779,6 +789,344 @@ void main() {
       ),
     );
   });
+
+  // ═════════════════════════════════════════════════════════
+  //  نوې پاڼې
+  // ═════════════════════════════════════════════════════════
+
+  testWidgets('35 — د شاګردانو فلټرونه', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await db.into(db.schools).insert(SchoolsCompanion.insert(name: 'د نور لیسه'));
+    await _seedSchool(db);
+
+    await _shoot(
+      tester,
+      name: '35-students-filters',
+      settle: const Duration(milliseconds: 500),
+      child: Scaffold(
+        body: StudentsPage(
+          repo: StudentRepository(db),
+          academic: AcademicRepository(db),
+          onAddStudent: () {},
+          onOpenStudent: (_) {},
+        ),
+      ),
+      after: (tester) async {
+        await tester.tap(find.byIcon(Icons.tune_rounded));
+        await tester.pumpAndSettle();
+      },
+    );
+  });
+
+  testWidgets('36 — د شاګرد پروفایل', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await db.into(db.schools).insert(SchoolsCompanion.insert(name: 'د نور لیسه'));
+    await _seedSchool(db);
+
+    // د یوې میاشتې حاضري — چې جدول ژوندی وښکاري.
+    final student = (await db.select(db.students).get()).first;
+    final repo = StudentRepository(db);
+    for (var d = 1; d <= 20; d++) {
+      await repo.setAttendance(
+        studentId: student.id,
+        date: DateTime(2026, 5, d),
+        status: switch (d % 7) {
+          0 => 'absent',
+          3 => 'late',
+          5 => 'leave',
+          _ => 'present',
+        },
+        byUserId: 1,
+        now: DateTime(2026, 5, 20, 9),
+      );
+    }
+
+    await _shoot(
+      tester,
+      name: '36-student-profile',
+      settle: const Duration(milliseconds: 600),
+      child: Scaffold(
+        body: StudentProfilePage(
+          studentId: student.id,
+          students: repo,
+          academic: AcademicRepository(db),
+          session: _session,
+          clock: () => DateTime(2026, 5, 20, 9),
+          onBack: () {},
+        ),
+      ),
+    );
+  });
+
+  testWidgets('37 — ډله ایزه نوم لیکنه', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await db.into(db.schools).insert(SchoolsCompanion.insert(name: 'د نور لیسه'));
+    await _seedSchool(db);
+
+    await _shoot(
+      tester,
+      name: '37-bulk-enroll',
+      settle: const Duration(milliseconds: 500),
+      child: Scaffold(
+        body: EnrollPage(
+          students: StudentRepository(db),
+          academic: AcademicRepository(db),
+          session: _session,
+          onDone: ({String? message}) {},
+        ),
+      ),
+      after: (tester) async {
+        await tester.tap(find.text('ډله ایز'));
+        await tester.pumpAndSettle();
+        final rows = find.byType(TextField);
+        await tester.enterText(rows.at(0), 'احمد');
+        await tester.enterText(rows.at(1), 'محمود');
+        await tester.pumpAndSettle();
+        await tester.enterText(find.byType(TextField).at(2), 'کریم');
+        await tester.enterText(find.byType(TextField).at(3), 'رحیم');
+        await tester.pumpAndSettle();
+      },
+    );
+  });
+
+  testWidgets('38 — د سکونت ګام (ولایت او انځور)', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await _seedSchool(db);
+
+    await _shoot(
+      tester,
+      name: '38-admission-residence',
+      settle: const Duration(milliseconds: 500),
+      child: Scaffold(body: _wizard(db)),
+      after: (tester) async {
+        final fields = find.byType(TextField);
+        await tester.enterText(fields.at(0), 'احمد');
+        await tester.enterText(fields.at(2), 'محمود');
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('بل'));
+        await tester.pumpAndSettle();
+      },
+    );
+  });
+
+  testWidgets('39 — د حاضرۍ ناستې', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await db.into(db.schools).insert(SchoolsCompanion.insert(name: 'د نور لیسه'));
+    await _seedSchool(db);
+
+    final sessions = AttendanceSessionRepository(db);
+    await sessions.seedDefault();
+    await sessions.create(
+      name: 'د لیلیه شاګردانو د شپې حاضري',
+      target: 'boarding',
+      startTime: '20:00',
+      endTime: '20:30',
+    );
+    await sessions.create(
+      name: 'د ماسپښین درسونه',
+      target: 'all',
+      startTime: '13:00',
+      endTime: '13:20',
+    );
+
+    final students = await db.select(db.students).get();
+    final att = AttendanceRepository(db);
+    await att.markRoster(
+      date: DateTime(2026, 5, 12),
+      statusByStudentId: {
+        for (final s in students.take(9)) s.id: 'present',
+      },
+      byUserId: 1,
+      now: DateTime(2026, 5, 12, 7, 40),
+    );
+
+    await _shoot(
+      tester,
+      name: '39-attendance-sessions',
+      settle: const Duration(milliseconds: 600),
+      child: Scaffold(
+        body: SessionsPage(
+          sessions: sessions,
+          clock: () => DateTime(2026, 5, 12, 7, 40),
+          onOpen: (_) {},
+          onCreate: () {},
+        ),
+      ),
+    );
+  });
+
+  testWidgets('40 — لاسي حاضري له فلټرونو سره', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await db.into(db.schools).insert(SchoolsCompanion.insert(name: 'د نور لیسه'));
+    await _seedSchool(db);
+
+    final sessions = AttendanceSessionRepository(db);
+    await sessions.seedDefault();
+
+    final students = await db.select(db.students).get();
+    final att = AttendanceRepository(db);
+    await att.markRoster(
+      date: DateTime(2026, 5, 12),
+      statusByStudentId: {
+        for (var i = 0; i < 6; i++)
+          students[i].id: switch (i % 3) {
+            0 => 'present',
+            1 => 'absent',
+            _ => 'leave',
+          },
+      },
+      byUserId: 1,
+      recordLeave: true,
+      now: DateTime(2026, 5, 12, 7, 40),
+    );
+
+    await _shoot(
+      tester,
+      name: '40-attendance-manual',
+      settle: const Duration(milliseconds: 600),
+      child: Scaffold(
+        body: Padding(
+          padding: const EdgeInsets.all(20),
+          child: ManualRoster(
+            sessions: sessions,
+            attendance: att,
+            academic: AcademicRepository(db),
+            session: null,
+            user: _session,
+            clock: () => DateTime(2026, 5, 12, 7, 40),
+          ),
+        ),
+      ),
+    );
+  });
+
+  testWidgets('41 — د اجازت نامې جوړول', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await db.into(db.schools).insert(SchoolsCompanion.insert(name: 'د نور لیسه'));
+    await _seedSchool(db);
+
+    await _shoot(
+      tester,
+      name: '41-leave-create',
+      settle: const Duration(milliseconds: 600),
+      child: Scaffold(
+        body: LeaveCreatePage(
+          students: StudentRepository(db),
+          academic: AcademicRepository(db),
+          leave: LeaveRepository(db),
+          session: _session,
+          clock: () => DateTime(2026, 5, 12, 9),
+          onDone: () {},
+        ),
+      ),
+      after: (tester) async {
+        // درې کسان وټاکه — چې د ډله‌ییزې اجازې حالت وښکاري.
+        final boxes = find.byType(Checkbox);
+        for (var i = 1; i <= 3; i++) {
+          await tester.tap(boxes.at(i));
+          await tester.pump();
+        }
+        await tester.pumpAndSettle();
+      },
+    );
+  });
+
+  testWidgets('42 — د مدرسې مضامین او کتابونه', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await _seedMadrasa(db);
+
+    await _shoot(
+      tester,
+      name: '42-subjects-madrasa',
+      settle: const Duration(milliseconds: 600),
+      child: Scaffold(body: SubjectsPage(academic: AcademicRepository(db))),
+    );
+  });
+
+  testWidgets('43 — د مدرسې درجې (ګریډ بڼه)', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await _seedMadrasa(db);
+
+    await _shoot(
+      tester,
+      name: '43-classes-grid',
+      settle: const Duration(milliseconds: 600),
+      child: Scaffold(
+        body: ClassesPage(
+          academic: AcademicRepository(db),
+          teachers: TeacherRepository(db),
+        ),
+      ),
+    );
+  });
+
+  testWidgets('44 — د مدرسې مهالویش (درجې × ساعتونه)', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await _seedMadrasa(db);
+
+    final timetable = TimetableRepository(db);
+    await timetable.seedDefaultSlots();
+    final academic = AcademicRepository(db);
+    final sections = await academic.sections();
+    final slots = (await timetable.slots()).where((s) => !s.isBreak).toList();
+
+    // د هرې درجې ترتیب — له خپلو کتابونو سره، ثابت نه تصادفي.
+    for (final sec in sections) {
+      final subs = await academic.subjects(gradeId: sec.gradeId);
+      final own = subs.where((s) => s.gradeId == sec.gradeId).toList();
+      for (var i = 0; i < slots.length && i < own.length; i++) {
+        await timetable.setEntry(
+          sectionId: sec.sectionId,
+          dayOfWeek: everyDay,
+          slotId: slots[i].id,
+          subjectId: own[i].id,
+        );
+      }
+    }
+
+    await _shoot(
+      tester,
+      name: '44-timetable-madrasa',
+      settle: const Duration(milliseconds: 700),
+      child: Scaffold(
+        body: TimetablePage(
+          timetable: timetable,
+          academic: academic,
+          teachers: TeacherRepository(db),
+        ),
+      ),
+    );
+  });
+
+  testWidgets('45 — فرعي سایډبار (شاګردان)', (tester) async {
+    await _shoot(
+      tester,
+      name: '45-sub-sidebar',
+      settle: const Duration(milliseconds: 500),
+      child: AppShell(
+        session: _session,
+        schoolName: 'د نور لیسه',
+        stats: _stats,
+        themeMode: ThemeMode.light,
+        onThemeChanged: (_) {},
+        onSignOut: () {},
+      ),
+      after: (tester) async {
+        await tester.tap(find.text('شاګردان').first);
+        await tester.pumpAndSettle();
+      },
+    );
+  });
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -983,6 +1331,10 @@ Future<void> _seedSchool(AppDatabase db) async {
         gender: gender,
         phone: Value('070${(1234567 + i * 4321)}'),
         status: Value(i == 12 ? 'suspended' : 'active'),
+        // **د داخلې نېټه ثابته ده، نه «نن».** که تلواله پرېښودل
+        // شوې وای، گولډن عکس به هره ورځ بدل شوی و او پرتله يې
+        // بې‌ځایه سره کوله.
+        admittedOn: Value(DateTime(2026, 3, 22)),
       ),
       guardians: [
         GuardiansCompanion.insert(fullName: father, relation: 'father'),
@@ -1002,6 +1354,69 @@ Future<void> _seedSchool(AppDatabase db) async {
     "UPDATE students SET qr_secret = 'demo-key-' || admission_no",
     updates: {db.students},
   );
+
+  // **سکونت او استوګنه — د id له مخې، نه تصادفي.** د گولډن عکس باید
+  // هر ځل یو شان وي؛ یو تصادفي ولایت به يې هره ورځ بدل کړ.
+  await db.customUpdate('''
+UPDATE students SET
+  province  = CASE id % 3 WHEN 0 THEN 'پکتیا' WHEN 1 THEN 'قندهار'
+                          ELSE 'ننگرهار' END,
+  district  = CASE id % 3 WHEN 0 THEN 'زرمت'  WHEN 1 THEN 'دامان'
+                          ELSE 'بهسود' END,
+  village   = CASE id % 2 WHEN 0 THEN 'ده نو' ELSE 'کلي بابا' END,
+  residency = CASE id % 4 WHEN 0 THEN 'boarding' ELSE 'day' END
+''', updates: {db.students});
+}
+
+/// د مدرسې بشپړ جوړښت — درجې، کتابونه، شاګردان.
+Future<void> _seedMadrasa(AppDatabase db) async {
+  await db
+      .into(db.schools)
+      .insert(
+        SchoolsCompanion.insert(
+          name: 'د نور دیني مدرسه',
+          kind: const Value('madrasa'),
+        ),
+      );
+  await AcademicRepository(db).seedMadrasaStructure(
+    yearLabel: '۱۴۰۵',
+    startsOn: DateTime(2026, 3, 21),
+    endsOn: DateTime(2026, 12, 21),
+  );
+
+  final sections = await AcademicRepository(db).sections();
+  const names = [
+    ('احمد', 'محمود'),
+    ('عبدالله', 'نور محمد'),
+    ('بلال', 'شیرخان'),
+    ('حمزه', 'عزیز'),
+    ('عمران', 'دولت'),
+    ('سمیع الله', 'فضل'),
+    ('یوسف', 'رحیم'),
+    ('صهیب', 'اسدالله'),
+  ];
+  final repo = StudentRepository(db);
+  for (var i = 0; i < names.length; i++) {
+    final (first, father) = names[i];
+    await repo.admit(
+      student: StudentsCompanion.insert(
+        admissionNo: '1405-${(i + 1).toString().padLeft(4, '0')}',
+        firstName: first,
+        fatherName: father,
+        gender: 'male',
+        residency: Value(i.isEven ? 'boarding' : 'day'),
+      ),
+      guardians: [
+        GuardiansCompanion.insert(fullName: father, relation: 'father'),
+      ],
+      sectionId: sections[i % sections.length].sectionId,
+      academicYearId: sections.first.sectionId == 0
+          ? null
+          : (await AcademicRepository(db).currentYear())!.id,
+      byUserId: 1,
+      byUserName: 'admin',
+    );
+  }
 }
 
 Widget _wizard(AppDatabase db) => AdmissionWizard(

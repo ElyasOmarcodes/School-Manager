@@ -28,6 +28,21 @@ class Schools extends Table {
   /// د اونۍ رخصتي ورځې — د شمېرو لیست، «5,6» (جمعه، پنجشنبه).
   TextColumn get weekendDays => text().withDefault(const Constant('4,5'))();
 
+  /// د مهالویش بڼه: `weekly` | `daily`
+  ///
+  /// **دا ولې دوه دي؟** مکتب هره ورځ بېل مهالویش لري — د شنبې
+  /// لومړی ساعت ریاضي، د یکشنبې لومړی ساعت پښتو. مدرسه داسې نه ده:
+  /// یو ځل د یوې درجې ترتیب جوړېږي او **هره ورځ هماغه** تدریسېږي.
+  /// نو د مدرسې جدول «درجې × ساعتونه» دی، نه «ورځې × ساعتونه».
+  TextColumn get timetableMode =>
+      text().withDefault(const Constant('weekly'))();
+
+  /// د نوي بخش تلواله ظرفیت. مدرسې لوی ټولګي لري.
+  IntColumn get defaultCapacity => integer().withDefault(const Constant(40))();
+
+  /// د ټولګیو د ښودلو بڼه: `rows` (هر ټولګی یو کتار) | `grid`
+  TextColumn get classesView => text().withDefault(const Constant('rows'))();
+
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
 
@@ -107,6 +122,17 @@ class Subjects extends Table {
   TextColumn get name => text()();
   TextColumn get code => text().nullable()();
   IntColumn get gradeId => integer().nullable().references(Grades, #id)();
+
+  /// هغه کتاب چې مضمون پرې لوستل کېږي — «قدوري (صلوة)».
+  ///
+  /// **دا د مدرسې لپاره اړین دی.** یوه مدرسه «فقه» نه تدریسوي؛
+  /// هغه د یوې ټاکلې درجې لپاره یو ټاکلی کتاب تدریسوي. پرته له
+  /// دې، د درجه ثانیه او درجه رابعه «فقه» به یو شان ښکارېدل.
+  TextColumn get book => text().nullable()();
+
+  /// `easy` | `medium` | `hard` — اختیاري، تلواله منځنی.
+  TextColumn get difficulty => text().withDefault(const Constant('medium'))();
+
   IntColumn get fullMark => integer().withDefault(const Constant(100))();
   IntColumn get passMark => integer().withDefault(const Constant(40))();
 
@@ -138,7 +164,20 @@ class Students extends Table {
   TextColumn get photoPath => text().nullable()();
 
   TextColumn get phone => text().nullable()();
+
+  /// **سکونت درې برخې لري.** یو ازاد «آدرس» ساحه د رپوټونو لپاره
+  /// بې‌ګټې وه — «کندهار» او «قندهار ښار» به دوه بېل ځایونه ګڼل
+  /// کېدل. اوس ولایت او ولسوالۍ له ثابت لیست څخه راځي.
+  TextColumn get province => text().nullable()();
+  TextColumn get district => text().nullable()();
+  TextColumn get village => text().nullable()();
+
+  /// زوړ ازاد آدرس — د زړو ریکارډونو لپاره پاتې دی.
   TextColumn get address => text().nullable()();
+
+  /// `day` (نهاري) | `boarding` (لیلیه)
+  TextColumn get residency => text().withDefault(const Constant('day'))();
+
   TextColumn get bloodGroup => text().nullable()();
   TextColumn get medicalNotes => text().nullable()();
 
@@ -151,6 +190,10 @@ class Students extends Table {
   /// کارت خپله نمبر نه، بلکې د دې کلید لاسلیک وړي.
   TextColumn get qrSecret => text().nullable()();
   IntColumn get cardVersion => integer().withDefault(const Constant(1))();
+
+  /// د ګوتې نښې پېژندنه — **اختیاري**. ټول ښوونځي سکینر نه لري،
+  /// نو دا هېڅکله د ثبت شرط نه دی.
+  TextColumn get fingerprintId => text().nullable()();
 
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
@@ -279,7 +322,16 @@ class Attendances extends Table {
   DateTimeColumn get checkOutAt => dateTime().nullable()();
 
   /// څنګه ثبت شو: `qr` | `manual_id` | `roster` | `auto`
+  /// | `manual` (له لیسټ څخه په لاس) | `finger` | `face`
   TextColumn get method => text().withDefault(const Constant('roster'))();
+
+  /// کومې ناستې پورې اړه لري. **`0` = د ورځې عمومي حاضري.**
+  ///
+  /// **ولې صفر او نه `null`؟** ځکه چې SQLite په یوځلي کلي کې `NULL`
+  /// له بل `NULL` سره برابر نه ګڼي. که دا ستنه تشېدلی وای، د ورځې
+  /// عمومي حاضري به يې هېڅ نه ساتله — یو شاګرد به سل ځله ثبتېده او
+  /// قید به نه ماتېده. صفر یو ریښتینی ارزښت دی، نو کلی کار کوي.
+  IntColumn get sessionId => integer().withDefault(const Constant(0))();
 
   /// که د اجازت‌نامې له امله «رخصت» شوی وي، دلته يې تړاو دی.
   IntColumn get leaveRequestId => integer().nullable()();
@@ -293,9 +345,12 @@ class Attendances extends Table {
       boolean().withDefault(const Constant(false))();
   DateTimeColumn get parentNotifiedAt => dateTime().nullable()();
 
+  /// **یوځلي کلی اوس ناسته هم لري.** پرته له دې، د شپې حاضري به
+  /// د سهار ریکارډ بدل کړ — یو شاګرد چې سهار حاضر و او ماښام
+  /// غیرحاضر، به یوازې یو حالت درلود.
   @override
   List<Set<Column>> get uniqueKeys => [
-    {studentId, date},
+    {studentId, date, sessionId},
   ];
 }
 

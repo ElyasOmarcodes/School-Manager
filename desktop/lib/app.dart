@@ -8,6 +8,7 @@ import 'core/theme/app_theme.dart';
 import 'data/db/database.dart';
 import 'data/repositories/academic_repository.dart';
 import 'data/repositories/attendance_repository.dart';
+import 'data/repositories/attendance_session_repository.dart';
 import 'data/repositories/device_repository.dart';
 import 'data/repositories/exam_repository.dart';
 import 'data/repositories/fee_repository.dart';
@@ -121,6 +122,8 @@ class _SchoolManagerAppState extends State<SchoolManagerApp> {
     await AcademicRepository(db).seedDefaultSubjects();
     await TimetableRepository(db).seedDefaultSlots();
     await FeeRepository(db).seedDefaultTypes();
+    // لږ تر لږه یوه د حاضرۍ ناسته — «د ورځې حاضري».
+    await AttendanceSessionRepository(db).seedDefault();
     _server = LocalServer(
       ApiDeps.of(db, schoolName: () => _schoolName),
     );
@@ -152,11 +155,17 @@ class _SchoolManagerAppState extends State<SchoolManagerApp> {
     // تلواله ټولګي (۱–۱۲، هر یو دوه بخشونه) او روان کال جوړوو.
     // پرته له دې به نوی ښوونځی د داخلې پاڼه پرانیزي او هېڅ ټولګی
     // ونه ویني. له تنظیماتو څخه بدلېدی شي.
+    //
+    // **مدرسه بېل جوړښت اخلي.** د پوهنې وزارت نصاب صنفونه نه لري،
+    // درجې لري — او د هرې درجې خپل کتابونه. که د مکتب دوولس ټولګي
+    // ورته جوړ شوي وای، مدیر به يې ټول ړنګول او له سره لیکل.
     final now = DateTime.now();
+    final madrasa = r.schoolKind == 'madrasa' || r.schoolKind == 'both';
     await AcademicRepository(db).seedDefaults(
       yearLabel: '${now.year}',
       startsOn: DateTime(now.year, 1, 1),
       endsOn: DateTime(now.year, 12, 31),
+      madrasa: madrasa,
     );
 
     final auth = AuthService(db);
@@ -329,6 +338,7 @@ class _SchoolManagerAppState extends State<SchoolManagerApp> {
       payrollRepo: PayrollRepository(_db!),
       userRepo: UserRepository(_db!),
       reportRepo: ReportRepository(_db!),
+      sessionRepo: AttendanceSessionRepository(_db!),
       server: _server,
       db: _db,
       config: _config,

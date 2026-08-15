@@ -7,6 +7,7 @@ import '../../core/theme/app_motion.dart';
 import '../../data/db/database.dart';
 import '../../data/repositories/academic_repository.dart';
 import '../../data/repositories/attendance_repository.dart';
+import '../../data/repositories/attendance_session_repository.dart';
 import '../../data/repositories/device_repository.dart';
 import '../../data/repositories/exam_repository.dart';
 import '../../data/repositories/fee_repository.dart';
@@ -23,10 +24,15 @@ import '../../data/repositories/user_repository.dart';
 import '../../server/local_server.dart';
 import '../auth/auth_service.dart';
 import '../dashboard/dashboard_page.dart';
-import '../students/admission_wizard.dart';
 import '../attendance/attendance_page.dart';
+import '../attendance/session_settings_page.dart';
+import '../attendance/sessions_page.dart';
 import '../classes/classes_page.dart';
+import '../leave/leave_create_page.dart';
 import '../leave/leave_page.dart';
+import '../students/enroll_page.dart';
+import '../students/student_profile_page.dart';
+import '../subjects/subjects_page.dart';
 import '../exams/exams_page.dart';
 import '../fees/fees_page.dart';
 import '../id_cards/id_cards_page.dart';
@@ -76,6 +82,9 @@ class AppShell extends StatefulWidget {
   final UserRepository? userRepo;
   final ReportRepository? reportRepo;
 
+  /// د حاضرۍ ناستې — که `null` وي، یوازې د ورځې عمومي حاضري ښکاري.
+  final AttendanceSessionRepository? sessionRepo;
+
   const AppShell({
     super.key,
     required this.session,
@@ -103,6 +112,7 @@ class AppShell extends StatefulWidget {
     this.payrollRepo,
     this.userRepo,
     this.reportRepo,
+    this.sessionRepo,
   });
 
   @override
@@ -113,20 +123,57 @@ class _AppShellState extends State<AppShell> {
   String _route = '/dashboard';
   bool _expanded = true;
 
-  /// د شاګردانو پاڼه دوه حالته لري: لیست او د داخلې ویزارډ.
-  /// دا حالت دلته دی نه په پاڼه کې، چې د سایډبار بدلون يې پاک کړي.
-  bool _admitting = false;
-
   /// د لیست د بیا-بارولو لپاره — کله چې نوی شاګرد ثبت شي.
   int _studentsRevision = 0;
 
+  /// کوم شاګرد پرانیستل شوی — `null` یعنې لیست ښکاري.
+  ///
+  /// **دا ولې په shell کې دی؟** ځکه چې د سایډبار هر کلیک يې باید
+  /// پاک کړي. که د پاڼې دننه وای، له «مضامین» څخه بېرته راتګ به
+  /// هماغه زوړ پروفایل بیا پرانیستی و.
+  int? _openStudentId;
+
+  /// کومه د حاضرۍ ناسته پرانیستل شوې — `null` یعنې لیست ښکاري.
+  AttendanceSession? _openSession;
+
+  /// د توکي هغه لار چې سرلیک ترې راځي — فرعي لار د مور لار ته ځي.
   NavItem? get _currentItem {
     for (final g in buildNav()) {
       for (final i in g.items) {
-        if (i.route == _route) return i;
+        if (i.owns(_route)) return i;
       }
     }
     return null;
+  }
+
+  NavSubItem? get _currentSub {
+    for (final g in buildNav()) {
+      for (final i in g.items) {
+        for (final c in i.children) {
+          if (c.route == _route) return c;
+        }
+      }
+    }
+    return null;
+  }
+
+  void _go(String route) {
+    setState(() {
+      _route = route;
+      _openStudentId = null;
+      _openSession = null;
+    });
+  }
+
+  void _toast(String text, Color color) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        width: 460,
+        backgroundColor: color,
+        content: Text(text),
+      ),
+    );
   }
 
   @override
@@ -143,16 +190,14 @@ class _AppShellState extends State<AppShell> {
             expanded: _expanded,
             schoolName: widget.schoolName,
             onToggle: () => setState(() => _expanded = !_expanded),
-            onNavigate: (r) => setState(() {
-              _route = r;
-              _admitting = false;
-            }),
+            onNavigate: _go,
           ),
           Expanded(
             child: Column(
               children: [
                 _TopBar(
                   item: _currentItem,
+                  sub: _currentSub,
                   session: widget.session,
                   themeMode: widget.themeMode,
                   onThemeChanged: widget.onThemeChanged,
@@ -181,7 +226,9 @@ class _AppShellState extends State<AppShell> {
                       ),
                     ),
                     child: KeyedSubtree(
-                      key: ValueKey('$_route/$_admitting'),
+                      key: ValueKey(
+                        '$_route/$_openStudentId/${_openSession?.id}',
+                      ),
                       child: _buildPage(),
                     ),
                   ),
@@ -198,40 +245,63 @@ class _AppShellState extends State<AppShell> {
     if (_route == '/dashboard') {
       return DashboardPage(stats: widget.stats);
     }
-    if (_route == '/students' && widget.studentRepo != null) {
-      if (_admitting && widget.academicRepo != null) {
-        return AdmissionWizard(
-          students: widget.studentRepo!,
-          academic: widget.academicRepo!,
+    final academic = widget.academicRepo;
+    final teachers = widget.teacherRepo;
+    final students = widget.studentRepo;
+    final dbPath = widget.config?.databasePath;
+
+    // ── شاګردان ─────────────────────────────────────────
+    if (_route == '/students' && students != null) {
+      if (_openStudentId != null && academic != null) {
+        return StudentProfilePage(
+          studentId: _openStudentId!,
+          students: students,
+          academic: academic,
           session: widget.session,
-          onCancel: () => setState(() => _admitting = false),
-          onAdmitted: (id, admissionNo) {
-            setState(() {
-              _admitting = false;
-              _studentsRevision++;
-            });
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                behavior: SnackBarBehavior.floating,
-                width: 420,
-                backgroundColor: AppColors.success,
-                content: Text('شاګرد ثبت شو — د داخلې نمبر $admissionNo'),
-              ),
-            );
-          },
+          databasePath: dbPath,
+          onBack: () => setState(() {
+            _openStudentId = null;
+            _studentsRevision++;
+          }),
         );
       }
       return StudentsPage(
         key: ValueKey('students-$_studentsRevision'),
-        repo: widget.studentRepo!,
-        onAddStudent: widget.academicRepo == null
+        repo: students,
+        academic: academic,
+        onOpenStudent: academic == null
             ? null
-            : () => setState(() => _admitting = true),
+            : (id) => setState(() => _openStudentId = id),
+        onAddStudent: academic == null
+            ? null
+            : () => _go('/students/enroll'),
       );
     }
-    final academic = widget.academicRepo;
-    final teachers = widget.teacherRepo;
-    final students = widget.studentRepo;
+
+    if (_route == '/students/enroll' &&
+        students != null &&
+        academic != null) {
+      return EnrollPage(
+        students: students,
+        academic: academic,
+        session: widget.session,
+        databasePath: dbPath,
+        onDone: ({String? message}) {
+          setState(() {
+            _route = '/students';
+            _studentsRevision++;
+          });
+          if (message != null) _toast(message, AppColors.success);
+        },
+      );
+    }
+
+    if (_route == '/subjects' && academic != null) {
+      return SubjectsPage(
+        academic: academic,
+        canEdit: widget.session.permissions.can('classes', Perm.edit),
+      );
+    }
 
     if (_route == '/id-cards' && students != null && academic != null) {
       return IdCardsPage(
@@ -240,23 +310,76 @@ class _AppShellState extends State<AppShell> {
         schoolName: widget.schoolName,
       );
     }
-    if (_route == '/attendance' &&
-        widget.attendanceRepo != null &&
-        academic != null) {
-      return AttendancePage(
-        attendance: widget.attendanceRepo!,
-        academic: academic,
-        session: widget.session,
+    // ── حاضري ───────────────────────────────────────────
+    final attendance = widget.attendanceRepo;
+    final sessions = widget.sessionRepo;
+
+    if (_route == '/attendance' && attendance != null && academic != null) {
+      // د ناستو لیست لومړی — بیا سکینر. که ناستې شتون ونه لري
+      // (زوړ حالت)، مستقیم سکینر ښکاري.
+      if (sessions == null) {
+        return AttendancePage(
+          attendance: attendance,
+          academic: academic,
+          session: widget.session,
+        );
+      }
+      if (_openSession != null) {
+        return AttendancePage(
+          attendance: attendance,
+          academic: academic,
+          session: widget.session,
+          sessions: sessions,
+          attendanceSession: _openSession,
+          onBack: () => setState(() => _openSession = null),
+        );
+      }
+      return SessionsPage(
+        sessions: sessions,
+        onOpen: (s) => setState(() => _openSession = s),
+        onCreate: widget.session.permissions.can('attendance', Perm.create)
+            ? () => _go('/attendance/new')
+            : null,
       );
     }
+
+    if ((_route == '/attendance/new' || _route == '/attendance/settings') &&
+        sessions != null &&
+        academic != null) {
+      return SessionSettingsPage(
+        key: ValueKey(_route),
+        sessions: sessions,
+        academic: academic,
+        startWithNew: _route == '/attendance/new',
+        canEdit: widget.session.permissions.can('attendance', Perm.edit),
+      );
+    }
+
+    // ── اجازت نامې ──────────────────────────────────────
     if (_route == '/leave' && widget.leaveRepo != null) {
       return LeavePage(repo: widget.leaveRepo!, session: widget.session);
+    }
+    if (_route == '/leave/new' &&
+        widget.leaveRepo != null &&
+        students != null &&
+        academic != null) {
+      return LeaveCreatePage(
+        students: students,
+        academic: academic,
+        leave: widget.leaveRepo!,
+        session: widget.session,
+        onDone: () => _go('/leave'),
+      );
     }
     if (_route == '/teachers' && teachers != null) {
       return TeachersPage(repo: teachers, session: widget.session);
     }
     if (_route == '/classes' && academic != null && teachers != null) {
-      return ClassesPage(academic: academic, teachers: teachers);
+      return ClassesPage(
+        academic: academic,
+        teachers: teachers,
+        canEdit: widget.session.permissions.can('classes', Perm.edit),
+      );
     }
     if (_route == '/messages' &&
         widget.messageRepo != null &&
@@ -342,6 +465,7 @@ class _AppShellState extends State<AppShell> {
 
 class _TopBar extends StatelessWidget {
   final NavItem? item;
+  final NavSubItem? sub;
   final Session session;
   final ThemeMode themeMode;
   final ValueChanged<ThemeMode> onThemeChanged;
@@ -349,6 +473,7 @@ class _TopBar extends StatelessWidget {
 
   const _TopBar({
     required this.item,
+    required this.sub,
     required this.session,
     required this.themeMode,
     required this.onThemeChanged,
@@ -381,6 +506,21 @@ class _TopBar extends StatelessWidget {
                 color: p.ink,
               ),
             ),
+            // فرعي پاڼه — د «شاګردان › نوې نوم لیکنه» په بڼه، چې
+            // کارن پوه شي په کوم ژور ځای کې دی.
+            if (sub != null && sub!.route != item!.route) ...[
+              const SizedBox(width: 8),
+              Icon(Icons.chevron_left_rounded, size: 17, color: p.faint),
+              const SizedBox(width: 4),
+              Text(
+                sub!.label(s),
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: p.muted,
+                ),
+              ),
+            ],
           ],
           const Spacer(),
 

@@ -473,6 +473,7 @@ ORDER BY s.id, es.sort_order
         lastName: first.data['last_name'] as String?,
         fatherName: first.read<String>('father_name'),
         gender: first.read<String>('gender'),
+        residency: 'day',
         status: first.read<String>('s_status'),
         cardVersion: first.read<int>('card_version'),
         admittedOn: first.read<DateTime>('admitted_on'),

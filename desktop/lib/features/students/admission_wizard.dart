@@ -1,16 +1,23 @@
+import 'dart:io';
+
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../core/data/afghanistan.dart';
 import '../../core/l10n/strings.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_motion.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/numerals.dart';
+import '../../core/utils/photo_store.dart';
+import '../../core/widgets/panel.dart';
+import '../../core/widgets/typeahead_field.dart';
 import '../../data/db/database.dart';
 import '../../data/repositories/academic_repository.dart';
 import '../../data/repositories/student_repository.dart';
 import '../auth/auth_service.dart';
+import 'photo_picker.dart';
 
 /// د داخلې نمبر مختاړی د زده‌کړې کال له نښې څخه.
 ///
@@ -25,15 +32,19 @@ String admissionPrefix(String? yearLabel) {
   return digits.isEmpty ? '0000' : digits;
 }
 
-/// د نوي شاګرد د داخلې ویزارډ — څلور ګامونه.
+/// د نوي شاګرد د داخلې ویزارډ — پنځه ګامونه.
 ///
 /// ولې ویزارډ او نه یوه اوږده فورمه؟ د داخلې فورمه ~۲۵ خانې لري.
 /// په یوه پاڼه کې يې ښودل د ریسیپشن کارکوونکی ستړی کوي او تېروتنې
-/// زیاتوي. څلور کوچني ګامونه، هر یو له خپلې کتنې سره.
+/// زیاتوي. پنځه کوچني ګامونه، هر یو له خپلې کتنې سره.
 class AdmissionWizard extends StatefulWidget {
   final StudentRepository students;
   final AcademicRepository academic;
   final Session session;
+
+  /// د انځورونو د ذخیره کولو لپاره — که `null` وي، د انځور ګام
+  /// یوازې پرته له عکسه ښکاري.
+  final String? databasePath;
 
   /// د بریالۍ داخلې وروسته د نوي شاګرد آی‌ډي راګرځوي.
   final void Function(int studentId, String admissionNo) onAdmitted;
@@ -46,6 +57,7 @@ class AdmissionWizard extends StatefulWidget {
     required this.session,
     required this.onAdmitted,
     required this.onCancel,
+    this.databasePath,
   });
 
   @override
@@ -53,7 +65,12 @@ class AdmissionWizard extends StatefulWidget {
 }
 
 class _AdmissionWizardState extends State<AdmissionWizard> {
-  static const int _steps = 4;
+  /// پنځه ګامونه: شاګرد ← سکونت او انځور ← سرپرست ← ټولګی ← بیاکتنه.
+  ///
+  /// **سکونت ولې خپل ګام لري؟** ځکه چې دری ساحې (ولایت، ولسوالۍ،
+  /// کلی) او د انځور اخیستل په یوه اوږده کرښه کې ګډ شوي وای، لومړی
+  /// ګام به دومره اوږد و چې کارن به يې نیمایي نه لیدل.
+  static const int _steps = 5;
   int _step = 0;
 
   // ── ګام ۰: شاګرد ────────────────────────────────────────
@@ -66,7 +83,15 @@ class _AdmissionWizardState extends State<AdmissionWizard> {
   String _gender = 'male';
   DateTime? _birthDate;
 
-  // ── ګام ۱: سرپرست ───────────────────────────────────────
+  // ── ګام ۱: سکونت، استوګنه او انځور ──────────────────────
+  final _village = TextEditingController();
+  final _fingerprint = TextEditingController();
+  String? _province;
+  String? _district;
+  String _residency = 'day';
+  String? _photoPath;
+
+  // ── ګام ۲: سرپرست ───────────────────────────────────────
   final _guardianName = TextEditingController();
   final _guardianPhone = TextEditingController();
   final _guardianAltPhone = TextEditingController();
@@ -75,12 +100,12 @@ class _AdmissionWizardState extends State<AdmissionWizard> {
   String _relation = 'father';
   String _channel = 'sms';
 
-  // ── ګام ۲: ټولګی ────────────────────────────────────────
+  // ── ګام ۳: ټولګی ────────────────────────────────────────
   List<SectionOption> _sections = const [];
   int? _sectionId;
   bool _loadingSections = true;
 
-  // ── ګام ۳: ثبت ──────────────────────────────────────────
+  // ── ګام ۴: ثبت ──────────────────────────────────────────
   String? _admissionNo;
   bool _submitting = false;
   String? _error;
@@ -109,6 +134,8 @@ class _AdmissionWizardState extends State<AdmissionWizard> {
       _guardianAltPhone,
       _guardianJob,
       _address,
+      _village,
+      _fingerprint,
     ]) {
       c.dispose();
     }
@@ -146,8 +173,10 @@ class _AdmissionWizardState extends State<AdmissionWizard> {
   bool get _stepValid => switch (_step) {
     0 =>
       _firstName.text.trim().isNotEmpty && _fatherName.text.trim().isNotEmpty,
-    1 => _guardianName.text.trim().isNotEmpty,
-    2 => true, // ټولګی اختیاري دی — شاګرد د ټولګي پرته هم ثبتېدی شي
+    // سکونت اختیاري دی — ډېر وخت د داخلې پر مهال نه معلومېږي.
+    1 => true,
+    2 => _guardianName.text.trim().isNotEmpty,
+    3 => true, // ټولګی اختیاري دی — شاګرد د ټولګي پرته هم ثبتېدی شي
     _ => true,
   };
 
@@ -177,6 +206,12 @@ class _AdmissionWizardState extends State<AdmissionWizard> {
           nationalId: Value(_text(_nationalId)),
           phone: Value(_digits(_guardianPhone)),
           address: Value(_text(_address)),
+          province: Value(_province),
+          district: Value(_district),
+          village: Value(_text(_village)),
+          residency: Value(_residency),
+          photoPath: Value(_photoPath),
+          fingerprintId: Value(_text(_fingerprint)),
         ),
         guardians: [
           GuardiansCompanion.insert(
@@ -287,10 +322,145 @@ class _AdmissionWizardState extends State<AdmissionWizard> {
 
   Widget _buildStep() => switch (_step) {
     0 => _studentStep(),
-    1 => _guardianStep(),
-    2 => _classStep(),
+    1 => _residenceStep(),
+    2 => _guardianStep(),
+    3 => _classStep(),
     _ => _reviewStep(),
   };
+
+  // ── ګام ۱: سکونت، استوګنه، انځور ────────────────────────
+
+  Widget _residenceStep() {
+    final s = S.of(context);
+    final p = context.palette;
+
+    return _StepBody(
+      title: 'سکونت او انځور',
+      subtitle: 'ټول اختیاري دي — وروسته له پروفایل څخه هم ډکېدی شي.',
+      children: [
+        _Row2(
+          left: TypeAheadField(
+            label: s.province,
+            icon: Icons.map_rounded,
+            value: _province,
+            options: provinceNames,
+            // د ولایت بدلون ولسوالۍ پاکوي — که نه، د کندهار
+            // ولسوالۍ به د هرات سره پاتې وه.
+            onChanged: (v) => setState(() {
+              _province = v;
+              _district = null;
+            }),
+          ),
+          right: TypeAheadField(
+            label: s.district,
+            icon: Icons.place_rounded,
+            enabled: _province != null,
+            hint: _province == null ? 'لومړی ولایت وټاکئ' : null,
+            value: _district,
+            options: districtsOf(_province),
+            onChanged: (v) => setState(() => _district = v),
+          ),
+        ),
+        _Row2(
+          left: _Field(label: s.village, controller: _village),
+          right: _Field(
+            label: '${s.fingerprint} — اختیاري',
+            controller: _fingerprint,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          s.residency,
+          style: TextStyle(fontSize: 12, color: p.faint),
+        ),
+        const SizedBox(height: 7),
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: SegmentedChoice<String>(
+            value: _residency,
+            color: AppColors.modHostel,
+            options: [
+              (
+                value: 'day',
+                label: s.dayScholar,
+                icon: Icons.wb_sunny_rounded,
+              ),
+              (
+                value: 'boarding',
+                label: s.boarder,
+                icon: Icons.night_shelter_rounded,
+              ),
+            ],
+            onChanged: (v) => setState(() => _residency = v),
+          ),
+        ),
+        const SizedBox(height: 18),
+        Row(
+          children: [
+            _PhotoBox(path: _photoPath),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    s.photo,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: p.ink,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'انځور د ډیټابیس تر څنګ ساتل کېږي، نو د بیک‌اپ سره ځي.',
+                    style: TextStyle(fontSize: 11.5, color: p.muted),
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: widget.databasePath == null || _admissionNo == null
+                            ? null
+                            : _pickPhoto,
+                        icon: const Icon(
+                          Icons.add_a_photo_rounded,
+                          size: 16,
+                        ),
+                        label: Text(
+                          _photoPath == null ? s.photo : 'بدل کړه',
+                        ),
+                      ),
+                      if (_photoPath != null) ...[
+                        const SizedBox(width: 8),
+                        TextButton(
+                          onPressed: () => setState(() => _photoPath = null),
+                          child: Text(s.delete),
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Future<void> _pickPhoto() async {
+    final db = widget.databasePath;
+    final no = _admissionNo;
+    if (db == null || no == null) return;
+    final path = await pickStudentPhoto(
+      context,
+      store: PhotoStore(db),
+      admissionNo: no,
+    );
+    if (path != null && mounted) setState(() => _photoPath = path);
+  }
 
   // ── ګام ۰ ───────────────────────────────────────────────
 
@@ -341,7 +511,7 @@ class _AdmissionWizardState extends State<AdmissionWizard> {
     );
   }
 
-  // ── ګام ۱ ───────────────────────────────────────────────
+  // ── ګام ۲ ───────────────────────────────────────────────
 
   Widget _guardianStep() {
     return _StepBody(
@@ -402,7 +572,7 @@ class _AdmissionWizardState extends State<AdmissionWizard> {
     );
   }
 
-  // ── ګام ۲ ───────────────────────────────────────────────
+  // ── ګام ۳ ───────────────────────────────────────────────
 
   Widget _classStep() {
     final p = context.palette;
@@ -466,7 +636,7 @@ class _AdmissionWizardState extends State<AdmissionWizard> {
     );
   }
 
-  // ── ګام ۳ ───────────────────────────────────────────────
+  // ── ګام ۴ ───────────────────────────────────────────────
 
   Widget _reviewStep() {
     final s = S.of(context);
@@ -519,6 +689,18 @@ class _AdmissionWizardState extends State<AdmissionWizard> {
           },
         ),
         _ReviewGroup(
+          title: 'سکونت',
+          rows: {
+            s.province: _province ?? '—',
+            s.district: _district ?? '—',
+            s.village: _village.text.trim().isEmpty
+                ? '—'
+                : _village.text.trim(),
+            s.residency: _residency == 'boarding' ? s.boarder : s.dayScholar,
+            s.photo: _photoPath == null ? 'نشته' : 'ثبت شوی',
+          },
+        ),
+        _ReviewGroup(
           title: 'ټولګی',
           rows: {'بخش': section?.label ?? 'نه دی ټاکل شوی'},
         ),
@@ -530,6 +712,35 @@ class _AdmissionWizardState extends State<AdmissionWizard> {
 // ═══════════════════════════════════════════════════════════
 //  د ویزارډ ټوټې
 // ═══════════════════════════════════════════════════════════
+
+/// د انځور کوچنی مخکتنی چوکاټ.
+class _PhotoBox extends StatelessWidget {
+  final String? path;
+  const _PhotoBox({required this.path});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final file = path == null ? null : File(path!);
+    final ok = file != null && file.existsSync();
+
+    return Container(
+      width: 88,
+      height: 106,
+      decoration: BoxDecoration(
+        color: p.surfaceAlt,
+        borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+        border: Border.all(color: p.line),
+        image: ok
+            ? DecorationImage(image: FileImage(file), fit: BoxFit.cover)
+            : null,
+      ),
+      child: ok
+          ? null
+          : Icon(Icons.person_rounded, size: 34, color: p.faint),
+    );
+  }
+}
 
 class _Header extends StatelessWidget {
   final int step;

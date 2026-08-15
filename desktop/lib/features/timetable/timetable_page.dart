@@ -5,6 +5,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_motion.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/numerals.dart';
+import '../../core/widgets/panel.dart';
 import '../../data/db/database.dart';
 import '../../data/repositories/academic_repository.dart';
 import '../../data/repositories/teacher_repository.dart';
@@ -42,6 +43,12 @@ class _TimetablePageState extends State<TimetablePage> {
   List<Teacher> _teachers = const [];
   List<TimetableConflict> _conflicts = const [];
 
+  /// `weekly` (مکتب) یا `daily` (مدرسه).
+  String _mode = 'weekly';
+  DailyGrid? _daily;
+
+  bool get _isDaily => _mode == 'daily';
+
   @override
   void initState() {
     super.initState();
@@ -53,25 +60,51 @@ class _TimetablePageState extends State<TimetablePage> {
     await widget.timetable.seedDefaultSlots();
 
     final sections = await widget.academic.sections();
+    final school = await widget.academic.school();
     if (!mounted) return;
     setState(() {
       _sections = sections;
       _section = sections.isEmpty ? null : sections.first;
+      _mode = school?.timetableMode ?? 'weekly';
     });
     await _load();
   }
 
+  Future<void> _setMode(String v) async {
+    setState(() => _mode = v);
+    await widget.academic.setTimetableMode(v);
+    await _load();
+  }
+
   Future<void> _load() async {
+    setState(() => _loading = true);
+    final teachers = await widget.teachers.activeTeachers();
+
+    if (_isDaily) {
+      // د مدرسې حالت: یو جدول، ټولې درجې. د مضمونونو لیست دلته
+      // ټول دی، ځکه چې هر کتار خپله درجه ده — د خانې ډیالوګ يې
+      // بیا د هغه کتار له مخې تنګوي.
+      final daily = await widget.timetable.dailyGrid();
+      final subjects = await widget.academic.subjects();
+      if (!mounted) return;
+      setState(() {
+        _daily = daily;
+        _subjects = subjects;
+        _teachers = teachers;
+        _conflicts = const [];
+        _loading = false;
+      });
+      return;
+    }
+
     final s = _section;
     if (s == null) {
       setState(() => _loading = false);
       return;
     }
-    setState(() => _loading = true);
 
     final grid = await widget.timetable.grid(sectionId: s.sectionId);
     final subjects = await widget.academic.subjects(gradeId: s.gradeId);
-    final teachers = await widget.teachers.activeTeachers();
     final conflicts = await widget.timetable.conflicts();
 
     if (!mounted) return;
@@ -82,6 +115,62 @@ class _TimetablePageState extends State<TimetablePage> {
       _conflicts = conflicts;
       _loading = false;
     });
+  }
+
+  /// د مدرسې د یوې خانې سمون — کتار یوه درجه ده، نه یوه ورځ.
+  Future<void> _editDailyCell(int sectionId, TimeSlot slot) async {
+    final existing = _daily?.at(sectionId, slot.id);
+    final row = _sections.where((x) => x.sectionId == sectionId).firstOrNull;
+
+    // یوازې د هماغې درجې مضمونونه — یوه درجه د بلې کتابونه نه لري.
+    final subjects = row == null
+        ? _subjects
+        : await widget.academic.subjects(gradeId: row.gradeId);
+    if (!mounted) return;
+
+    final result = await showDialog<_CellEdit>(
+      context: context,
+      builder: (_) => _CellDialog(
+        day: everyDay,
+        slot: slot,
+        subjects: subjects,
+        teachers: _teachers,
+        current: existing,
+      ),
+    );
+    if (result == null || !mounted) return;
+
+    if (result.clear) {
+      await widget.timetable.clearEntry(
+        sectionId: sectionId,
+        dayOfWeek: everyDay,
+        slotId: slot.id,
+      );
+      await _load();
+      return;
+    }
+
+    final outcome = await widget.timetable.setEntry(
+      sectionId: sectionId,
+      dayOfWeek: everyDay,
+      slotId: slot.id,
+      subjectId: result.subjectId!,
+      teacherId: result.teacherId,
+      room: result.room,
+    );
+    if (!mounted) return;
+
+    switch (outcome) {
+      case SetEntryOk():
+        await _load();
+      case SetEntryTeacherBusy(
+        teacherName: final t,
+        otherSection: final other,
+      ):
+        _warn('$t پر همدې ساعت په «$other» کې بوخت دی.');
+      case SetEntryRoomBusy(room: final r, otherSection: final other):
+        _warn('خونه «$r» پر همدې ساعت «$other» نیولې ده.');
+    }
   }
 
   Future<void> _editCell(int day, TimeSlot slot) async {
@@ -159,21 +248,48 @@ class _TimetablePageState extends State<TimetablePage> {
           FadeSlideIn(
             child: Row(
               children: [
-                _SectionPicker(
-                  sections: _sections,
-                  selected: _section,
-                  onPicked: (s) {
-                    setState(() => _section = s);
-                    _load();
-                  },
-                ),
-                const SizedBox(width: 14),
-                if (grid != null)
+                if (!_isDaily) ...[
+                  _SectionPicker(
+                    sections: _sections,
+                    selected: _section,
+                    onPicked: (s) {
+                      setState(() => _section = s);
+                      _load();
+                    },
+                  ),
+                  const SizedBox(width: 14),
+                ],
+                if (_isDaily && _daily != null)
+                  Text(
+                    '${locale.num(_daily!.filled)} له '
+                    '${locale.num(_daily!.capacity)} خانو ډکې  ·  '
+                    'یو ترتیب چې هره ورځ تکرارېږي',
+                    style: TextStyle(fontSize: 12.5, color: p.muted),
+                  )
+                else if (grid != null)
                   Text(
                     '${locale.num(grid.filled)} له '
                     '${locale.num(grid.capacity)} خانو ډکې',
                     style: TextStyle(fontSize: 12.5, color: p.muted),
                   ),
+                const SizedBox(width: 14),
+                SegmentedChoice<String>(
+                  value: _mode,
+                  color: AppColors.modTimetable,
+                  options: const [
+                    (
+                      value: 'weekly',
+                      label: 'اونیز (مکتب)',
+                      icon: Icons.calendar_view_week_rounded,
+                    ),
+                    (
+                      value: 'daily',
+                      label: 'درجې (مدرسه)',
+                      icon: Icons.table_rows_rounded,
+                    ),
+                  ],
+                  onChanged: _setMode,
+                ),
                 const Spacer(),
                 if (_conflicts.isNotEmpty)
                   Container(
@@ -212,14 +328,20 @@ class _TimetablePageState extends State<TimetablePage> {
           Expanded(
             child: _loading
                 ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
-                : grid == null || _sections.isEmpty
+                : _sections.isEmpty
                 ? Center(
                     child: Text(
                       'لومړی ټولګي جوړ کړئ.',
                       style: TextStyle(fontSize: 13, color: p.muted),
                     ),
                   )
-                : _buildGrid(grid),
+                : _isDaily
+                ? (_daily == null
+                      ? const SizedBox.shrink()
+                      : _buildDaily(_daily!))
+                : (grid == null
+                      ? const SizedBox.shrink()
+                      : _buildGrid(grid)),
           ),
         ],
       ),
@@ -276,6 +398,153 @@ class _TimetablePageState extends State<TimetablePage> {
                 onTap: slot.isBreak ? null : _editCell,
               ),
           ],
+        ),
+      ),
+    );
+  }
+
+  /// **د مدرسې جدول** — کتارونه درجې دي، ستنې ساعتونه (له تفریح سره).
+  ///
+  /// دلته تفریح یوه **ستنه** ده، نه یو کتار — ځکه چې د ټولو درجو
+  /// تفریح په یوه وخت کې ده، نو یوه نرۍ ستنه بس ده او د هرې درجې
+  /// د ورځې ټول ترتیب په یوه کتار کې لیدل کېږي.
+  Widget _buildDaily(DailyGrid daily) {
+    final p = context.palette;
+    final locale = S.of(context).locale;
+
+    if (daily.rows.isEmpty) {
+      return Center(
+        child: Text(
+          'لومړی درجې جوړې کړئ.',
+          style: TextStyle(fontSize: 13, color: p.muted),
+        ),
+      );
+    }
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: SingleChildScrollView(
+        child: Container(
+          decoration: BoxDecoration(
+            color: p.surface,
+            borderRadius: BorderRadius.circular(AppTheme.radius),
+            border: Border.all(color: p.line),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            children: [
+              // سرلیک — د ساعتونو نومونه او وختونه.
+              Container(
+                color: p.surfaceAlt,
+                child: Row(
+                  children: [
+                    const SizedBox(width: 150),
+                    for (final slot in daily.slots)
+                      Container(
+                        width: slot.isBreak ? 62 : 150,
+                        height: 50,
+                        alignment: Alignment.center,
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        decoration: BoxDecoration(
+                          color: slot.isBreak
+                              ? AppColors.warning.withValues(alpha: 0.07)
+                              : null,
+                          border: Border(right: BorderSide(color: p.line)),
+                        ),
+                        // د تفریح ستنه نرۍ ده — یوازې نوم پکې ځایېږي.
+                        // وخت يې په tooltip کې دی.
+                        child: slot.isBreak
+                            ? Tooltip(
+                                message:
+                                    '${locale.num(slot.startTime)}–'
+                                    '${locale.num(slot.endTime)}',
+                                child: Text(
+                                  locale.num(slot.name),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.warning,
+                                  ),
+                                ),
+                              )
+                            : Column(
+                                mainAxisSize: MainAxisSize.min,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    locale.num(slot.name),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                      color: p.inkSoft,
+                                    ),
+                                  ),
+                                  Text(
+                                    '${locale.num(slot.startTime)}–'
+                                    '${locale.num(slot.endTime)}',
+                                    style: AppTheme.tabular(
+                                      TextStyle(fontSize: 9.5, color: p.faint),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                      ),
+                  ],
+                ),
+              ),
+              for (final row in daily.rows)
+                Container(
+                  decoration: BoxDecoration(
+                    border: Border(top: BorderSide(color: p.line)),
+                  ),
+                  child: IntrinsicHeight(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Container(
+                          width: 150,
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          alignment: AlignmentDirectional.centerStart,
+                          decoration: BoxDecoration(
+                            color: p.surfaceAlt,
+                            border: Border(left: BorderSide(color: p.line)),
+                          ),
+                          child: Text(
+                            row.label,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: p.ink,
+                            ),
+                          ),
+                        ),
+                        for (final slot in daily.slots)
+                          SizedBox(
+                            width: slot.isBreak ? 62 : 150,
+                            child: slot.isBreak
+                                ? Container(
+                                    color: AppColors.warning.withValues(
+                                      alpha: 0.05,
+                                    ),
+                                  )
+                                : _Cell(
+                                    cell: daily.at(row.sectionId, slot.id),
+                                    onTap: () => _editDailyCell(
+                                      row.sectionId,
+                                      slot,
+                                    ),
+                                  ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -455,14 +724,16 @@ class _CellState extends State<_Cell> {
                       ),
                     ),
                     const SizedBox(height: 2),
+                    // کتاب لومړیتوب لري — د مدرسې د جدول ارزښت
+                    // همدا دی. که کتاب نه وي (مکتب)، استاد ښیي.
                     Text(
-                      cell.teacherName ?? 'استاد نه دی ټاکل شوی',
+                      cell.detail ?? 'استاد نه دی ټاکل شوی',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 10.5,
-                        color: cell.teacherName == null
+                        color: cell.detail == null
                             ? AppColors.warning
                             : p.muted,
                       ),

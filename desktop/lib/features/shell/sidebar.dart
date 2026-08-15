@@ -63,11 +63,11 @@ class Sidebar extends StatelessWidget {
                     _GroupLabel(text: g.title(s), expanded: expanded),
                   for (final item in g.items)
                     if (item.visibleTo(permissions))
-                      _NavTile(
+                      _NavBranch(
                         item: item,
-                        active: currentRoute == item.route,
+                        currentRoute: currentRoute,
                         expanded: expanded,
-                        onTap: () => onNavigate(item.route),
+                        onNavigate: onNavigate,
                       ),
                   const SizedBox(height: 6),
                 ],
@@ -177,17 +177,202 @@ class _GroupLabel extends StatelessWidget {
   }
 }
 
+/// یو توکی له خپلو فرعي توکو سره.
+///
+/// **د پرانیستلو انیمیشن ولې دومره مهم دی؟** ځکه چې فرعي لیست د
+/// لاندې توکي ځای نیسي — که ناڅاپه ښکاره شي، سترګه به هغه توکي ورک
+/// کړ چې لټاوه يې. `AnimatedSize` لاندېني توکي په نرمۍ سره ښکته
+/// ښویوي، نو د حرکت لار څرګنده وي.
+class _NavBranch extends StatefulWidget {
+  final NavItem item;
+  final String currentRoute;
+  final bool expanded;
+  final ValueChanged<String> onNavigate;
+
+  const _NavBranch({
+    required this.item,
+    required this.currentRoute,
+    required this.expanded,
+    required this.onNavigate,
+  });
+
+  @override
+  State<_NavBranch> createState() => _NavBranchState();
+}
+
+class _NavBranchState extends State<_NavBranch> {
+  /// په لاس پرانیستل — د اوسنۍ لارې خودکار پرانیستل ترې جلا دي.
+  bool _open = false;
+
+  bool get _ownsRoute => widget.item.owns(widget.currentRoute);
+
+  /// فرعي لیست هغه وخت ښکاري چې یا کارن پرانیستی وي، یا اوسنۍ
+  /// لار د همدې څانګې وي — نو د بلې پاڼې څخه راستنېدل يې نه بندوي.
+  bool get _showChildren =>
+      widget.expanded && widget.item.hasChildren && (_open || _ownsRoute);
+
+  @override
+  void didUpdateWidget(_NavBranch old) {
+    super.didUpdateWidget(old);
+    // بله څانګه چې فعاله شي، دا پخپله بندېږي — چې سایډبار اوږد نه شي.
+    if (!_ownsRoute && _open) _open = false;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final children = widget.item.children;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _NavTile(
+          item: widget.item,
+          active: _ownsRoute,
+          expanded: widget.expanded,
+          showChevron: widget.item.hasChildren && widget.expanded,
+          chevronOpen: _showChildren,
+          onTap: () {
+            if (widget.item.hasChildren && widget.expanded) {
+              setState(() => _open = !_ownsRoute || !_open);
+              // پر مور توکي کېکاږل لومړي فرعي توکي ته هم بیایي —
+              // که نه، کارن به دوه ځله کېکاږلو ته اړ و.
+              if (!_ownsRoute) widget.onNavigate(children.first.route);
+              return;
+            }
+            widget.onNavigate(widget.item.route);
+          },
+        ),
+        AnimatedSize(
+          duration: AppMotion.normal,
+          curve: AppMotion.standard,
+          alignment: Alignment.topCenter,
+          child: _showChildren
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    for (final c in children)
+                      _SubTile(
+                        sub: c,
+                        color: widget.item.color,
+                        active: widget.currentRoute == c.route,
+                        onTap: () => widget.onNavigate(c.route),
+                      ),
+                    const SizedBox(height: 3),
+                  ],
+                )
+              : const SizedBox.shrink(),
+        ),
+      ],
+    );
+  }
+}
+
+/// یو فرعي توکی — **له مور توکي کوچنی**، چې کچه يې په یوه نظر معلومه شي.
+class _SubTile extends StatefulWidget {
+  final NavSubItem sub;
+  final Color color;
+  final bool active;
+  final VoidCallback onTap;
+
+  const _SubTile({
+    required this.sub,
+    required this.color,
+    required this.active,
+    required this.onTap,
+  });
+
+  @override
+  State<_SubTile> createState() => _SubTileState();
+}
+
+class _SubTileState extends State<_SubTile> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final s = S.of(context);
+    final c = widget.color;
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        behavior: HitTestBehavior.opaque,
+        child: AnimatedContainer(
+          duration: AppMotion.fast,
+          curve: AppMotion.standard,
+          // د ښي خوا زیات فاصله (RTL کې) — چې د مور توکي لاندې
+          // ښکاره ښکاري، نه د هغه په څنګ کې.
+          margin: const EdgeInsetsDirectional.fromSTEB(10, 1, 26, 1),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+          decoration: BoxDecoration(
+            color: widget.active
+                ? c.withValues(alpha: 0.10)
+                : _hover
+                ? p.surfaceAlt
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            children: [
+              // د څانګې کرښه — د بصري تړاو لپاره.
+              Container(
+                width: 2,
+                height: 16,
+                margin: const EdgeInsetsDirectional.only(end: 9),
+                decoration: BoxDecoration(
+                  color: widget.active ? c : p.line,
+                  borderRadius: BorderRadius.circular(1),
+                ),
+              ),
+              Icon(
+                widget.sub.icon,
+                size: 14,
+                color: widget.active ? c : p.muted,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  widget.sub.label(s),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: widget.active
+                        ? FontWeight.w700
+                        : FontWeight.w500,
+                    color: widget.active ? c : p.muted,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _NavTile extends StatefulWidget {
   final NavItem item;
   final bool active;
   final bool expanded;
   final VoidCallback onTap;
+  final bool showChevron;
+  final bool chevronOpen;
 
   const _NavTile({
     required this.item,
     required this.active,
     required this.expanded,
     required this.onTap,
+    this.showChevron = false,
+    this.chevronOpen = false,
   });
 
   @override
@@ -259,19 +444,38 @@ class _NavTileState extends State<_NavTile> {
                     ),
                   ),
                 ),
-                // د فعال توکي وړه نښه په څنډه کې.
-                AnimatedOpacity(
-                  duration: AppMotion.fast,
-                  opacity: active ? 1 : 0,
-                  child: Container(
-                    width: 3,
-                    height: 18,
-                    decoration: BoxDecoration(
-                      color: c,
-                      borderRadius: BorderRadius.circular(2),
+                if (widget.showChevron)
+                  AnimatedRotation(
+                    duration: AppMotion.normal,
+                    curve: AppMotion.standard,
+                    // پرانیستی = ښکته، بند = د متن د پیل خوا ته.
+                    // `AnimatedRotation` د RTL سره پخپله نه اوړي، نو
+                    // د لوري له مخې يې خپله ټاکو.
+                    turns: widget.chevronOpen
+                        ? 0
+                        : (Directionality.of(context) == TextDirection.rtl
+                              ? 0.25
+                              : -0.25),
+                    child: Icon(
+                      Icons.expand_more_rounded,
+                      size: 16,
+                      color: active ? c : p.faint,
+                    ),
+                  )
+                else
+                  // د فعال توکي وړه نښه په څنډه کې.
+                  AnimatedOpacity(
+                    duration: AppMotion.fast,
+                    opacity: active ? 1 : 0,
+                    child: Container(
+                      width: 3,
+                      height: 18,
+                      decoration: BoxDecoration(
+                        color: c,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
                     ),
                   ),
-                ),
               ],
             ],
           ),

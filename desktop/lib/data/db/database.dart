@@ -37,6 +37,7 @@ part 'database.g.dart';
     // ── پنځم/شپږم پړاو: مهالویش او ازموینې ────────────────
     TimeSlots,
     TimetableEntries,
+    AttendanceSessions,
     Exams,
     ExamSubjects,
     Marks,
@@ -82,7 +83,7 @@ class AppDatabase extends _$AppDatabase {
   );
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -119,6 +120,45 @@ class AppDatabase extends _$AppDatabase {
         await m.createTable(feePayments);
         await m.createTable(payrollRuns);
         await m.createTable(payrollItems);
+      }
+
+      // ── ۴ → ۵: مدرسه، سکونت، او د حاضرۍ ناستې ────────────
+      //
+      // دلته ستنې زیاتېږي، نه جدولونه بدلېږي — نو موجوده ډیټا
+      // بشپړه پاتې کېږي. هره نوې ستنه یا `nullable` ده یا تلواله
+      // ارزښت لري.
+      if (from < 5) {
+        await m.createTable(attendanceSessions);
+
+        await m.addColumn(schools, schools.timetableMode);
+        await m.addColumn(schools, schools.defaultCapacity);
+        await m.addColumn(schools, schools.classesView);
+
+        await m.addColumn(subjects, subjects.book);
+        await m.addColumn(subjects, subjects.difficulty);
+
+        await m.addColumn(students, students.province);
+        await m.addColumn(students, students.district);
+        await m.addColumn(students, students.village);
+        await m.addColumn(students, students.residency);
+        await m.addColumn(students, students.fingerprintId);
+
+        // **دا یوازې یوه نوې ستنه نه ده.** د حاضرۍ یوځلي کلی له
+        // `(شاګرد، نېټه)` څخه `(شاګرد، نېټه، ناسته)` ته بدلېږي، او
+        // SQLite د `ALTER TABLE` له لارې قید نه بدلوي. نو جدول له
+        // سره جوړېږي او زړه ډیټا پکې لېږدېږي — د زړو کرښو ناسته
+        // صفر ګرځي، یعنې «د ورځې عمومي حاضري».
+        await m.alterTable(
+          // drift دا API «تجربوي» بولي، خو د یوځلي کلي د بدلولو
+          // بله لار نشته — او همدا هغه لار ده چې د drift خپل
+          // سند يې وړاندیز کوي.
+          // ignore: experimental_member_use
+          TableMigration(
+            attendances,
+            newColumns: [attendances.sessionId],
+            columnTransformer: {attendances.sessionId: const Constant(0)},
+          ),
+        );
       }
       await _createIndexes();
     },
@@ -236,6 +276,15 @@ class AppDatabase extends _$AppDatabase {
       // ── معاشونه ───────────────────────────────────────────
       'CREATE INDEX IF NOT EXISTS ix_payroll_items '
           'ON payroll_items (run_id)',
+
+      // ── سکونت او ناستې ────────────────────────────────────
+      // د ولایت له مخې فلټر — د شاګردانو پاڼه يې کاروي.
+      'CREATE INDEX IF NOT EXISTS ix_students_province '
+          'ON students (province, district)',
+      'CREATE INDEX IF NOT EXISTS ix_students_residency '
+          'ON students (residency) WHERE deleted_at IS NULL',
+      'CREATE INDEX IF NOT EXISTS ix_att_session '
+          'ON attendances (session_id, date)',
     ];
     for (final s in stmts) {
       await customStatement(s);
