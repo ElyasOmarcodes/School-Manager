@@ -29,7 +29,15 @@ import 'package:school_manager/data/repositories/device_repository.dart';
 import 'package:school_manager/data/repositories/message_repository.dart';
 import 'package:school_manager/data/repositories/notification_repository.dart';
 import 'package:school_manager/features/id_cards/id_cards_page.dart';
+import 'package:school_manager/data/repositories/exam_repository.dart';
+import 'package:school_manager/data/repositories/staff_repository.dart';
+import 'package:school_manager/data/repositories/timetable_repository.dart';
+import 'package:school_manager/features/exams/exams_page.dart';
+import 'package:school_manager/features/exams/mark_sheet.dart';
+import 'package:school_manager/features/exams/results_view.dart';
 import 'package:school_manager/features/messages/messages_page.dart';
+import 'package:school_manager/features/staff/staff_page.dart';
+import 'package:school_manager/features/timetable/timetable_page.dart';
 import 'package:school_manager/features/settings/settings_page.dart';
 import 'package:school_manager/server/api_router.dart';
 import 'package:school_manager/server/local_server.dart';
@@ -443,6 +451,132 @@ void main() {
           session: _session,
           schoolName: 'د نور لیسه',
           clock: () => DateTime(2026, 5, 12, 9, 15),
+        ),
+      ),
+    );
+  });
+
+  testWidgets('21 — مهالویش', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await _seedSchool(db);
+    await _seedTeachers(db);
+    await _seedTimetable(db);
+
+    await _shoot(
+      tester,
+      name: '21-timetable',
+      settle: const Duration(milliseconds: 700),
+      child: Scaffold(
+        body: TimetablePage(
+          timetable: TimetableRepository(db),
+          academic: AcademicRepository(db),
+          teachers: TeacherRepository(db),
+        ),
+      ),
+    );
+  });
+
+  testWidgets('22 — ازموینې', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await _seedSchool(db);
+    await _seedExam(db);
+
+    await _shoot(
+      tester,
+      name: '22-exams',
+      settle: const Duration(milliseconds: 700),
+      child: Scaffold(
+        body: ExamsPage(
+          exams: ExamRepository(db),
+          academic: AcademicRepository(db),
+          session: _session,
+          schoolName: 'د نور لیسه',
+        ),
+      ),
+    );
+  });
+
+  testWidgets('23 — د نمرو لیکل', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await _seedSchool(db);
+    final exam = await _seedExam(db);
+
+    await _shoot(
+      tester,
+      name: '23-mark-sheet',
+      settle: const Duration(milliseconds: 700),
+      child: Scaffold(
+        body: MarkSheetView(
+          exams: ExamRepository(db),
+          exam: exam,
+          sections: await AcademicRepository(db).sections(),
+          session: _session,
+          onBack: () {},
+        ),
+      ),
+    );
+  });
+
+  testWidgets('24 — د ازموینې پایلې', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await _seedSchool(db);
+    final exam = await _seedExam(db, withMarks: true);
+
+    await _shoot(
+      tester,
+      name: '24-results',
+      settle: const Duration(milliseconds: 700),
+      child: Scaffold(
+        body: ResultsView(
+          exams: ExamRepository(db),
+          exam: exam,
+          sections: await AcademicRepository(db).sections(),
+          schoolName: 'د نور لیسه',
+          onBack: () {},
+          onPrint: (_) async {},
+        ),
+      ),
+    );
+  });
+
+  testWidgets('25 — کارمندان', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await _seedSchool(db);
+    await _seedTeachers(db);
+    await _seedStaff(db);
+
+    await _shoot(
+      tester,
+      name: '25-staff',
+      settle: const Duration(milliseconds: 700),
+      child: Scaffold(
+        body: StaffPage(repo: StaffRepository(db), session: _session),
+      ),
+    );
+  });
+
+  testWidgets('26 — مهالویش (تیاره)', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await _seedSchool(db);
+    await _seedTeachers(db);
+    await _seedTimetable(db);
+
+    await _shoot(
+      tester,
+      name: '26-timetable-dark',
+      brightness: Brightness.dark,
+      settle: const Duration(milliseconds: 700),
+      child: Scaffold(
+        body: TimetablePage(
+          timetable: TimetableRepository(db),
+          academic: AcademicRepository(db),
+          teachers: TeacherRepository(db),
         ),
       ),
     );
@@ -881,4 +1015,139 @@ Future<void> _seedDevices(AppDatabase db) async {
     variables: [Variable<DateTime>(DateTime(2099, 1, 1, 8, 20))],
     updates: {db.pairingCodes},
   );
+}
+
+/// د لومړي بخش لپاره یو ډک اونیز مهالویش.
+Future<void> _seedTimetable(AppDatabase db) async {
+  final academic = AcademicRepository(db);
+  final tt = TimetableRepository(db);
+  await academic.seedDefaultSubjects();
+  await tt.seedDefaultSlots();
+
+  final sections = await academic.sections();
+  final section = sections.first;
+  final subjects = await academic.subjects();
+  final teachers = await db.select(db.teachers).get();
+  final slots = (await tt.slots()).where((s) => !s.isBreak).toList();
+
+  // یو منظم جدول — هره ورځ بېل مضمونونه، خو یو استاد دوه ځای نه.
+  var pick = 0;
+  for (final day in defaultTeachingDays) {
+    for (var i = 0; i < slots.length - 2; i++) {
+      await tt.setEntry(
+        sectionId: section.sectionId,
+        dayOfWeek: day,
+        slotId: slots[i].id,
+        subjectId: subjects[pick % subjects.length].id,
+        teacherId: teachers.isEmpty
+            ? null
+            : teachers[pick % teachers.length].id,
+        room: i.isEven ? null : '${101 + (pick % 4)}',
+      );
+      pick++;
+    }
+  }
+}
+
+/// یوه ازموینه — که `withMarks` سم وي، نمرې يې هم ډکې دي.
+Future<Exam> _seedExam(AppDatabase db, {bool withMarks = false}) async {
+  final academic = AcademicRepository(db);
+  final exams = ExamRepository(db);
+  await academic.seedDefaultSubjects();
+
+  final year = (await academic.currentYear())!;
+  final sections = await academic.sections();
+  final subjects = await academic.subjects();
+  final chosen = [
+    subjects.firstWhere((s) => s.name == 'ریاضي').id,
+    subjects.firstWhere((s) => s.name == 'پښتو').id,
+    subjects.firstWhere((s) => s.name == 'انګلیسي').id,
+    subjects.firstWhere((s) => s.name == 'اسلامیات').id,
+  ];
+
+  final id = await exams.create(
+    name: 'د لومړۍ ربعې ازموینه',
+    examType: 'midterm',
+    academicYearId: year.id,
+    startsOn: DateTime(2026, 5, 10),
+    endsOn: DateTime(2026, 5, 20),
+  );
+  for (final gradeId in sections.map((s) => s.gradeId).toSet()) {
+    await exams.addSubjects(
+      examId: id,
+      gradeId: gradeId,
+      subjectIds: chosen,
+    );
+  }
+
+  // یوه دویمه ازموینه چې لیست تش نه وي.
+  await exams.create(
+    name: 'د میاشتنۍ ازموینه — ثور',
+    examType: 'monthly',
+    academicYearId: year.id,
+    startsOn: DateTime(2026, 4, 12),
+    endsOn: DateTime(2026, 4, 14),
+  );
+
+  if (withMarks) {
+    final section = sections.first;
+    final subs = await exams.subjectsOf(id, gradeId: section.gradeId);
+    final roster = await db
+        .customSelect(
+          'SELECT student_id FROM enrollments '
+          'WHERE section_id = ? AND is_active = 1',
+          variables: [Variable<int>(section.sectionId)],
+          readsFrom: {db.enrollments},
+        )
+        .get();
+    final ids = roster.map((r) => r.read<int>('student_id')).toList();
+
+    // **ثابتې نمرې.** تصادفي به د گولډن عکس هر ځل بدل کړ.
+    const pattern = [92, 78, 55, 34, 88, 61, 45, 97, 70, 39];
+    for (var s = 0; s < subs.length; s++) {
+      await exams.saveMarks(
+        examSubjectId: subs[s].examSubject.id,
+        byStudent: {
+          for (var i = 0; i < ids.length; i++)
+            ids[i]: (
+              obtained: (pattern[(i + s * 3) % pattern.length]).toDouble(),
+              isAbsent: i == 2 && s == 1,
+            ),
+        },
+        byUserId: 1,
+      );
+    }
+  }
+
+  return (db.select(db.exams)..where((e) => e.id.equals(id))).getSingle();
+}
+
+/// څو کارمندان — د معاشونو ستنه چې تشه نه وي.
+Future<void> _seedStaff(AppDatabase db) async {
+  const people = [
+    ('عبدالغفار', 'محاسب', 'مالي', 18000),
+    ('نور محمد', 'سرایدار', 'پاکوالی', 9000),
+    ('شیرخان', 'ساتونکی', 'ساتنه', 11000),
+    ('حبیب الله', 'د کتابتون مسوول', 'کتابتون', 14000),
+    ('زلمی', 'ډرایور', 'ترانسپورت', 12000),
+    ('فریده', 'نرس', 'روغتیا', 16000),
+    ('اجمل', 'د دفتر مدیر', 'اداري', 22000),
+  ];
+
+  final repo = StaffRepository(db);
+  for (final (name, job, dep, salary) in people) {
+    await repo.add(
+      staff: StaffMembersCompanion.insert(
+        employeeNo: await repo.nextEmployeeNo(),
+        fullName: name,
+        jobTitle: job,
+        gender: name == 'فریده' ? 'female' : 'male',
+        department: Value(dep),
+        phone: Value('070${1234567 + salary}'),
+        monthlySalary: Value(salary),
+      ),
+      byUserId: 1,
+      byUserName: 'admin',
+    );
+  }
 }

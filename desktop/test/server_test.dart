@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:school_manager/data/db/database.dart';
 import 'package:school_manager/data/repositories/academic_repository.dart';
 import 'package:school_manager/data/repositories/attendance_repository.dart';
+import 'package:school_manager/data/repositories/exam_repository.dart';
 import 'package:school_manager/data/repositories/device_repository.dart';
 import 'package:school_manager/data/repositories/message_repository.dart';
 import 'package:school_manager/data/repositories/notification_repository.dart';
@@ -88,6 +89,22 @@ void main() {
       byUserId: 1,
       byUserName: 'admin',
     );
+  }
+
+  /// شاګرد په لومړي بخش کې ثبتوي — د ازموینې پایلې ورته پکار دي.
+  Future<void> enroll(int studentId) async {
+    final academic = AcademicRepository(db);
+    final section = (await academic.sections()).first;
+    final year = (await academic.currentYear())!;
+    await db
+        .into(db.enrollments)
+        .insert(
+          EnrollmentsCompanion.insert(
+            studentId: studentId,
+            sectionId: section.sectionId,
+            academicYearId: year.id,
+          ),
+        );
   }
 
   Future<String> pairManager() async {
@@ -498,6 +515,98 @@ void main() {
       final after = await db.select(db.messages).getSingle();
       expect(after.status, 'read');
       expect(after.readAt, isNotNull);
+    });
+  });
+
+  group('د خپرو شویو نمرو لار', () {
+    /// یوه ازموینه له نمرو سره جوړوي او ازموینه‌کوونکي ته يې ورکوي.
+    Future<int> seedExam(int studentId, {required bool published}) async {
+      final academic = AcademicRepository(db);
+      final exams = ExamRepository(db);
+      await academic.seedDefaultSubjects();
+
+      final year = (await academic.currentYear())!;
+      final section = (await academic.sections()).first;
+      final subjects = await academic.subjects();
+
+      final examId = await exams.create(
+        name: 'د ربعې ازموینه',
+        examType: 'midterm',
+        academicYearId: year.id,
+        startsOn: DateTime(2026, 5, 10),
+        endsOn: DateTime(2026, 5, 20),
+      );
+      await exams.addSubjects(
+        examId: examId,
+        gradeId: section.gradeId,
+        subjectIds: [
+          subjects.firstWhere((s) => s.name == 'ریاضي').id,
+          subjects.firstWhere((s) => s.name == 'پښتو').id,
+        ],
+      );
+
+      final subs = await exams.subjectsOf(examId, gradeId: section.gradeId);
+      for (final (i, sub) in subs.indexed) {
+        await exams.saveMarks(
+          examSubjectId: sub.examSubject.id,
+          byStudent: {
+            studentId: (obtained: i == 0 ? 92.0 : 78.0, isAbsent: false),
+          },
+          byUserId: 1,
+        );
+      }
+
+      if (published) await exams.publish(examId, published: true);
+      return examId;
+    }
+
+    test('نه‌خپرې شوې پایله والدینو ته نه ښکاري', () async {
+      final a = await admit('0001', 'احمد');
+      await enroll(a);
+      await seedExam(a, published: false);
+
+      final p = await pairParent(a);
+      final j = await jsonOf(
+        await get('/api/parent/children/$a/results', token: p.token),
+      );
+      expect(j['items'], isEmpty);
+    });
+
+    test('خپره شوې پایله له مضمونونو، درجې او مقام سره راځي', () async {
+      final a = await admit('0001', 'احمد');
+      await enroll(a);
+      await seedExam(a, published: true);
+
+      final p = await pairParent(a);
+      final j = await jsonOf(
+        await get('/api/parent/children/$a/results', token: p.token),
+      );
+      final items = j['items'] as List;
+
+      expect(items, hasLength(1));
+      final r = items.first as Map<String, dynamic>;
+      expect(r['exam'], 'د ربعې ازموینه');
+      expect(r['obtained'], 170);
+      expect(r['full'], 200);
+      expect(r['percent'], 85);
+      expect(r['grade'], 'A');
+      expect(r['passed'], true);
+      expect((r['subjects'] as List), hasLength(2));
+    });
+
+    test('یو سرپرست د بل کور پایله نه شي لیدلی', () async {
+      final mine = await admit('0001', 'احمد');
+      final other = await admit('0002', 'کریم');
+      await enroll(mine);
+      await enroll(other);
+      await seedExam(other, published: true);
+
+      final p = await pairParent(mine);
+      final r = await get(
+        '/api/parent/children/$other/results',
+        token: p.token,
+      );
+      expect(r.statusCode, 403);
     });
   });
 

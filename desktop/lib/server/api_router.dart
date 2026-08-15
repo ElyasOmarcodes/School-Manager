@@ -9,6 +9,7 @@ import 'package:shelf_router/shelf_router.dart';
 import '../data/db/database.dart';
 import '../data/repositories/attendance_repository.dart';
 import '../data/repositories/device_repository.dart';
+import '../data/repositories/exam_repository.dart';
 import '../data/repositories/leave_repository.dart';
 import '../data/repositories/message_repository.dart';
 import '../data/repositories/notification_repository.dart';
@@ -27,6 +28,7 @@ class ApiDeps {
   final DeviceRepository devices;
   final AttendanceRepository attendance;
   final LeaveRepository leave;
+  final ExamRepository exams;
   final MessageRepository messages;
   final NotificationRepository notifications;
 
@@ -38,6 +40,7 @@ class ApiDeps {
     required this.devices,
     required this.attendance,
     required this.leave,
+    required this.exams,
     required this.messages,
     required this.notifications,
     required this.schoolName,
@@ -48,6 +51,7 @@ class ApiDeps {
     devices: DeviceRepository(db),
     attendance: AttendanceRepository(db),
     leave: LeaveRepository(db),
+    exams: ExamRepository(db),
     messages: MessageRepository(db),
     notifications: NotificationRepository(db),
     schoolName: schoolName ?? () => '',
@@ -478,6 +482,46 @@ ORDER BY s.first_name
           {
             'date': _iso(row.read<DateTime>('date')),
             'status': row.read<String>('status'),
+          },
+      ],
+    });
+  });
+
+  parent.get('/children/<id|[0-9]+>/results', (Request r, String id) async {
+    final me = _me(r);
+    final sid = int.parse(id);
+    if (!await _guardianOwns(d, me.guardianId, sid)) {
+      return _err(403, 'دا شاګرد ستاسو نه دی');
+    }
+
+    final results = await d.exams.publishedResultsFor(sid);
+    return _json({
+      'items': [
+        for (final e in results)
+          {
+            'examId': e.exam.id,
+            'exam': e.exam.name,
+            'examType': e.exam.examType,
+            'date': _iso(e.exam.startsOn),
+            'obtained': e.result.obtainedTotal,
+            'full': e.result.fullTotal,
+            'percent': e.result.percent.round(),
+            'grade': e.result.band.letter,
+            'gradeLabel': e.result.band.label,
+            'rank': e.result.rank,
+            'outOf': e.result.outOf,
+            'passed': e.result.passedAll,
+            'subjects': [
+              for (final s in e.result.subjects)
+                {
+                  'name': s.subjectName,
+                  'obtained': s.obtained,
+                  'full': s.fullMark,
+                  'pass': s.passMark,
+                  'absent': s.isAbsent,
+                  'passed': s.passed,
+                },
+            ],
           },
       ],
     });

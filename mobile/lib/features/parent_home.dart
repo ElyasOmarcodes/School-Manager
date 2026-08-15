@@ -35,7 +35,11 @@ class _ParentHomeState extends State<ParentHome> {
   List<ChildInfo> _children = const [];
   int _childIndex = 0;
   ChildAttendance? _attendance;
+  List<ExamResultInfo> _results = const [];
   List<ParentMessage> _messages = const [];
+
+  /// د دویم ټب دننه: حاضري که نمرې.
+  bool _showResults = false;
 
   @override
   void initState() {
@@ -55,10 +59,11 @@ class _ParentHomeState extends State<ParentHome> {
       final children = await widget.api.children();
       final messages = await widget.api.messages();
       ChildAttendance? att;
+      var results = <ExamResultInfo>[];
       if (children.isNotEmpty) {
-        att = await widget.api.childAttendance(
-          children[_childIndex.clamp(0, children.length - 1)].id,
-        );
+        final id = children[_childIndex.clamp(0, children.length - 1)].id;
+        att = await widget.api.childAttendance(id);
+        results = await widget.api.childResults(id);
       }
 
       if (!mounted) return;
@@ -66,6 +71,7 @@ class _ParentHomeState extends State<ParentHome> {
         _children = children;
         _messages = messages;
         _attendance = att;
+        _results = results;
         _loading = false;
       });
     } on ApiException catch (e) {
@@ -82,10 +88,17 @@ class _ParentHomeState extends State<ParentHome> {
     setState(() {
       _childIndex = i;
       _attendance = null;
+      _results = const [];
     });
     try {
       final att = await widget.api.childAttendance(_children[i].id);
-      if (mounted) setState(() => _attendance = att);
+      final res = await widget.api.childResults(_children[i].id);
+      if (mounted) {
+        setState(() {
+          _attendance = att;
+          _results = res;
+        });
+      }
     } on ApiException catch (e) {
       if (mounted) _toast(e.message, M.danger);
     }
@@ -346,7 +359,32 @@ class _ParentHomeState extends State<ParentHome> {
           ),
         if (_children.length > 1) const SizedBox(height: 18),
 
-        if (_attendance == null)
+        // حاضري که نمرې — یو ټب، دوه انځورونه.
+        Row(
+          children: [
+            Expanded(
+              child: _Segment(
+                label: t.attendance,
+                on: !_showResults,
+                onTap: () => setState(() => _showResults = false),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _Segment(
+                label: t.results,
+                on: _showResults,
+                badge: _results.length,
+                onTap: () => setState(() => _showResults = true),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 18),
+
+        if (_showResults)
+          ..._buildResults()
+        else if (_attendance == null)
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 40),
             child: LoadingState(),
@@ -376,6 +414,22 @@ class _ParentHomeState extends State<ParentHome> {
         ],
       ],
     );
+  }
+
+  // ── نمرې ────────────────────────────────────────────────
+
+  List<Widget> _buildResults() {
+    if (_results.isEmpty) {
+      return const [
+        EmptyState(
+          icon: Icons.assignment_rounded,
+          title: 'لا هېڅ پایله نه ده خپره شوې',
+          hint:
+              'کله چې ښوونځی د ازموینې نمرې خپرې کړي، دلته به ښکاره شي.',
+        ),
+      ];
+    }
+    return [for (final r in _results) _ResultCard(result: r)];
   }
 
   // ── پیغامونه ────────────────────────────────────────────
@@ -875,4 +929,271 @@ class _LeaveSheetState extends State<_LeaveSheet> {
   static String _iso(DateTime t) =>
       '${t.year}-${t.month.toString().padLeft(2, '0')}'
       '-${t.day.toString().padLeft(2, '0')}';
+}
+
+/// د یوې خپرې شوې ازموینې کارت.
+class _ResultCard extends StatefulWidget {
+  final ExamResultInfo result;
+  const _ResultCard({required this.result});
+
+  @override
+  State<_ResultCard> createState() => _ResultCardState();
+}
+
+class _ResultCardState extends State<_ResultCard> {
+  bool _open = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.pal;
+    final t = T.of(context);
+    final r = widget.result;
+    final color = r.passed ? M.success : M.danger;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      decoration: BoxDecoration(
+        color: p.surface,
+        borderRadius: BorderRadius.circular(M.radiusLg),
+        border: Border.all(color: p.line),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        children: [
+          GestureDetector(
+            onTap: () => setState(() => _open = !_open),
+            behavior: HitTestBehavior.opaque,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Container(
+                    width: 46,
+                    height: 46,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.13),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Text(
+                      r.grade,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: color,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 13),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          r.exam,
+                          style: TextStyle(
+                            fontSize: 14.5,
+                            fontWeight: FontWeight.w700,
+                            color: p.ink,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          '${num_(r.date, t.locale)}  •  '
+                          'مقام ${num_(r.rank, t.locale)} '
+                          'له ${num_(r.outOf, t.locale)} څخه',
+                          style: TextStyle(fontSize: 11.5, color: p.muted),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '٪${num_(r.percent, t.locale)}',
+                        style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800,
+                          color: color,
+                        ),
+                      ),
+                      Text(
+                        r.gradeLabel,
+                        style: TextStyle(fontSize: 11, color: p.muted),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(width: 6),
+                  AnimatedRotation(
+                    turns: _open ? 0.5 : 0,
+                    duration: M.fast,
+                    child: Icon(
+                      Icons.expand_more_rounded,
+                      size: 20,
+                      color: p.faint,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          AnimatedSize(
+            duration: M.normal,
+            curve: M.ease,
+            child: !_open
+                ? const SizedBox(width: double.infinity)
+                : Container(
+                    width: double.infinity,
+                    color: p.surfaceAlt,
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
+                    child: Column(
+                      children: [
+                        for (final s in r.subjects)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 6),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  s.passed
+                                      ? Icons.check_circle_rounded
+                                      : Icons.cancel_rounded,
+                                  size: 15,
+                                  color: s.passed ? M.success : M.danger,
+                                ),
+                                const SizedBox(width: 9),
+                                Expanded(
+                                  child: Text(
+                                    s.name,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: p.inkSoft,
+                                    ),
+                                  ),
+                                ),
+                                Text(
+                                  s.absent
+                                      ? 'غیرحاضر'
+                                      : '${num_(_n(s.obtained ?? 0), t.locale)}'
+                                            ' / ${num_(s.full, t.locale)}',
+                                  style: TextStyle(
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: s.absent
+                                        ? M.danger
+                                        : (s.passed ? p.ink : M.danger),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        const SizedBox(height: 8),
+                        Divider(color: p.line, height: 1),
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                'مجموعه',
+                                style: TextStyle(
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: p.ink,
+                                ),
+                              ),
+                            ),
+                            Text(
+                              '${num_(_n(r.obtained), t.locale)} / '
+                              '${num_(r.full, t.locale)}',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w800,
+                                color: color,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static String _n(double v) =>
+      v == v.roundToDouble() ? v.round().toString() : v.toStringAsFixed(1);
+}
+
+/// د دوو حالتونو ټاکونکی — حاضري / نمرې.
+class _Segment extends StatelessWidget {
+  final String label;
+  final bool on;
+  final int badge;
+  final VoidCallback onTap;
+
+  const _Segment({
+    required this.label,
+    required this.on,
+    required this.onTap,
+    this.badge = 0,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.pal;
+    final t = T.of(context);
+
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: M.fast,
+        curve: M.ease,
+        height: 42,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: on ? M.primary.withValues(alpha: 0.13) : p.surfaceAlt,
+          borderRadius: BorderRadius.circular(M.radius),
+          border: Border.all(color: on ? M.primary : Colors.transparent),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: on ? FontWeight.w700 : FontWeight.w500,
+                color: on ? M.primary : p.inkSoft,
+              ),
+            ),
+            if (badge > 0) ...[
+              const SizedBox(width: 7),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 7,
+                  vertical: 2,
+                ),
+                decoration: BoxDecoration(
+                  color: (on ? M.primary : p.muted).withValues(alpha: 0.16),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  num_(badge, t.locale),
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w800,
+                    color: on ? M.primary : p.muted,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
 }

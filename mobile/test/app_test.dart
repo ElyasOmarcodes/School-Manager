@@ -206,6 +206,26 @@ void main() {
       expect(find.text('رخصت'), findsOneWidget);
     });
 
+    testWidgets('د خپرو شویو نمرو کارت پرانیستل کېږي', (tester) async {
+      await tester.pumpWidget(parentApp());
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('حاضري').last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('نمرې').last);
+      await tester.pumpAndSettle();
+
+      expect(find.text('د لومړۍ ربعې ازموینه'), findsOneWidget);
+      expect(find.text('٪۸۵'), findsOneWidget);
+
+      // مضمونونه تر هغې پټ دي چې کارت پرانیستل شي.
+      expect(find.text('ریاضي'), findsNothing);
+      await tester.tap(find.text('د لومړۍ ربعې ازموینه'));
+      await tester.pumpAndSettle();
+      expect(find.text('ریاضي'), findsOneWidget);
+      expect(find.text('اسلامیات'), findsOneWidget);
+    });
+
     testWidgets('پیغامونه راځي او لوستل کېږي', (tester) async {
       await tester.pumpWidget(parentApp());
       await tester.pumpAndSettle();

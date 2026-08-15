@@ -246,6 +246,61 @@ class FakeServer {
       });
     }
 
+    if (RegExp(r'^/api/parent/children/\d+/results').hasMatch(path)) {
+      return _json({
+        'items': [
+          {
+            'examId': 1,
+            'exam': 'د لومړۍ ربعې ازموینه',
+            'examType': 'midterm',
+            'date': '2026-05-10',
+            'obtained': 340.0,
+            'full': 400,
+            'percent': 85,
+            'grade': 'A',
+            'gradeLabel': 'ډېر ښه',
+            'rank': 2,
+            'outOf': 32,
+            'passed': true,
+            'subjects': [
+              {
+                'name': 'ریاضي',
+                'obtained': 92.0,
+                'full': 100,
+                'pass': 40,
+                'absent': false,
+                'passed': true,
+              },
+              {
+                'name': 'پښتو',
+                'obtained': 78.0,
+                'full': 100,
+                'pass': 40,
+                'absent': false,
+                'passed': true,
+              },
+              {
+                'name': 'انګلیسي',
+                'obtained': 85.0,
+                'full': 100,
+                'pass': 40,
+                'absent': false,
+                'passed': true,
+              },
+              {
+                'name': 'اسلامیات',
+                'obtained': 85.0,
+                'full': 100,
+                'pass': 40,
+                'absent': false,
+                'passed': true,
+              },
+            ],
+          },
+        ],
+      });
+    }
+
     if (path == '/api/parent/messages') {
       return _json({
         'items': [

@@ -4,6 +4,7 @@ import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:sqlite3/sqlite3.dart';
 
+import 'tables/academic_tables.dart';
 import 'tables/comm_tables.dart';
 import 'tables/core_tables.dart';
 
@@ -32,6 +33,12 @@ part 'database.g.dart';
     MessageTemplates,
     Messages,
     AppNotifications,
+    // ── پنځم/شپږم پړاو: مهالویش او ازموینې ────────────────
+    TimeSlots,
+    TimetableEntries,
+    Exams,
+    ExamSubjects,
+    Marks,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -68,7 +75,7 @@ class AppDatabase extends _$AppDatabase {
   );
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -87,6 +94,15 @@ class AppDatabase extends _$AppDatabase {
         await m.createTable(messageTemplates);
         await m.createTable(messages);
         await m.createTable(appNotifications);
+      }
+
+      // ── ۲ → ۳: مهالویش، ازموینې، نمرې ───────────────────
+      if (from < 3) {
+        await m.createTable(timeSlots);
+        await m.createTable(timetableEntries);
+        await m.createTable(exams);
+        await m.createTable(examSubjects);
+        await m.createTable(marks);
       }
       await _createIndexes();
     },
@@ -166,6 +182,27 @@ class AppDatabase extends _$AppDatabase {
       // د مدیر د اپ صندوق.
       'CREATE INDEX IF NOT EXISTS ix_notif_inbox '
           'ON app_notifications (audience, created_at DESC)',
+
+      // ── مهالویش ───────────────────────────────────────────
+      // د بخش د ورځې لیست — د مهالویش پاڼه يې هر کلیک کې پوښتي.
+      'CREATE INDEX IF NOT EXISTS ix_tt_section '
+          'ON timetable_entries (section_id, day_of_week, slot_id)',
+      // **د ټکر کتنه پر دې ولاړه ده.** «دا استاد په دې ورځ، په دې
+      // ساعت کې بل ځای بوخت دی؟» — پرته له دې به هر ذخیره کول د
+      // ټول جدول لټون کاوه.
+      'CREATE INDEX IF NOT EXISTS ix_tt_teacher '
+          'ON timetable_entries (teacher_id, day_of_week, slot_id)',
+
+      // ── ازموینې ───────────────────────────────────────────
+      'CREATE INDEX IF NOT EXISTS ix_exam_year '
+          'ON exams (academic_year_id, term)',
+      'CREATE INDEX IF NOT EXISTS ix_exsub_exam '
+          'ON exam_subjects (exam_id, grade_id, sort_order)',
+      // د نتیجې محاسبه د شاګرد په کچه راټولوي.
+      'CREATE INDEX IF NOT EXISTS ix_marks_student '
+          'ON marks (student_id, exam_subject_id)',
+      'CREATE INDEX IF NOT EXISTS ix_marks_subject '
+          'ON marks (exam_subject_id)',
     ];
     for (final s in stmts) {
       await customStatement(s);

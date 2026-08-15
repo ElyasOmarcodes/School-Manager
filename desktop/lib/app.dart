@@ -9,11 +9,14 @@ import 'data/db/database.dart';
 import 'data/repositories/academic_repository.dart';
 import 'data/repositories/attendance_repository.dart';
 import 'data/repositories/device_repository.dart';
+import 'data/repositories/exam_repository.dart';
 import 'data/repositories/leave_repository.dart';
 import 'data/repositories/message_repository.dart';
 import 'data/repositories/notification_repository.dart';
+import 'data/repositories/staff_repository.dart';
 import 'data/repositories/student_repository.dart';
 import 'data/repositories/teacher_repository.dart';
+import 'data/repositories/timetable_repository.dart';
 import 'server/api_router.dart';
 import 'server/local_server.dart';
 import 'features/auth/auth_service.dart';
@@ -110,6 +113,9 @@ class _SchoolManagerAppState extends State<SchoolManagerApp> {
   /// سرور جوړوي (خو نه يې چالانوي) او تلوالې کینډۍ کېږدي.
   Future<void> _prepareServer(AppDatabase db) async {
     await MessageRepository(db).ensureDefaultTemplates();
+    // مضمونونه او درسي ساعتونه — د مهالویش او ازموینو مخکې شرط.
+    await AcademicRepository(db).seedDefaultSubjects();
+    await TimetableRepository(db).seedDefaultSlots();
     _server = LocalServer(
       ApiDeps.of(db, schoolName: () => _schoolName),
     );
@@ -311,6 +317,9 @@ class _SchoolManagerAppState extends State<SchoolManagerApp> {
       messageRepo: MessageRepository(_db!),
       notificationRepo: NotificationRepository(_db!),
       deviceRepo: DeviceRepository(_db!),
+      timetableRepo: TimetableRepository(_db!),
+      examRepo: ExamRepository(_db!),
+      staffRepo: StaffRepository(_db!),
       server: _server,
       db: _db,
       config: _config,

@@ -228,6 +228,14 @@ class ApiClient {
     return ChildAttendance.fromJson(j);
   }
 
+  Future<List<ExamResultInfo>> childResults(int id) async {
+    final j = await _get('/api/parent/children/$id/results');
+    return [
+      for (final e in (j['items'] as List? ?? const []))
+        ExamResultInfo.fromJson(e as Map<String, dynamic>),
+    ];
+  }
+
   Future<List<ParentMessage>> messages() async {
     final j = await _get('/api/parent/messages');
     return [
@@ -534,5 +542,84 @@ class ParentMessage {
     read: j['read'] == true,
     createdAt:
         DateTime.tryParse(j['createdAt'] as String? ?? '') ?? DateTime.now(),
+  );
+}
+
+/// د یوې خپرې شوې ازموینې پایله — د والدینو اپ لپاره.
+class ExamResultInfo {
+  final int examId;
+  final String exam;
+  final String examType;
+  final String date;
+  final double obtained;
+  final int full;
+  final int percent;
+  final String grade;
+  final String gradeLabel;
+  final int rank;
+  final int outOf;
+  final bool passed;
+  final List<SubjectMark> subjects;
+
+  const ExamResultInfo({
+    required this.examId,
+    required this.exam,
+    required this.examType,
+    required this.date,
+    required this.obtained,
+    required this.full,
+    required this.percent,
+    required this.grade,
+    required this.gradeLabel,
+    required this.rank,
+    required this.outOf,
+    required this.passed,
+    required this.subjects,
+  });
+
+  factory ExamResultInfo.fromJson(Map<String, dynamic> j) => ExamResultInfo(
+    examId: (j['examId'] as num).toInt(),
+    exam: j['exam'] as String? ?? '',
+    examType: j['examType'] as String? ?? '',
+    date: j['date'] as String? ?? '',
+    obtained: (j['obtained'] as num?)?.toDouble() ?? 0,
+    full: (j['full'] as num?)?.toInt() ?? 0,
+    percent: (j['percent'] as num?)?.toInt() ?? 0,
+    grade: j['grade'] as String? ?? '',
+    gradeLabel: j['gradeLabel'] as String? ?? '',
+    rank: (j['rank'] as num?)?.toInt() ?? 0,
+    outOf: (j['outOf'] as num?)?.toInt() ?? 0,
+    passed: j['passed'] == true,
+    subjects: [
+      for (final s in (j['subjects'] as List? ?? const []))
+        SubjectMark.fromJson(s as Map<String, dynamic>),
+    ],
+  );
+}
+
+class SubjectMark {
+  final String name;
+  final double? obtained;
+  final int full;
+  final int pass;
+  final bool absent;
+  final bool passed;
+
+  const SubjectMark({
+    required this.name,
+    required this.full,
+    required this.pass,
+    required this.absent,
+    required this.passed,
+    this.obtained,
+  });
+
+  factory SubjectMark.fromJson(Map<String, dynamic> j) => SubjectMark(
+    name: j['name'] as String? ?? '',
+    obtained: (j['obtained'] as num?)?.toDouble(),
+    full: (j['full'] as num?)?.toInt() ?? 100,
+    pass: (j['pass'] as num?)?.toInt() ?? 40,
+    absent: j['absent'] == true,
+    passed: j['passed'] == true,
   );
 }

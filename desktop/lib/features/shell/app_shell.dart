@@ -8,11 +8,14 @@ import '../../data/db/database.dart';
 import '../../data/repositories/academic_repository.dart';
 import '../../data/repositories/attendance_repository.dart';
 import '../../data/repositories/device_repository.dart';
+import '../../data/repositories/exam_repository.dart';
 import '../../data/repositories/leave_repository.dart';
 import '../../data/repositories/message_repository.dart';
 import '../../data/repositories/notification_repository.dart';
+import '../../data/repositories/staff_repository.dart';
 import '../../data/repositories/student_repository.dart';
 import '../../data/repositories/teacher_repository.dart';
+import '../../data/repositories/timetable_repository.dart';
 import '../../server/local_server.dart';
 import '../auth/auth_service.dart';
 import '../dashboard/dashboard_page.dart';
@@ -20,11 +23,14 @@ import '../students/admission_wizard.dart';
 import '../attendance/attendance_page.dart';
 import '../classes/classes_page.dart';
 import '../leave/leave_page.dart';
+import '../exams/exams_page.dart';
 import '../id_cards/id_cards_page.dart';
 import '../messages/messages_page.dart';
 import '../settings/settings_page.dart';
+import '../staff/staff_page.dart';
 import '../students/students_page.dart';
 import '../teachers/teachers_page.dart';
+import '../timetable/timetable_page.dart';
 import 'nav_items.dart';
 import 'sidebar.dart';
 
@@ -51,6 +57,11 @@ class AppShell extends StatefulWidget {
   final AppConfig? config;
   final ValueChanged<AppConfig>? onConfigChanged;
 
+  // ── پنځم/شپږم/اووم پړاو ───────────────────────────────
+  final TimetableRepository? timetableRepo;
+  final ExamRepository? examRepo;
+  final StaffRepository? staffRepo;
+
   const AppShell({
     super.key,
     required this.session,
@@ -71,6 +82,9 @@ class AppShell extends StatefulWidget {
     this.db,
     this.config,
     this.onConfigChanged,
+    this.timetableRepo,
+    this.examRepo,
+    this.staffRepo,
   });
 
   @override
@@ -237,6 +251,27 @@ class _AppShellState extends State<AppShell> {
         session: widget.session,
         schoolName: widget.schoolName,
       );
+    }
+    if (_route == '/timetable' &&
+        widget.timetableRepo != null &&
+        academic != null &&
+        teachers != null) {
+      return TimetablePage(
+        timetable: widget.timetableRepo!,
+        academic: academic,
+        teachers: teachers,
+      );
+    }
+    if (_route == '/exams' && widget.examRepo != null && academic != null) {
+      return ExamsPage(
+        exams: widget.examRepo!,
+        academic: academic,
+        session: widget.session,
+        schoolName: widget.schoolName,
+      );
+    }
+    if (_route == '/staff' && widget.staffRepo != null) {
+      return StaffPage(repo: widget.staffRepo!, session: widget.session);
     }
     if (_route == '/settings' &&
         widget.db != null &&

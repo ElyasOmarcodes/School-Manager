@@ -97,6 +97,22 @@ void main() {
     );
   });
 
+  testWidgets('m9 — د والدینو نمرې', (tester) async {
+    await _shoot(
+      tester,
+      name: 'm9-parent-results',
+      session: parent,
+      after: (t) async {
+        await t.tap(find.text('حاضري').last);
+        await t.pumpAndSettle();
+        await t.tap(find.text('نمرې').last);
+        await t.pumpAndSettle();
+        await t.tap(find.text('د لومړۍ ربعې ازموینه'));
+        await t.pumpAndSettle();
+      },
+    );
+  });
+
   testWidgets('m8 — د والدینو پیغامونه', (tester) async {
     await _shoot(
       tester,

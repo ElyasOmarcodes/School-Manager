@@ -13221,6 +13221,2624 @@ class AppNotificationsCompanion extends UpdateCompanion<AppNotification> {
   }
 }
 
+class $TimeSlotsTable extends TimeSlots
+    with TableInfo<$TimeSlotsTable, TimeSlot> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $TimeSlotsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _startTimeMeta = const VerificationMeta(
+    'startTime',
+  );
+  @override
+  late final GeneratedColumn<String> startTime = GeneratedColumn<String>(
+    'start_time',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _endTimeMeta = const VerificationMeta(
+    'endTime',
+  );
+  @override
+  late final GeneratedColumn<String> endTime = GeneratedColumn<String>(
+    'end_time',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _isBreakMeta = const VerificationMeta(
+    'isBreak',
+  );
+  @override
+  late final GeneratedColumn<bool> isBreak = GeneratedColumn<bool>(
+    'is_break',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_break" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _sortOrderMeta = const VerificationMeta(
+    'sortOrder',
+  );
+  @override
+  late final GeneratedColumn<int> sortOrder = GeneratedColumn<int>(
+    'sort_order',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    startTime,
+    endTime,
+    isBreak,
+    sortOrder,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'time_slots';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<TimeSlot> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('start_time')) {
+      context.handle(
+        _startTimeMeta,
+        startTime.isAcceptableOrUnknown(data['start_time']!, _startTimeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_startTimeMeta);
+    }
+    if (data.containsKey('end_time')) {
+      context.handle(
+        _endTimeMeta,
+        endTime.isAcceptableOrUnknown(data['end_time']!, _endTimeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_endTimeMeta);
+    }
+    if (data.containsKey('is_break')) {
+      context.handle(
+        _isBreakMeta,
+        isBreak.isAcceptableOrUnknown(data['is_break']!, _isBreakMeta),
+      );
+    }
+    if (data.containsKey('sort_order')) {
+      context.handle(
+        _sortOrderMeta,
+        sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  TimeSlot map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return TimeSlot(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      startTime: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}start_time'],
+      )!,
+      endTime: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}end_time'],
+      )!,
+      isBreak: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_break'],
+      )!,
+      sortOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sort_order'],
+      )!,
+    );
+  }
+
+  @override
+  $TimeSlotsTable createAlias(String alias) {
+    return $TimeSlotsTable(attachedDatabase, alias);
+  }
+}
+
+class TimeSlot extends DataClass implements Insertable<TimeSlot> {
+  final int id;
+  final String name;
+
+  /// «HH:mm»
+  final String startTime;
+  final String endTime;
+
+  /// تفریح دی؟ — د مهالویش په جدول کې بېل رنګ اخلي او مضمون نه مني.
+  final bool isBreak;
+  final int sortOrder;
+  const TimeSlot({
+    required this.id,
+    required this.name,
+    required this.startTime,
+    required this.endTime,
+    required this.isBreak,
+    required this.sortOrder,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['name'] = Variable<String>(name);
+    map['start_time'] = Variable<String>(startTime);
+    map['end_time'] = Variable<String>(endTime);
+    map['is_break'] = Variable<bool>(isBreak);
+    map['sort_order'] = Variable<int>(sortOrder);
+    return map;
+  }
+
+  TimeSlotsCompanion toCompanion(bool nullToAbsent) {
+    return TimeSlotsCompanion(
+      id: Value(id),
+      name: Value(name),
+      startTime: Value(startTime),
+      endTime: Value(endTime),
+      isBreak: Value(isBreak),
+      sortOrder: Value(sortOrder),
+    );
+  }
+
+  factory TimeSlot.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return TimeSlot(
+      id: serializer.fromJson<int>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      startTime: serializer.fromJson<String>(json['startTime']),
+      endTime: serializer.fromJson<String>(json['endTime']),
+      isBreak: serializer.fromJson<bool>(json['isBreak']),
+      sortOrder: serializer.fromJson<int>(json['sortOrder']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'name': serializer.toJson<String>(name),
+      'startTime': serializer.toJson<String>(startTime),
+      'endTime': serializer.toJson<String>(endTime),
+      'isBreak': serializer.toJson<bool>(isBreak),
+      'sortOrder': serializer.toJson<int>(sortOrder),
+    };
+  }
+
+  TimeSlot copyWith({
+    int? id,
+    String? name,
+    String? startTime,
+    String? endTime,
+    bool? isBreak,
+    int? sortOrder,
+  }) => TimeSlot(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    startTime: startTime ?? this.startTime,
+    endTime: endTime ?? this.endTime,
+    isBreak: isBreak ?? this.isBreak,
+    sortOrder: sortOrder ?? this.sortOrder,
+  );
+  TimeSlot copyWithCompanion(TimeSlotsCompanion data) {
+    return TimeSlot(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      startTime: data.startTime.present ? data.startTime.value : this.startTime,
+      endTime: data.endTime.present ? data.endTime.value : this.endTime,
+      isBreak: data.isBreak.present ? data.isBreak.value : this.isBreak,
+      sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TimeSlot(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('startTime: $startTime, ')
+          ..write('endTime: $endTime, ')
+          ..write('isBreak: $isBreak, ')
+          ..write('sortOrder: $sortOrder')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, name, startTime, endTime, isBreak, sortOrder);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is TimeSlot &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.startTime == this.startTime &&
+          other.endTime == this.endTime &&
+          other.isBreak == this.isBreak &&
+          other.sortOrder == this.sortOrder);
+}
+
+class TimeSlotsCompanion extends UpdateCompanion<TimeSlot> {
+  final Value<int> id;
+  final Value<String> name;
+  final Value<String> startTime;
+  final Value<String> endTime;
+  final Value<bool> isBreak;
+  final Value<int> sortOrder;
+  const TimeSlotsCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.startTime = const Value.absent(),
+    this.endTime = const Value.absent(),
+    this.isBreak = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+  });
+  TimeSlotsCompanion.insert({
+    this.id = const Value.absent(),
+    required String name,
+    required String startTime,
+    required String endTime,
+    this.isBreak = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+  }) : name = Value(name),
+       startTime = Value(startTime),
+       endTime = Value(endTime);
+  static Insertable<TimeSlot> custom({
+    Expression<int>? id,
+    Expression<String>? name,
+    Expression<String>? startTime,
+    Expression<String>? endTime,
+    Expression<bool>? isBreak,
+    Expression<int>? sortOrder,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (startTime != null) 'start_time': startTime,
+      if (endTime != null) 'end_time': endTime,
+      if (isBreak != null) 'is_break': isBreak,
+      if (sortOrder != null) 'sort_order': sortOrder,
+    });
+  }
+
+  TimeSlotsCompanion copyWith({
+    Value<int>? id,
+    Value<String>? name,
+    Value<String>? startTime,
+    Value<String>? endTime,
+    Value<bool>? isBreak,
+    Value<int>? sortOrder,
+  }) {
+    return TimeSlotsCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      startTime: startTime ?? this.startTime,
+      endTime: endTime ?? this.endTime,
+      isBreak: isBreak ?? this.isBreak,
+      sortOrder: sortOrder ?? this.sortOrder,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (startTime.present) {
+      map['start_time'] = Variable<String>(startTime.value);
+    }
+    if (endTime.present) {
+      map['end_time'] = Variable<String>(endTime.value);
+    }
+    if (isBreak.present) {
+      map['is_break'] = Variable<bool>(isBreak.value);
+    }
+    if (sortOrder.present) {
+      map['sort_order'] = Variable<int>(sortOrder.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TimeSlotsCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('startTime: $startTime, ')
+          ..write('endTime: $endTime, ')
+          ..write('isBreak: $isBreak, ')
+          ..write('sortOrder: $sortOrder')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $TimetableEntriesTable extends TimetableEntries
+    with TableInfo<$TimetableEntriesTable, TimetableEntry> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $TimetableEntriesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _sectionIdMeta = const VerificationMeta(
+    'sectionId',
+  );
+  @override
+  late final GeneratedColumn<int> sectionId = GeneratedColumn<int>(
+    'section_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES sections (id)',
+    ),
+  );
+  static const VerificationMeta _dayOfWeekMeta = const VerificationMeta(
+    'dayOfWeek',
+  );
+  @override
+  late final GeneratedColumn<int> dayOfWeek = GeneratedColumn<int>(
+    'day_of_week',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _slotIdMeta = const VerificationMeta('slotId');
+  @override
+  late final GeneratedColumn<int> slotId = GeneratedColumn<int>(
+    'slot_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES time_slots (id)',
+    ),
+  );
+  static const VerificationMeta _subjectIdMeta = const VerificationMeta(
+    'subjectId',
+  );
+  @override
+  late final GeneratedColumn<int> subjectId = GeneratedColumn<int>(
+    'subject_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES subjects (id)',
+    ),
+  );
+  static const VerificationMeta _teacherIdMeta = const VerificationMeta(
+    'teacherId',
+  );
+  @override
+  late final GeneratedColumn<int> teacherId = GeneratedColumn<int>(
+    'teacher_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES teachers (id)',
+    ),
+  );
+  static const VerificationMeta _roomMeta = const VerificationMeta('room');
+  @override
+  late final GeneratedColumn<String> room = GeneratedColumn<String>(
+    'room',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    sectionId,
+    dayOfWeek,
+    slotId,
+    subjectId,
+    teacherId,
+    room,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'timetable_entries';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<TimetableEntry> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('section_id')) {
+      context.handle(
+        _sectionIdMeta,
+        sectionId.isAcceptableOrUnknown(data['section_id']!, _sectionIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sectionIdMeta);
+    }
+    if (data.containsKey('day_of_week')) {
+      context.handle(
+        _dayOfWeekMeta,
+        dayOfWeek.isAcceptableOrUnknown(data['day_of_week']!, _dayOfWeekMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dayOfWeekMeta);
+    }
+    if (data.containsKey('slot_id')) {
+      context.handle(
+        _slotIdMeta,
+        slotId.isAcceptableOrUnknown(data['slot_id']!, _slotIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_slotIdMeta);
+    }
+    if (data.containsKey('subject_id')) {
+      context.handle(
+        _subjectIdMeta,
+        subjectId.isAcceptableOrUnknown(data['subject_id']!, _subjectIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_subjectIdMeta);
+    }
+    if (data.containsKey('teacher_id')) {
+      context.handle(
+        _teacherIdMeta,
+        teacherId.isAcceptableOrUnknown(data['teacher_id']!, _teacherIdMeta),
+      );
+    }
+    if (data.containsKey('room')) {
+      context.handle(
+        _roomMeta,
+        room.isAcceptableOrUnknown(data['room']!, _roomMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {sectionId, dayOfWeek, slotId},
+  ];
+  @override
+  TimetableEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return TimetableEntry(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      sectionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}section_id'],
+      )!,
+      dayOfWeek: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}day_of_week'],
+      )!,
+      slotId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}slot_id'],
+      )!,
+      subjectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}subject_id'],
+      )!,
+      teacherId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}teacher_id'],
+      ),
+      room: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}room'],
+      ),
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $TimetableEntriesTable createAlias(String alias) {
+    return $TimetableEntriesTable(attachedDatabase, alias);
+  }
+}
+
+class TimetableEntry extends DataClass implements Insertable<TimetableEntry> {
+  final int id;
+  final int sectionId;
+
+  /// ۱ = دوشنبه … ۷ = یکشنبه (د Dart `DateTime.weekday` په څېر).
+  final int dayOfWeek;
+  final int slotId;
+  final int subjectId;
+  final int? teacherId;
+  final String? room;
+  final DateTime updatedAt;
+  const TimetableEntry({
+    required this.id,
+    required this.sectionId,
+    required this.dayOfWeek,
+    required this.slotId,
+    required this.subjectId,
+    this.teacherId,
+    this.room,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['section_id'] = Variable<int>(sectionId);
+    map['day_of_week'] = Variable<int>(dayOfWeek);
+    map['slot_id'] = Variable<int>(slotId);
+    map['subject_id'] = Variable<int>(subjectId);
+    if (!nullToAbsent || teacherId != null) {
+      map['teacher_id'] = Variable<int>(teacherId);
+    }
+    if (!nullToAbsent || room != null) {
+      map['room'] = Variable<String>(room);
+    }
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  TimetableEntriesCompanion toCompanion(bool nullToAbsent) {
+    return TimetableEntriesCompanion(
+      id: Value(id),
+      sectionId: Value(sectionId),
+      dayOfWeek: Value(dayOfWeek),
+      slotId: Value(slotId),
+      subjectId: Value(subjectId),
+      teacherId: teacherId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(teacherId),
+      room: room == null && nullToAbsent ? const Value.absent() : Value(room),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory TimetableEntry.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return TimetableEntry(
+      id: serializer.fromJson<int>(json['id']),
+      sectionId: serializer.fromJson<int>(json['sectionId']),
+      dayOfWeek: serializer.fromJson<int>(json['dayOfWeek']),
+      slotId: serializer.fromJson<int>(json['slotId']),
+      subjectId: serializer.fromJson<int>(json['subjectId']),
+      teacherId: serializer.fromJson<int?>(json['teacherId']),
+      room: serializer.fromJson<String?>(json['room']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'sectionId': serializer.toJson<int>(sectionId),
+      'dayOfWeek': serializer.toJson<int>(dayOfWeek),
+      'slotId': serializer.toJson<int>(slotId),
+      'subjectId': serializer.toJson<int>(subjectId),
+      'teacherId': serializer.toJson<int?>(teacherId),
+      'room': serializer.toJson<String?>(room),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  TimetableEntry copyWith({
+    int? id,
+    int? sectionId,
+    int? dayOfWeek,
+    int? slotId,
+    int? subjectId,
+    Value<int?> teacherId = const Value.absent(),
+    Value<String?> room = const Value.absent(),
+    DateTime? updatedAt,
+  }) => TimetableEntry(
+    id: id ?? this.id,
+    sectionId: sectionId ?? this.sectionId,
+    dayOfWeek: dayOfWeek ?? this.dayOfWeek,
+    slotId: slotId ?? this.slotId,
+    subjectId: subjectId ?? this.subjectId,
+    teacherId: teacherId.present ? teacherId.value : this.teacherId,
+    room: room.present ? room.value : this.room,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  TimetableEntry copyWithCompanion(TimetableEntriesCompanion data) {
+    return TimetableEntry(
+      id: data.id.present ? data.id.value : this.id,
+      sectionId: data.sectionId.present ? data.sectionId.value : this.sectionId,
+      dayOfWeek: data.dayOfWeek.present ? data.dayOfWeek.value : this.dayOfWeek,
+      slotId: data.slotId.present ? data.slotId.value : this.slotId,
+      subjectId: data.subjectId.present ? data.subjectId.value : this.subjectId,
+      teacherId: data.teacherId.present ? data.teacherId.value : this.teacherId,
+      room: data.room.present ? data.room.value : this.room,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TimetableEntry(')
+          ..write('id: $id, ')
+          ..write('sectionId: $sectionId, ')
+          ..write('dayOfWeek: $dayOfWeek, ')
+          ..write('slotId: $slotId, ')
+          ..write('subjectId: $subjectId, ')
+          ..write('teacherId: $teacherId, ')
+          ..write('room: $room, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    sectionId,
+    dayOfWeek,
+    slotId,
+    subjectId,
+    teacherId,
+    room,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is TimetableEntry &&
+          other.id == this.id &&
+          other.sectionId == this.sectionId &&
+          other.dayOfWeek == this.dayOfWeek &&
+          other.slotId == this.slotId &&
+          other.subjectId == this.subjectId &&
+          other.teacherId == this.teacherId &&
+          other.room == this.room &&
+          other.updatedAt == this.updatedAt);
+}
+
+class TimetableEntriesCompanion extends UpdateCompanion<TimetableEntry> {
+  final Value<int> id;
+  final Value<int> sectionId;
+  final Value<int> dayOfWeek;
+  final Value<int> slotId;
+  final Value<int> subjectId;
+  final Value<int?> teacherId;
+  final Value<String?> room;
+  final Value<DateTime> updatedAt;
+  const TimetableEntriesCompanion({
+    this.id = const Value.absent(),
+    this.sectionId = const Value.absent(),
+    this.dayOfWeek = const Value.absent(),
+    this.slotId = const Value.absent(),
+    this.subjectId = const Value.absent(),
+    this.teacherId = const Value.absent(),
+    this.room = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+  });
+  TimetableEntriesCompanion.insert({
+    this.id = const Value.absent(),
+    required int sectionId,
+    required int dayOfWeek,
+    required int slotId,
+    required int subjectId,
+    this.teacherId = const Value.absent(),
+    this.room = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+  }) : sectionId = Value(sectionId),
+       dayOfWeek = Value(dayOfWeek),
+       slotId = Value(slotId),
+       subjectId = Value(subjectId);
+  static Insertable<TimetableEntry> custom({
+    Expression<int>? id,
+    Expression<int>? sectionId,
+    Expression<int>? dayOfWeek,
+    Expression<int>? slotId,
+    Expression<int>? subjectId,
+    Expression<int>? teacherId,
+    Expression<String>? room,
+    Expression<DateTime>? updatedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (sectionId != null) 'section_id': sectionId,
+      if (dayOfWeek != null) 'day_of_week': dayOfWeek,
+      if (slotId != null) 'slot_id': slotId,
+      if (subjectId != null) 'subject_id': subjectId,
+      if (teacherId != null) 'teacher_id': teacherId,
+      if (room != null) 'room': room,
+      if (updatedAt != null) 'updated_at': updatedAt,
+    });
+  }
+
+  TimetableEntriesCompanion copyWith({
+    Value<int>? id,
+    Value<int>? sectionId,
+    Value<int>? dayOfWeek,
+    Value<int>? slotId,
+    Value<int>? subjectId,
+    Value<int?>? teacherId,
+    Value<String?>? room,
+    Value<DateTime>? updatedAt,
+  }) {
+    return TimetableEntriesCompanion(
+      id: id ?? this.id,
+      sectionId: sectionId ?? this.sectionId,
+      dayOfWeek: dayOfWeek ?? this.dayOfWeek,
+      slotId: slotId ?? this.slotId,
+      subjectId: subjectId ?? this.subjectId,
+      teacherId: teacherId ?? this.teacherId,
+      room: room ?? this.room,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (sectionId.present) {
+      map['section_id'] = Variable<int>(sectionId.value);
+    }
+    if (dayOfWeek.present) {
+      map['day_of_week'] = Variable<int>(dayOfWeek.value);
+    }
+    if (slotId.present) {
+      map['slot_id'] = Variable<int>(slotId.value);
+    }
+    if (subjectId.present) {
+      map['subject_id'] = Variable<int>(subjectId.value);
+    }
+    if (teacherId.present) {
+      map['teacher_id'] = Variable<int>(teacherId.value);
+    }
+    if (room.present) {
+      map['room'] = Variable<String>(room.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TimetableEntriesCompanion(')
+          ..write('id: $id, ')
+          ..write('sectionId: $sectionId, ')
+          ..write('dayOfWeek: $dayOfWeek, ')
+          ..write('slotId: $slotId, ')
+          ..write('subjectId: $subjectId, ')
+          ..write('teacherId: $teacherId, ')
+          ..write('room: $room, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ExamsTable extends Exams with TableInfo<$ExamsTable, Exam> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ExamsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _examTypeMeta = const VerificationMeta(
+    'examType',
+  );
+  @override
+  late final GeneratedColumn<String> examType = GeneratedColumn<String>(
+    'exam_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('midterm'),
+  );
+  static const VerificationMeta _academicYearIdMeta = const VerificationMeta(
+    'academicYearId',
+  );
+  @override
+  late final GeneratedColumn<int> academicYearId = GeneratedColumn<int>(
+    'academic_year_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES academic_years (id)',
+    ),
+  );
+  static const VerificationMeta _termMeta = const VerificationMeta('term');
+  @override
+  late final GeneratedColumn<int> term = GeneratedColumn<int>(
+    'term',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  static const VerificationMeta _startsOnMeta = const VerificationMeta(
+    'startsOn',
+  );
+  @override
+  late final GeneratedColumn<DateTime> startsOn = GeneratedColumn<DateTime>(
+    'starts_on',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _endsOnMeta = const VerificationMeta('endsOn');
+  @override
+  late final GeneratedColumn<DateTime> endsOn = GeneratedColumn<DateTime>(
+    'ends_on',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _isPublishedMeta = const VerificationMeta(
+    'isPublished',
+  );
+  @override
+  late final GeneratedColumn<bool> isPublished = GeneratedColumn<bool>(
+    'is_published',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_published" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _publishedAtMeta = const VerificationMeta(
+    'publishedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> publishedAt = GeneratedColumn<DateTime>(
+    'published_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    examType,
+    academicYearId,
+    term,
+    startsOn,
+    endsOn,
+    isPublished,
+    publishedAt,
+    createdAt,
+    deletedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'exams';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Exam> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('exam_type')) {
+      context.handle(
+        _examTypeMeta,
+        examType.isAcceptableOrUnknown(data['exam_type']!, _examTypeMeta),
+      );
+    }
+    if (data.containsKey('academic_year_id')) {
+      context.handle(
+        _academicYearIdMeta,
+        academicYearId.isAcceptableOrUnknown(
+          data['academic_year_id']!,
+          _academicYearIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_academicYearIdMeta);
+    }
+    if (data.containsKey('term')) {
+      context.handle(
+        _termMeta,
+        term.isAcceptableOrUnknown(data['term']!, _termMeta),
+      );
+    }
+    if (data.containsKey('starts_on')) {
+      context.handle(
+        _startsOnMeta,
+        startsOn.isAcceptableOrUnknown(data['starts_on']!, _startsOnMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_startsOnMeta);
+    }
+    if (data.containsKey('ends_on')) {
+      context.handle(
+        _endsOnMeta,
+        endsOn.isAcceptableOrUnknown(data['ends_on']!, _endsOnMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_endsOnMeta);
+    }
+    if (data.containsKey('is_published')) {
+      context.handle(
+        _isPublishedMeta,
+        isPublished.isAcceptableOrUnknown(
+          data['is_published']!,
+          _isPublishedMeta,
+        ),
+      );
+    }
+    if (data.containsKey('published_at')) {
+      context.handle(
+        _publishedAtMeta,
+        publishedAt.isAcceptableOrUnknown(
+          data['published_at']!,
+          _publishedAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Exam map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Exam(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      examType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}exam_type'],
+      )!,
+      academicYearId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}academic_year_id'],
+      )!,
+      term: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}term'],
+      )!,
+      startsOn: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}starts_on'],
+      )!,
+      endsOn: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}ends_on'],
+      )!,
+      isPublished: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_published'],
+      )!,
+      publishedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}published_at'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+    );
+  }
+
+  @override
+  $ExamsTable createAlias(String alias) {
+    return $ExamsTable(attachedDatabase, alias);
+  }
+}
+
+class Exam extends DataClass implements Insertable<Exam> {
+  final int id;
+  final String name;
+
+  /// `monthly` | `midterm` | `final` | `quiz`
+  final String examType;
+  final int academicYearId;
+
+  /// ربع/سمستر — ۱ یا ۲. د کلني نتیجې لپاره پکار دی.
+  final int term;
+  final DateTime startsOn;
+  final DateTime endsOn;
+
+  /// **خپرول یوه پرېکړه ده، نه یو حالت.** تر څو چې خپره نه شي،
+  /// نمرې یوازې استادان ویني — نه والدین. که نه، یوه نیمګړې لیکل
+  /// شوې نمره به د کور خوا ته د اندېښنې لامل شوه.
+  final bool isPublished;
+  final DateTime? publishedAt;
+  final DateTime createdAt;
+  final DateTime? deletedAt;
+  const Exam({
+    required this.id,
+    required this.name,
+    required this.examType,
+    required this.academicYearId,
+    required this.term,
+    required this.startsOn,
+    required this.endsOn,
+    required this.isPublished,
+    this.publishedAt,
+    required this.createdAt,
+    this.deletedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['name'] = Variable<String>(name);
+    map['exam_type'] = Variable<String>(examType);
+    map['academic_year_id'] = Variable<int>(academicYearId);
+    map['term'] = Variable<int>(term);
+    map['starts_on'] = Variable<DateTime>(startsOn);
+    map['ends_on'] = Variable<DateTime>(endsOn);
+    map['is_published'] = Variable<bool>(isPublished);
+    if (!nullToAbsent || publishedAt != null) {
+      map['published_at'] = Variable<DateTime>(publishedAt);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    return map;
+  }
+
+  ExamsCompanion toCompanion(bool nullToAbsent) {
+    return ExamsCompanion(
+      id: Value(id),
+      name: Value(name),
+      examType: Value(examType),
+      academicYearId: Value(academicYearId),
+      term: Value(term),
+      startsOn: Value(startsOn),
+      endsOn: Value(endsOn),
+      isPublished: Value(isPublished),
+      publishedAt: publishedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(publishedAt),
+      createdAt: Value(createdAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+    );
+  }
+
+  factory Exam.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Exam(
+      id: serializer.fromJson<int>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      examType: serializer.fromJson<String>(json['examType']),
+      academicYearId: serializer.fromJson<int>(json['academicYearId']),
+      term: serializer.fromJson<int>(json['term']),
+      startsOn: serializer.fromJson<DateTime>(json['startsOn']),
+      endsOn: serializer.fromJson<DateTime>(json['endsOn']),
+      isPublished: serializer.fromJson<bool>(json['isPublished']),
+      publishedAt: serializer.fromJson<DateTime?>(json['publishedAt']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'name': serializer.toJson<String>(name),
+      'examType': serializer.toJson<String>(examType),
+      'academicYearId': serializer.toJson<int>(academicYearId),
+      'term': serializer.toJson<int>(term),
+      'startsOn': serializer.toJson<DateTime>(startsOn),
+      'endsOn': serializer.toJson<DateTime>(endsOn),
+      'isPublished': serializer.toJson<bool>(isPublished),
+      'publishedAt': serializer.toJson<DateTime?>(publishedAt),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+    };
+  }
+
+  Exam copyWith({
+    int? id,
+    String? name,
+    String? examType,
+    int? academicYearId,
+    int? term,
+    DateTime? startsOn,
+    DateTime? endsOn,
+    bool? isPublished,
+    Value<DateTime?> publishedAt = const Value.absent(),
+    DateTime? createdAt,
+    Value<DateTime?> deletedAt = const Value.absent(),
+  }) => Exam(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    examType: examType ?? this.examType,
+    academicYearId: academicYearId ?? this.academicYearId,
+    term: term ?? this.term,
+    startsOn: startsOn ?? this.startsOn,
+    endsOn: endsOn ?? this.endsOn,
+    isPublished: isPublished ?? this.isPublished,
+    publishedAt: publishedAt.present ? publishedAt.value : this.publishedAt,
+    createdAt: createdAt ?? this.createdAt,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+  );
+  Exam copyWithCompanion(ExamsCompanion data) {
+    return Exam(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      examType: data.examType.present ? data.examType.value : this.examType,
+      academicYearId: data.academicYearId.present
+          ? data.academicYearId.value
+          : this.academicYearId,
+      term: data.term.present ? data.term.value : this.term,
+      startsOn: data.startsOn.present ? data.startsOn.value : this.startsOn,
+      endsOn: data.endsOn.present ? data.endsOn.value : this.endsOn,
+      isPublished: data.isPublished.present
+          ? data.isPublished.value
+          : this.isPublished,
+      publishedAt: data.publishedAt.present
+          ? data.publishedAt.value
+          : this.publishedAt,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Exam(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('examType: $examType, ')
+          ..write('academicYearId: $academicYearId, ')
+          ..write('term: $term, ')
+          ..write('startsOn: $startsOn, ')
+          ..write('endsOn: $endsOn, ')
+          ..write('isPublished: $isPublished, ')
+          ..write('publishedAt: $publishedAt, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('deletedAt: $deletedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    name,
+    examType,
+    academicYearId,
+    term,
+    startsOn,
+    endsOn,
+    isPublished,
+    publishedAt,
+    createdAt,
+    deletedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Exam &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.examType == this.examType &&
+          other.academicYearId == this.academicYearId &&
+          other.term == this.term &&
+          other.startsOn == this.startsOn &&
+          other.endsOn == this.endsOn &&
+          other.isPublished == this.isPublished &&
+          other.publishedAt == this.publishedAt &&
+          other.createdAt == this.createdAt &&
+          other.deletedAt == this.deletedAt);
+}
+
+class ExamsCompanion extends UpdateCompanion<Exam> {
+  final Value<int> id;
+  final Value<String> name;
+  final Value<String> examType;
+  final Value<int> academicYearId;
+  final Value<int> term;
+  final Value<DateTime> startsOn;
+  final Value<DateTime> endsOn;
+  final Value<bool> isPublished;
+  final Value<DateTime?> publishedAt;
+  final Value<DateTime> createdAt;
+  final Value<DateTime?> deletedAt;
+  const ExamsCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.examType = const Value.absent(),
+    this.academicYearId = const Value.absent(),
+    this.term = const Value.absent(),
+    this.startsOn = const Value.absent(),
+    this.endsOn = const Value.absent(),
+    this.isPublished = const Value.absent(),
+    this.publishedAt = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+  });
+  ExamsCompanion.insert({
+    this.id = const Value.absent(),
+    required String name,
+    this.examType = const Value.absent(),
+    required int academicYearId,
+    this.term = const Value.absent(),
+    required DateTime startsOn,
+    required DateTime endsOn,
+    this.isPublished = const Value.absent(),
+    this.publishedAt = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+  }) : name = Value(name),
+       academicYearId = Value(academicYearId),
+       startsOn = Value(startsOn),
+       endsOn = Value(endsOn);
+  static Insertable<Exam> custom({
+    Expression<int>? id,
+    Expression<String>? name,
+    Expression<String>? examType,
+    Expression<int>? academicYearId,
+    Expression<int>? term,
+    Expression<DateTime>? startsOn,
+    Expression<DateTime>? endsOn,
+    Expression<bool>? isPublished,
+    Expression<DateTime>? publishedAt,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? deletedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (examType != null) 'exam_type': examType,
+      if (academicYearId != null) 'academic_year_id': academicYearId,
+      if (term != null) 'term': term,
+      if (startsOn != null) 'starts_on': startsOn,
+      if (endsOn != null) 'ends_on': endsOn,
+      if (isPublished != null) 'is_published': isPublished,
+      if (publishedAt != null) 'published_at': publishedAt,
+      if (createdAt != null) 'created_at': createdAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+    });
+  }
+
+  ExamsCompanion copyWith({
+    Value<int>? id,
+    Value<String>? name,
+    Value<String>? examType,
+    Value<int>? academicYearId,
+    Value<int>? term,
+    Value<DateTime>? startsOn,
+    Value<DateTime>? endsOn,
+    Value<bool>? isPublished,
+    Value<DateTime?>? publishedAt,
+    Value<DateTime>? createdAt,
+    Value<DateTime?>? deletedAt,
+  }) {
+    return ExamsCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      examType: examType ?? this.examType,
+      academicYearId: academicYearId ?? this.academicYearId,
+      term: term ?? this.term,
+      startsOn: startsOn ?? this.startsOn,
+      endsOn: endsOn ?? this.endsOn,
+      isPublished: isPublished ?? this.isPublished,
+      publishedAt: publishedAt ?? this.publishedAt,
+      createdAt: createdAt ?? this.createdAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (examType.present) {
+      map['exam_type'] = Variable<String>(examType.value);
+    }
+    if (academicYearId.present) {
+      map['academic_year_id'] = Variable<int>(academicYearId.value);
+    }
+    if (term.present) {
+      map['term'] = Variable<int>(term.value);
+    }
+    if (startsOn.present) {
+      map['starts_on'] = Variable<DateTime>(startsOn.value);
+    }
+    if (endsOn.present) {
+      map['ends_on'] = Variable<DateTime>(endsOn.value);
+    }
+    if (isPublished.present) {
+      map['is_published'] = Variable<bool>(isPublished.value);
+    }
+    if (publishedAt.present) {
+      map['published_at'] = Variable<DateTime>(publishedAt.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ExamsCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('examType: $examType, ')
+          ..write('academicYearId: $academicYearId, ')
+          ..write('term: $term, ')
+          ..write('startsOn: $startsOn, ')
+          ..write('endsOn: $endsOn, ')
+          ..write('isPublished: $isPublished, ')
+          ..write('publishedAt: $publishedAt, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('deletedAt: $deletedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ExamSubjectsTable extends ExamSubjects
+    with TableInfo<$ExamSubjectsTable, ExamSubject> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ExamSubjectsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _examIdMeta = const VerificationMeta('examId');
+  @override
+  late final GeneratedColumn<int> examId = GeneratedColumn<int>(
+    'exam_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES exams (id)',
+    ),
+  );
+  static const VerificationMeta _gradeIdMeta = const VerificationMeta(
+    'gradeId',
+  );
+  @override
+  late final GeneratedColumn<int> gradeId = GeneratedColumn<int>(
+    'grade_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES grades (id)',
+    ),
+  );
+  static const VerificationMeta _subjectIdMeta = const VerificationMeta(
+    'subjectId',
+  );
+  @override
+  late final GeneratedColumn<int> subjectId = GeneratedColumn<int>(
+    'subject_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES subjects (id)',
+    ),
+  );
+  static const VerificationMeta _fullMarkMeta = const VerificationMeta(
+    'fullMark',
+  );
+  @override
+  late final GeneratedColumn<int> fullMark = GeneratedColumn<int>(
+    'full_mark',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(100),
+  );
+  static const VerificationMeta _passMarkMeta = const VerificationMeta(
+    'passMark',
+  );
+  @override
+  late final GeneratedColumn<int> passMark = GeneratedColumn<int>(
+    'pass_mark',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(40),
+  );
+  static const VerificationMeta _examDateMeta = const VerificationMeta(
+    'examDate',
+  );
+  @override
+  late final GeneratedColumn<DateTime> examDate = GeneratedColumn<DateTime>(
+    'exam_date',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sortOrderMeta = const VerificationMeta(
+    'sortOrder',
+  );
+  @override
+  late final GeneratedColumn<int> sortOrder = GeneratedColumn<int>(
+    'sort_order',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    examId,
+    gradeId,
+    subjectId,
+    fullMark,
+    passMark,
+    examDate,
+    sortOrder,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'exam_subjects';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ExamSubject> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('exam_id')) {
+      context.handle(
+        _examIdMeta,
+        examId.isAcceptableOrUnknown(data['exam_id']!, _examIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_examIdMeta);
+    }
+    if (data.containsKey('grade_id')) {
+      context.handle(
+        _gradeIdMeta,
+        gradeId.isAcceptableOrUnknown(data['grade_id']!, _gradeIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_gradeIdMeta);
+    }
+    if (data.containsKey('subject_id')) {
+      context.handle(
+        _subjectIdMeta,
+        subjectId.isAcceptableOrUnknown(data['subject_id']!, _subjectIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_subjectIdMeta);
+    }
+    if (data.containsKey('full_mark')) {
+      context.handle(
+        _fullMarkMeta,
+        fullMark.isAcceptableOrUnknown(data['full_mark']!, _fullMarkMeta),
+      );
+    }
+    if (data.containsKey('pass_mark')) {
+      context.handle(
+        _passMarkMeta,
+        passMark.isAcceptableOrUnknown(data['pass_mark']!, _passMarkMeta),
+      );
+    }
+    if (data.containsKey('exam_date')) {
+      context.handle(
+        _examDateMeta,
+        examDate.isAcceptableOrUnknown(data['exam_date']!, _examDateMeta),
+      );
+    }
+    if (data.containsKey('sort_order')) {
+      context.handle(
+        _sortOrderMeta,
+        sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {examId, gradeId, subjectId},
+  ];
+  @override
+  ExamSubject map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ExamSubject(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      examId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}exam_id'],
+      )!,
+      gradeId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}grade_id'],
+      )!,
+      subjectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}subject_id'],
+      )!,
+      fullMark: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}full_mark'],
+      )!,
+      passMark: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}pass_mark'],
+      )!,
+      examDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}exam_date'],
+      ),
+      sortOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sort_order'],
+      )!,
+    );
+  }
+
+  @override
+  $ExamSubjectsTable createAlias(String alias) {
+    return $ExamSubjectsTable(attachedDatabase, alias);
+  }
+}
+
+class ExamSubject extends DataClass implements Insertable<ExamSubject> {
+  final int id;
+  final int examId;
+  final int gradeId;
+  final int subjectId;
+  final int fullMark;
+  final int passMark;
+  final DateTime? examDate;
+  final int sortOrder;
+  const ExamSubject({
+    required this.id,
+    required this.examId,
+    required this.gradeId,
+    required this.subjectId,
+    required this.fullMark,
+    required this.passMark,
+    this.examDate,
+    required this.sortOrder,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['exam_id'] = Variable<int>(examId);
+    map['grade_id'] = Variable<int>(gradeId);
+    map['subject_id'] = Variable<int>(subjectId);
+    map['full_mark'] = Variable<int>(fullMark);
+    map['pass_mark'] = Variable<int>(passMark);
+    if (!nullToAbsent || examDate != null) {
+      map['exam_date'] = Variable<DateTime>(examDate);
+    }
+    map['sort_order'] = Variable<int>(sortOrder);
+    return map;
+  }
+
+  ExamSubjectsCompanion toCompanion(bool nullToAbsent) {
+    return ExamSubjectsCompanion(
+      id: Value(id),
+      examId: Value(examId),
+      gradeId: Value(gradeId),
+      subjectId: Value(subjectId),
+      fullMark: Value(fullMark),
+      passMark: Value(passMark),
+      examDate: examDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(examDate),
+      sortOrder: Value(sortOrder),
+    );
+  }
+
+  factory ExamSubject.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ExamSubject(
+      id: serializer.fromJson<int>(json['id']),
+      examId: serializer.fromJson<int>(json['examId']),
+      gradeId: serializer.fromJson<int>(json['gradeId']),
+      subjectId: serializer.fromJson<int>(json['subjectId']),
+      fullMark: serializer.fromJson<int>(json['fullMark']),
+      passMark: serializer.fromJson<int>(json['passMark']),
+      examDate: serializer.fromJson<DateTime?>(json['examDate']),
+      sortOrder: serializer.fromJson<int>(json['sortOrder']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'examId': serializer.toJson<int>(examId),
+      'gradeId': serializer.toJson<int>(gradeId),
+      'subjectId': serializer.toJson<int>(subjectId),
+      'fullMark': serializer.toJson<int>(fullMark),
+      'passMark': serializer.toJson<int>(passMark),
+      'examDate': serializer.toJson<DateTime?>(examDate),
+      'sortOrder': serializer.toJson<int>(sortOrder),
+    };
+  }
+
+  ExamSubject copyWith({
+    int? id,
+    int? examId,
+    int? gradeId,
+    int? subjectId,
+    int? fullMark,
+    int? passMark,
+    Value<DateTime?> examDate = const Value.absent(),
+    int? sortOrder,
+  }) => ExamSubject(
+    id: id ?? this.id,
+    examId: examId ?? this.examId,
+    gradeId: gradeId ?? this.gradeId,
+    subjectId: subjectId ?? this.subjectId,
+    fullMark: fullMark ?? this.fullMark,
+    passMark: passMark ?? this.passMark,
+    examDate: examDate.present ? examDate.value : this.examDate,
+    sortOrder: sortOrder ?? this.sortOrder,
+  );
+  ExamSubject copyWithCompanion(ExamSubjectsCompanion data) {
+    return ExamSubject(
+      id: data.id.present ? data.id.value : this.id,
+      examId: data.examId.present ? data.examId.value : this.examId,
+      gradeId: data.gradeId.present ? data.gradeId.value : this.gradeId,
+      subjectId: data.subjectId.present ? data.subjectId.value : this.subjectId,
+      fullMark: data.fullMark.present ? data.fullMark.value : this.fullMark,
+      passMark: data.passMark.present ? data.passMark.value : this.passMark,
+      examDate: data.examDate.present ? data.examDate.value : this.examDate,
+      sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ExamSubject(')
+          ..write('id: $id, ')
+          ..write('examId: $examId, ')
+          ..write('gradeId: $gradeId, ')
+          ..write('subjectId: $subjectId, ')
+          ..write('fullMark: $fullMark, ')
+          ..write('passMark: $passMark, ')
+          ..write('examDate: $examDate, ')
+          ..write('sortOrder: $sortOrder')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    examId,
+    gradeId,
+    subjectId,
+    fullMark,
+    passMark,
+    examDate,
+    sortOrder,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ExamSubject &&
+          other.id == this.id &&
+          other.examId == this.examId &&
+          other.gradeId == this.gradeId &&
+          other.subjectId == this.subjectId &&
+          other.fullMark == this.fullMark &&
+          other.passMark == this.passMark &&
+          other.examDate == this.examDate &&
+          other.sortOrder == this.sortOrder);
+}
+
+class ExamSubjectsCompanion extends UpdateCompanion<ExamSubject> {
+  final Value<int> id;
+  final Value<int> examId;
+  final Value<int> gradeId;
+  final Value<int> subjectId;
+  final Value<int> fullMark;
+  final Value<int> passMark;
+  final Value<DateTime?> examDate;
+  final Value<int> sortOrder;
+  const ExamSubjectsCompanion({
+    this.id = const Value.absent(),
+    this.examId = const Value.absent(),
+    this.gradeId = const Value.absent(),
+    this.subjectId = const Value.absent(),
+    this.fullMark = const Value.absent(),
+    this.passMark = const Value.absent(),
+    this.examDate = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+  });
+  ExamSubjectsCompanion.insert({
+    this.id = const Value.absent(),
+    required int examId,
+    required int gradeId,
+    required int subjectId,
+    this.fullMark = const Value.absent(),
+    this.passMark = const Value.absent(),
+    this.examDate = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+  }) : examId = Value(examId),
+       gradeId = Value(gradeId),
+       subjectId = Value(subjectId);
+  static Insertable<ExamSubject> custom({
+    Expression<int>? id,
+    Expression<int>? examId,
+    Expression<int>? gradeId,
+    Expression<int>? subjectId,
+    Expression<int>? fullMark,
+    Expression<int>? passMark,
+    Expression<DateTime>? examDate,
+    Expression<int>? sortOrder,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (examId != null) 'exam_id': examId,
+      if (gradeId != null) 'grade_id': gradeId,
+      if (subjectId != null) 'subject_id': subjectId,
+      if (fullMark != null) 'full_mark': fullMark,
+      if (passMark != null) 'pass_mark': passMark,
+      if (examDate != null) 'exam_date': examDate,
+      if (sortOrder != null) 'sort_order': sortOrder,
+    });
+  }
+
+  ExamSubjectsCompanion copyWith({
+    Value<int>? id,
+    Value<int>? examId,
+    Value<int>? gradeId,
+    Value<int>? subjectId,
+    Value<int>? fullMark,
+    Value<int>? passMark,
+    Value<DateTime?>? examDate,
+    Value<int>? sortOrder,
+  }) {
+    return ExamSubjectsCompanion(
+      id: id ?? this.id,
+      examId: examId ?? this.examId,
+      gradeId: gradeId ?? this.gradeId,
+      subjectId: subjectId ?? this.subjectId,
+      fullMark: fullMark ?? this.fullMark,
+      passMark: passMark ?? this.passMark,
+      examDate: examDate ?? this.examDate,
+      sortOrder: sortOrder ?? this.sortOrder,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (examId.present) {
+      map['exam_id'] = Variable<int>(examId.value);
+    }
+    if (gradeId.present) {
+      map['grade_id'] = Variable<int>(gradeId.value);
+    }
+    if (subjectId.present) {
+      map['subject_id'] = Variable<int>(subjectId.value);
+    }
+    if (fullMark.present) {
+      map['full_mark'] = Variable<int>(fullMark.value);
+    }
+    if (passMark.present) {
+      map['pass_mark'] = Variable<int>(passMark.value);
+    }
+    if (examDate.present) {
+      map['exam_date'] = Variable<DateTime>(examDate.value);
+    }
+    if (sortOrder.present) {
+      map['sort_order'] = Variable<int>(sortOrder.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ExamSubjectsCompanion(')
+          ..write('id: $id, ')
+          ..write('examId: $examId, ')
+          ..write('gradeId: $gradeId, ')
+          ..write('subjectId: $subjectId, ')
+          ..write('fullMark: $fullMark, ')
+          ..write('passMark: $passMark, ')
+          ..write('examDate: $examDate, ')
+          ..write('sortOrder: $sortOrder')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $MarksTable extends Marks with TableInfo<$MarksTable, Mark> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $MarksTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _examSubjectIdMeta = const VerificationMeta(
+    'examSubjectId',
+  );
+  @override
+  late final GeneratedColumn<int> examSubjectId = GeneratedColumn<int>(
+    'exam_subject_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES exam_subjects (id)',
+    ),
+  );
+  static const VerificationMeta _studentIdMeta = const VerificationMeta(
+    'studentId',
+  );
+  @override
+  late final GeneratedColumn<int> studentId = GeneratedColumn<int>(
+    'student_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES students (id)',
+    ),
+  );
+  static const VerificationMeta _obtainedMeta = const VerificationMeta(
+    'obtained',
+  );
+  @override
+  late final GeneratedColumn<double> obtained = GeneratedColumn<double>(
+    'obtained',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _isAbsentMeta = const VerificationMeta(
+    'isAbsent',
+  );
+  @override
+  late final GeneratedColumn<bool> isAbsent = GeneratedColumn<bool>(
+    'is_absent',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_absent" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _remarksMeta = const VerificationMeta(
+    'remarks',
+  );
+  @override
+  late final GeneratedColumn<String> remarks = GeneratedColumn<String>(
+    'remarks',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _enteredByUserIdMeta = const VerificationMeta(
+    'enteredByUserId',
+  );
+  @override
+  late final GeneratedColumn<int> enteredByUserId = GeneratedColumn<int>(
+    'entered_by_user_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _enteredAtMeta = const VerificationMeta(
+    'enteredAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> enteredAt = GeneratedColumn<DateTime>(
+    'entered_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    examSubjectId,
+    studentId,
+    obtained,
+    isAbsent,
+    remarks,
+    enteredByUserId,
+    enteredAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'marks';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Mark> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('exam_subject_id')) {
+      context.handle(
+        _examSubjectIdMeta,
+        examSubjectId.isAcceptableOrUnknown(
+          data['exam_subject_id']!,
+          _examSubjectIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_examSubjectIdMeta);
+    }
+    if (data.containsKey('student_id')) {
+      context.handle(
+        _studentIdMeta,
+        studentId.isAcceptableOrUnknown(data['student_id']!, _studentIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_studentIdMeta);
+    }
+    if (data.containsKey('obtained')) {
+      context.handle(
+        _obtainedMeta,
+        obtained.isAcceptableOrUnknown(data['obtained']!, _obtainedMeta),
+      );
+    }
+    if (data.containsKey('is_absent')) {
+      context.handle(
+        _isAbsentMeta,
+        isAbsent.isAcceptableOrUnknown(data['is_absent']!, _isAbsentMeta),
+      );
+    }
+    if (data.containsKey('remarks')) {
+      context.handle(
+        _remarksMeta,
+        remarks.isAcceptableOrUnknown(data['remarks']!, _remarksMeta),
+      );
+    }
+    if (data.containsKey('entered_by_user_id')) {
+      context.handle(
+        _enteredByUserIdMeta,
+        enteredByUserId.isAcceptableOrUnknown(
+          data['entered_by_user_id']!,
+          _enteredByUserIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('entered_at')) {
+      context.handle(
+        _enteredAtMeta,
+        enteredAt.isAcceptableOrUnknown(data['entered_at']!, _enteredAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {examSubjectId, studentId},
+  ];
+  @override
+  Mark map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Mark(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      examSubjectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}exam_subject_id'],
+      )!,
+      studentId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}student_id'],
+      )!,
+      obtained: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}obtained'],
+      ),
+      isAbsent: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_absent'],
+      )!,
+      remarks: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}remarks'],
+      ),
+      enteredByUserId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}entered_by_user_id'],
+      ),
+      enteredAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}entered_at'],
+      )!,
+    );
+  }
+
+  @override
+  $MarksTable createAlias(String alias) {
+    return $MarksTable(attachedDatabase, alias);
+  }
+}
+
+class Mark extends DataClass implements Insertable<Mark> {
+  final int id;
+  final int examSubjectId;
+  final int studentId;
+
+  /// **ولې `real` نه `int`؟** ځینې ښوونځي نیمې نمرې ورکوي —
+  /// «۱۷.۵ له ۲۰ څخه». که پوره عدد وای، استاد به يې ګردول ته اړ و
+  /// او د کال په پای کې به توپیر راټول شوی و.
+  final double? obtained;
+
+  /// **دا ولې له صفر نمرې څخه بېل دی؟** ځکه چې «راغلی نه و» او
+  /// «راغی خو څه يې ونه لیکل» دوه بېل شیان دي. که دواړه صفر وای،
+  /// د اوسط شمېرل به غلط وو.
+  final bool isAbsent;
+  final String? remarks;
+  final int? enteredByUserId;
+  final DateTime enteredAt;
+  const Mark({
+    required this.id,
+    required this.examSubjectId,
+    required this.studentId,
+    this.obtained,
+    required this.isAbsent,
+    this.remarks,
+    this.enteredByUserId,
+    required this.enteredAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['exam_subject_id'] = Variable<int>(examSubjectId);
+    map['student_id'] = Variable<int>(studentId);
+    if (!nullToAbsent || obtained != null) {
+      map['obtained'] = Variable<double>(obtained);
+    }
+    map['is_absent'] = Variable<bool>(isAbsent);
+    if (!nullToAbsent || remarks != null) {
+      map['remarks'] = Variable<String>(remarks);
+    }
+    if (!nullToAbsent || enteredByUserId != null) {
+      map['entered_by_user_id'] = Variable<int>(enteredByUserId);
+    }
+    map['entered_at'] = Variable<DateTime>(enteredAt);
+    return map;
+  }
+
+  MarksCompanion toCompanion(bool nullToAbsent) {
+    return MarksCompanion(
+      id: Value(id),
+      examSubjectId: Value(examSubjectId),
+      studentId: Value(studentId),
+      obtained: obtained == null && nullToAbsent
+          ? const Value.absent()
+          : Value(obtained),
+      isAbsent: Value(isAbsent),
+      remarks: remarks == null && nullToAbsent
+          ? const Value.absent()
+          : Value(remarks),
+      enteredByUserId: enteredByUserId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(enteredByUserId),
+      enteredAt: Value(enteredAt),
+    );
+  }
+
+  factory Mark.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Mark(
+      id: serializer.fromJson<int>(json['id']),
+      examSubjectId: serializer.fromJson<int>(json['examSubjectId']),
+      studentId: serializer.fromJson<int>(json['studentId']),
+      obtained: serializer.fromJson<double?>(json['obtained']),
+      isAbsent: serializer.fromJson<bool>(json['isAbsent']),
+      remarks: serializer.fromJson<String?>(json['remarks']),
+      enteredByUserId: serializer.fromJson<int?>(json['enteredByUserId']),
+      enteredAt: serializer.fromJson<DateTime>(json['enteredAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'examSubjectId': serializer.toJson<int>(examSubjectId),
+      'studentId': serializer.toJson<int>(studentId),
+      'obtained': serializer.toJson<double?>(obtained),
+      'isAbsent': serializer.toJson<bool>(isAbsent),
+      'remarks': serializer.toJson<String?>(remarks),
+      'enteredByUserId': serializer.toJson<int?>(enteredByUserId),
+      'enteredAt': serializer.toJson<DateTime>(enteredAt),
+    };
+  }
+
+  Mark copyWith({
+    int? id,
+    int? examSubjectId,
+    int? studentId,
+    Value<double?> obtained = const Value.absent(),
+    bool? isAbsent,
+    Value<String?> remarks = const Value.absent(),
+    Value<int?> enteredByUserId = const Value.absent(),
+    DateTime? enteredAt,
+  }) => Mark(
+    id: id ?? this.id,
+    examSubjectId: examSubjectId ?? this.examSubjectId,
+    studentId: studentId ?? this.studentId,
+    obtained: obtained.present ? obtained.value : this.obtained,
+    isAbsent: isAbsent ?? this.isAbsent,
+    remarks: remarks.present ? remarks.value : this.remarks,
+    enteredByUserId: enteredByUserId.present
+        ? enteredByUserId.value
+        : this.enteredByUserId,
+    enteredAt: enteredAt ?? this.enteredAt,
+  );
+  Mark copyWithCompanion(MarksCompanion data) {
+    return Mark(
+      id: data.id.present ? data.id.value : this.id,
+      examSubjectId: data.examSubjectId.present
+          ? data.examSubjectId.value
+          : this.examSubjectId,
+      studentId: data.studentId.present ? data.studentId.value : this.studentId,
+      obtained: data.obtained.present ? data.obtained.value : this.obtained,
+      isAbsent: data.isAbsent.present ? data.isAbsent.value : this.isAbsent,
+      remarks: data.remarks.present ? data.remarks.value : this.remarks,
+      enteredByUserId: data.enteredByUserId.present
+          ? data.enteredByUserId.value
+          : this.enteredByUserId,
+      enteredAt: data.enteredAt.present ? data.enteredAt.value : this.enteredAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Mark(')
+          ..write('id: $id, ')
+          ..write('examSubjectId: $examSubjectId, ')
+          ..write('studentId: $studentId, ')
+          ..write('obtained: $obtained, ')
+          ..write('isAbsent: $isAbsent, ')
+          ..write('remarks: $remarks, ')
+          ..write('enteredByUserId: $enteredByUserId, ')
+          ..write('enteredAt: $enteredAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    examSubjectId,
+    studentId,
+    obtained,
+    isAbsent,
+    remarks,
+    enteredByUserId,
+    enteredAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Mark &&
+          other.id == this.id &&
+          other.examSubjectId == this.examSubjectId &&
+          other.studentId == this.studentId &&
+          other.obtained == this.obtained &&
+          other.isAbsent == this.isAbsent &&
+          other.remarks == this.remarks &&
+          other.enteredByUserId == this.enteredByUserId &&
+          other.enteredAt == this.enteredAt);
+}
+
+class MarksCompanion extends UpdateCompanion<Mark> {
+  final Value<int> id;
+  final Value<int> examSubjectId;
+  final Value<int> studentId;
+  final Value<double?> obtained;
+  final Value<bool> isAbsent;
+  final Value<String?> remarks;
+  final Value<int?> enteredByUserId;
+  final Value<DateTime> enteredAt;
+  const MarksCompanion({
+    this.id = const Value.absent(),
+    this.examSubjectId = const Value.absent(),
+    this.studentId = const Value.absent(),
+    this.obtained = const Value.absent(),
+    this.isAbsent = const Value.absent(),
+    this.remarks = const Value.absent(),
+    this.enteredByUserId = const Value.absent(),
+    this.enteredAt = const Value.absent(),
+  });
+  MarksCompanion.insert({
+    this.id = const Value.absent(),
+    required int examSubjectId,
+    required int studentId,
+    this.obtained = const Value.absent(),
+    this.isAbsent = const Value.absent(),
+    this.remarks = const Value.absent(),
+    this.enteredByUserId = const Value.absent(),
+    this.enteredAt = const Value.absent(),
+  }) : examSubjectId = Value(examSubjectId),
+       studentId = Value(studentId);
+  static Insertable<Mark> custom({
+    Expression<int>? id,
+    Expression<int>? examSubjectId,
+    Expression<int>? studentId,
+    Expression<double>? obtained,
+    Expression<bool>? isAbsent,
+    Expression<String>? remarks,
+    Expression<int>? enteredByUserId,
+    Expression<DateTime>? enteredAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (examSubjectId != null) 'exam_subject_id': examSubjectId,
+      if (studentId != null) 'student_id': studentId,
+      if (obtained != null) 'obtained': obtained,
+      if (isAbsent != null) 'is_absent': isAbsent,
+      if (remarks != null) 'remarks': remarks,
+      if (enteredByUserId != null) 'entered_by_user_id': enteredByUserId,
+      if (enteredAt != null) 'entered_at': enteredAt,
+    });
+  }
+
+  MarksCompanion copyWith({
+    Value<int>? id,
+    Value<int>? examSubjectId,
+    Value<int>? studentId,
+    Value<double?>? obtained,
+    Value<bool>? isAbsent,
+    Value<String?>? remarks,
+    Value<int?>? enteredByUserId,
+    Value<DateTime>? enteredAt,
+  }) {
+    return MarksCompanion(
+      id: id ?? this.id,
+      examSubjectId: examSubjectId ?? this.examSubjectId,
+      studentId: studentId ?? this.studentId,
+      obtained: obtained ?? this.obtained,
+      isAbsent: isAbsent ?? this.isAbsent,
+      remarks: remarks ?? this.remarks,
+      enteredByUserId: enteredByUserId ?? this.enteredByUserId,
+      enteredAt: enteredAt ?? this.enteredAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (examSubjectId.present) {
+      map['exam_subject_id'] = Variable<int>(examSubjectId.value);
+    }
+    if (studentId.present) {
+      map['student_id'] = Variable<int>(studentId.value);
+    }
+    if (obtained.present) {
+      map['obtained'] = Variable<double>(obtained.value);
+    }
+    if (isAbsent.present) {
+      map['is_absent'] = Variable<bool>(isAbsent.value);
+    }
+    if (remarks.present) {
+      map['remarks'] = Variable<String>(remarks.value);
+    }
+    if (enteredByUserId.present) {
+      map['entered_by_user_id'] = Variable<int>(enteredByUserId.value);
+    }
+    if (enteredAt.present) {
+      map['entered_at'] = Variable<DateTime>(enteredAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MarksCompanion(')
+          ..write('id: $id, ')
+          ..write('examSubjectId: $examSubjectId, ')
+          ..write('studentId: $studentId, ')
+          ..write('obtained: $obtained, ')
+          ..write('isAbsent: $isAbsent, ')
+          ..write('remarks: $remarks, ')
+          ..write('enteredByUserId: $enteredByUserId, ')
+          ..write('enteredAt: $enteredAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -13250,6 +15868,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $AppNotificationsTable appNotifications = $AppNotificationsTable(
     this,
   );
+  late final $TimeSlotsTable timeSlots = $TimeSlotsTable(this);
+  late final $TimetableEntriesTable timetableEntries = $TimetableEntriesTable(
+    this,
+  );
+  late final $ExamsTable exams = $ExamsTable(this);
+  late final $ExamSubjectsTable examSubjects = $ExamSubjectsTable(this);
+  late final $MarksTable marks = $MarksTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -13275,6 +15900,11 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     messageTemplates,
     messages,
     appNotifications,
+    timeSlots,
+    timetableEntries,
+    exams,
+    examSubjects,
+    marks,
   ];
 }
 
@@ -14083,6 +16713,28 @@ final class $$AcademicYearsTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<$ExamsTable, List<Exam>> _examsRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.exams,
+    aliasName: $_aliasNameGenerator(
+      db.academicYears.id,
+      db.exams.academicYearId,
+    ),
+  );
+
+  $$ExamsTableProcessedTableManager get examsRefs {
+    final manager = $$ExamsTableTableManager(
+      $_db,
+      $_db.exams,
+    ).filter((f) => f.academicYearId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_examsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$AcademicYearsTableFilterComposer
@@ -14160,6 +16812,31 @@ class $$AcademicYearsTableFilterComposer
           }) => $$EnrollmentsTableFilterComposer(
             $db: $db,
             $table: $db.enrollments,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> examsRefs(
+    Expression<bool> Function($$ExamsTableFilterComposer f) f,
+  ) {
+    final $$ExamsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.exams,
+      getReferencedColumn: (t) => t.academicYearId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ExamsTableFilterComposer(
+            $db: $db,
+            $table: $db.exams,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -14278,6 +16955,31 @@ class $$AcademicYearsTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> examsRefs<T extends Object>(
+    Expression<T> Function($$ExamsTableAnnotationComposer a) f,
+  ) {
+    final $$ExamsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.exams,
+      getReferencedColumn: (t) => t.academicYearId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ExamsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.exams,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$AcademicYearsTableTableManager
@@ -14293,7 +16995,11 @@ class $$AcademicYearsTableTableManager
           $$AcademicYearsTableUpdateCompanionBuilder,
           (AcademicYear, $$AcademicYearsTableReferences),
           AcademicYear,
-          PrefetchHooks Function({bool sectionsRefs, bool enrollmentsRefs})
+          PrefetchHooks Function({
+            bool sectionsRefs,
+            bool enrollmentsRefs,
+            bool examsRefs,
+          })
         > {
   $$AcademicYearsTableTableManager(_$AppDatabase db, $AcademicYearsTable table)
     : super(
@@ -14343,12 +17049,17 @@ class $$AcademicYearsTableTableManager
               )
               .toList(),
           prefetchHooksCallback:
-              ({sectionsRefs = false, enrollmentsRefs = false}) {
+              ({
+                sectionsRefs = false,
+                enrollmentsRefs = false,
+                examsRefs = false,
+              }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (sectionsRefs) db.sections,
                     if (enrollmentsRefs) db.enrollments,
+                    if (examsRefs) db.exams,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -14395,6 +17106,27 @@ class $$AcademicYearsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (examsRefs)
+                        await $_getPrefetchedData<
+                          AcademicYear,
+                          $AcademicYearsTable,
+                          Exam
+                        >(
+                          currentTable: table,
+                          referencedTable: $$AcademicYearsTableReferences
+                              ._examsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$AcademicYearsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).examsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.academicYearId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -14415,7 +17147,11 @@ typedef $$AcademicYearsTableProcessedTableManager =
       $$AcademicYearsTableUpdateCompanionBuilder,
       (AcademicYear, $$AcademicYearsTableReferences),
       AcademicYear,
-      PrefetchHooks Function({bool sectionsRefs, bool enrollmentsRefs})
+      PrefetchHooks Function({
+        bool sectionsRefs,
+        bool enrollmentsRefs,
+        bool examsRefs,
+      })
     >;
 typedef $$GradesTableCreateCompanionBuilder =
     GradesCompanion Function({
@@ -14469,6 +17205,24 @@ final class $$GradesTableReferences
     ).filter((f) => f.gradeId.id.sqlEquals($_itemColumn<int>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_subjectsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$ExamSubjectsTable, List<ExamSubject>>
+  _examSubjectsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.examSubjects,
+    aliasName: $_aliasNameGenerator(db.grades.id, db.examSubjects.gradeId),
+  );
+
+  $$ExamSubjectsTableProcessedTableManager get examSubjectsRefs {
+    final manager = $$ExamSubjectsTableTableManager(
+      $_db,
+      $_db.examSubjects,
+    ).filter((f) => f.gradeId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_examSubjectsRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -14545,6 +17299,31 @@ class $$GradesTableFilterComposer
           }) => $$SubjectsTableFilterComposer(
             $db: $db,
             $table: $db.subjects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> examSubjectsRefs(
+    Expression<bool> Function($$ExamSubjectsTableFilterComposer f) f,
+  ) {
+    final $$ExamSubjectsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.examSubjects,
+      getReferencedColumn: (t) => t.gradeId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ExamSubjectsTableFilterComposer(
+            $db: $db,
+            $table: $db.examSubjects,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -14655,6 +17434,31 @@ class $$GradesTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> examSubjectsRefs<T extends Object>(
+    Expression<T> Function($$ExamSubjectsTableAnnotationComposer a) f,
+  ) {
+    final $$ExamSubjectsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.examSubjects,
+      getReferencedColumn: (t) => t.gradeId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ExamSubjectsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.examSubjects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$GradesTableTableManager
@@ -14670,7 +17474,11 @@ class $$GradesTableTableManager
           $$GradesTableUpdateCompanionBuilder,
           (Grade, $$GradesTableReferences),
           Grade,
-          PrefetchHooks Function({bool sectionsRefs, bool subjectsRefs})
+          PrefetchHooks Function({
+            bool sectionsRefs,
+            bool subjectsRefs,
+            bool examSubjectsRefs,
+          })
         > {
   $$GradesTableTableManager(_$AppDatabase db, $GradesTable table)
     : super(
@@ -14714,12 +17522,17 @@ class $$GradesTableTableManager
               )
               .toList(),
           prefetchHooksCallback:
-              ({sectionsRefs = false, subjectsRefs = false}) {
+              ({
+                sectionsRefs = false,
+                subjectsRefs = false,
+                examSubjectsRefs = false,
+              }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (sectionsRefs) db.sections,
                     if (subjectsRefs) db.subjects,
+                    if (examSubjectsRefs) db.examSubjects,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -14758,6 +17571,27 @@ class $$GradesTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (examSubjectsRefs)
+                        await $_getPrefetchedData<
+                          Grade,
+                          $GradesTable,
+                          ExamSubject
+                        >(
+                          currentTable: table,
+                          referencedTable: $$GradesTableReferences
+                              ._examSubjectsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$GradesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).examSubjectsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.gradeId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -14778,7 +17612,11 @@ typedef $$GradesTableProcessedTableManager =
       $$GradesTableUpdateCompanionBuilder,
       (Grade, $$GradesTableReferences),
       Grade,
-      PrefetchHooks Function({bool sectionsRefs, bool subjectsRefs})
+      PrefetchHooks Function({
+        bool sectionsRefs,
+        bool subjectsRefs,
+        bool examSubjectsRefs,
+      })
     >;
 typedef $$SectionsTableCreateCompanionBuilder =
     SectionsCompanion Function({
@@ -14873,6 +17711,29 @@ final class $$SectionsTableReferences
     ).filter((f) => f.sectionId.id.sqlEquals($_itemColumn<int>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_attendancesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$TimetableEntriesTable, List<TimetableEntry>>
+  _timetableEntriesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.timetableEntries,
+    aliasName: $_aliasNameGenerator(
+      db.sections.id,
+      db.timetableEntries.sectionId,
+    ),
+  );
+
+  $$TimetableEntriesTableProcessedTableManager get timetableEntriesRefs {
+    final manager = $$TimetableEntriesTableTableManager(
+      $_db,
+      $_db.timetableEntries,
+    ).filter((f) => f.sectionId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _timetableEntriesRefsTable($_db),
+    );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -15000,6 +17861,31 @@ class $$SectionsTableFilterComposer
           }) => $$AttendancesTableFilterComposer(
             $db: $db,
             $table: $db.attendances,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> timetableEntriesRefs(
+    Expression<bool> Function($$TimetableEntriesTableFilterComposer f) f,
+  ) {
+    final $$TimetableEntriesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.timetableEntries,
+      getReferencedColumn: (t) => t.sectionId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TimetableEntriesTableFilterComposer(
+            $db: $db,
+            $table: $db.timetableEntries,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -15212,6 +18098,31 @@ class $$SectionsTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> timetableEntriesRefs<T extends Object>(
+    Expression<T> Function($$TimetableEntriesTableAnnotationComposer a) f,
+  ) {
+    final $$TimetableEntriesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.timetableEntries,
+      getReferencedColumn: (t) => t.sectionId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TimetableEntriesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.timetableEntries,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$SectionsTableTableManager
@@ -15232,6 +18143,7 @@ class $$SectionsTableTableManager
             bool academicYearId,
             bool enrollmentsRefs,
             bool attendancesRefs,
+            bool timetableEntriesRefs,
           })
         > {
   $$SectionsTableTableManager(_$AppDatabase db, $SectionsTable table)
@@ -15295,12 +18207,14 @@ class $$SectionsTableTableManager
                 academicYearId = false,
                 enrollmentsRefs = false,
                 attendancesRefs = false,
+                timetableEntriesRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (enrollmentsRefs) db.enrollments,
                     if (attendancesRefs) db.attendances,
+                    if (timetableEntriesRefs) db.timetableEntries,
                   ],
                   addJoins:
                       <
@@ -15391,6 +18305,27 @@ class $$SectionsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (timetableEntriesRefs)
+                        await $_getPrefetchedData<
+                          Section,
+                          $SectionsTable,
+                          TimetableEntry
+                        >(
+                          currentTable: table,
+                          referencedTable: $$SectionsTableReferences
+                              ._timetableEntriesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$SectionsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).timetableEntriesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.sectionId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -15416,6 +18351,7 @@ typedef $$SectionsTableProcessedTableManager =
         bool academicYearId,
         bool enrollmentsRefs,
         bool attendancesRefs,
+        bool timetableEntriesRefs,
       })
     >;
 typedef $$SubjectsTableCreateCompanionBuilder =
@@ -15460,6 +18396,47 @@ final class $$SubjectsTableReferences
     if (item == null) return manager;
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<$TimetableEntriesTable, List<TimetableEntry>>
+  _timetableEntriesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.timetableEntries,
+    aliasName: $_aliasNameGenerator(
+      db.subjects.id,
+      db.timetableEntries.subjectId,
+    ),
+  );
+
+  $$TimetableEntriesTableProcessedTableManager get timetableEntriesRefs {
+    final manager = $$TimetableEntriesTableTableManager(
+      $_db,
+      $_db.timetableEntries,
+    ).filter((f) => f.subjectId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _timetableEntriesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$ExamSubjectsTable, List<ExamSubject>>
+  _examSubjectsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.examSubjects,
+    aliasName: $_aliasNameGenerator(db.subjects.id, db.examSubjects.subjectId),
+  );
+
+  $$ExamSubjectsTableProcessedTableManager get examSubjectsRefs {
+    final manager = $$ExamSubjectsTableTableManager(
+      $_db,
+      $_db.examSubjects,
+    ).filter((f) => f.subjectId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_examSubjectsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
     );
   }
 }
@@ -15529,6 +18506,56 @@ class $$SubjectsTableFilterComposer
           ),
     );
     return composer;
+  }
+
+  Expression<bool> timetableEntriesRefs(
+    Expression<bool> Function($$TimetableEntriesTableFilterComposer f) f,
+  ) {
+    final $$TimetableEntriesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.timetableEntries,
+      getReferencedColumn: (t) => t.subjectId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TimetableEntriesTableFilterComposer(
+            $db: $db,
+            $table: $db.timetableEntries,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> examSubjectsRefs(
+    Expression<bool> Function($$ExamSubjectsTableFilterComposer f) f,
+  ) {
+    final $$ExamSubjectsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.examSubjects,
+      getReferencedColumn: (t) => t.subjectId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ExamSubjectsTableFilterComposer(
+            $db: $db,
+            $table: $db.examSubjects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
   }
 }
 
@@ -15654,6 +18681,56 @@ class $$SubjectsTableAnnotationComposer
     );
     return composer;
   }
+
+  Expression<T> timetableEntriesRefs<T extends Object>(
+    Expression<T> Function($$TimetableEntriesTableAnnotationComposer a) f,
+  ) {
+    final $$TimetableEntriesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.timetableEntries,
+      getReferencedColumn: (t) => t.subjectId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TimetableEntriesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.timetableEntries,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> examSubjectsRefs<T extends Object>(
+    Expression<T> Function($$ExamSubjectsTableAnnotationComposer a) f,
+  ) {
+    final $$ExamSubjectsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.examSubjects,
+      getReferencedColumn: (t) => t.subjectId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ExamSubjectsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.examSubjects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$SubjectsTableTableManager
@@ -15669,7 +18746,11 @@ class $$SubjectsTableTableManager
           $$SubjectsTableUpdateCompanionBuilder,
           (Subject, $$SubjectsTableReferences),
           Subject,
-          PrefetchHooks Function({bool gradeId})
+          PrefetchHooks Function({
+            bool gradeId,
+            bool timetableEntriesRefs,
+            bool examSubjectsRefs,
+          })
         > {
   $$SubjectsTableTableManager(_$AppDatabase db, $SubjectsTable table)
     : super(
@@ -15730,47 +18811,98 @@ class $$SubjectsTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({gradeId = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [],
-              addJoins:
-                  <
-                    T extends TableManagerState<
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic
-                    >
-                  >(state) {
-                    if (gradeId) {
-                      state =
-                          state.withJoin(
-                                currentTable: table,
-                                currentColumn: table.gradeId,
-                                referencedTable: $$SubjectsTableReferences
-                                    ._gradeIdTable(db),
-                                referencedColumn: $$SubjectsTableReferences
-                                    ._gradeIdTable(db)
-                                    .id,
-                              )
-                              as T;
-                    }
+          prefetchHooksCallback:
+              ({
+                gradeId = false,
+                timetableEntriesRefs = false,
+                examSubjectsRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (timetableEntriesRefs) db.timetableEntries,
+                    if (examSubjectsRefs) db.examSubjects,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (gradeId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.gradeId,
+                                    referencedTable: $$SubjectsTableReferences
+                                        ._gradeIdTable(db),
+                                    referencedColumn: $$SubjectsTableReferences
+                                        ._gradeIdTable(db)
+                                        .id,
+                                  )
+                                  as T;
+                        }
 
-                    return state;
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (timetableEntriesRefs)
+                        await $_getPrefetchedData<
+                          Subject,
+                          $SubjectsTable,
+                          TimetableEntry
+                        >(
+                          currentTable: table,
+                          referencedTable: $$SubjectsTableReferences
+                              ._timetableEntriesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$SubjectsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).timetableEntriesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.subjectId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (examSubjectsRefs)
+                        await $_getPrefetchedData<
+                          Subject,
+                          $SubjectsTable,
+                          ExamSubject
+                        >(
+                          currentTable: table,
+                          referencedTable: $$SubjectsTableReferences
+                              ._examSubjectsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$SubjectsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).examSubjectsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.subjectId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
                   },
-              getPrefetchedDataCallback: (items) async {
-                return [];
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -15787,7 +18919,11 @@ typedef $$SubjectsTableProcessedTableManager =
       $$SubjectsTableUpdateCompanionBuilder,
       (Subject, $$SubjectsTableReferences),
       Subject,
-      PrefetchHooks Function({bool gradeId})
+      PrefetchHooks Function({
+        bool gradeId,
+        bool timetableEntriesRefs,
+        bool examSubjectsRefs,
+      })
     >;
 typedef $$StudentsTableCreateCompanionBuilder =
     StudentsCompanion Function({
@@ -15935,6 +19071,25 @@ final class $$StudentsTableReferences
     ).filter((f) => f.studentId.id.sqlEquals($_itemColumn<int>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_messagesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$MarksTable, List<Mark>> _marksRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.marks,
+    aliasName: $_aliasNameGenerator(db.students.id, db.marks.studentId),
+  );
+
+  $$MarksTableProcessedTableManager get marksRefs {
+    final manager = $$MarksTableTableManager(
+      $_db,
+      $_db.marks,
+    ).filter((f) => f.studentId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_marksRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -16176,6 +19331,31 @@ class $$StudentsTableFilterComposer
           }) => $$MessagesTableFilterComposer(
             $db: $db,
             $table: $db.messages,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> marksRefs(
+    Expression<bool> Function($$MarksTableFilterComposer f) f,
+  ) {
+    final $$MarksTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.marks,
+      getReferencedColumn: (t) => t.studentId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MarksTableFilterComposer(
+            $db: $db,
+            $table: $db.marks,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -16523,6 +19703,31 @@ class $$StudentsTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> marksRefs<T extends Object>(
+    Expression<T> Function($$MarksTableAnnotationComposer a) f,
+  ) {
+    final $$MarksTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.marks,
+      getReferencedColumn: (t) => t.studentId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MarksTableAnnotationComposer(
+            $db: $db,
+            $table: $db.marks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$StudentsTableTableManager
@@ -16544,6 +19749,7 @@ class $$StudentsTableTableManager
             bool attendancesRefs,
             bool leaveRequestsRefs,
             bool messagesRefs,
+            bool marksRefs,
           })
         > {
   $$StudentsTableTableManager(_$AppDatabase db, $StudentsTable table)
@@ -16668,6 +19874,7 @@ class $$StudentsTableTableManager
                 attendancesRefs = false,
                 leaveRequestsRefs = false,
                 messagesRefs = false,
+                marksRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -16677,6 +19884,7 @@ class $$StudentsTableTableManager
                     if (attendancesRefs) db.attendances,
                     if (leaveRequestsRefs) db.leaveRequests,
                     if (messagesRefs) db.messages,
+                    if (marksRefs) db.marks,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -16786,6 +19994,27 @@ class $$StudentsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (marksRefs)
+                        await $_getPrefetchedData<
+                          Student,
+                          $StudentsTable,
+                          Mark
+                        >(
+                          currentTable: table,
+                          referencedTable: $$StudentsTableReferences
+                              ._marksRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$StudentsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).marksRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.studentId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -16812,6 +20041,7 @@ typedef $$StudentsTableProcessedTableManager =
         bool attendancesRefs,
         bool leaveRequestsRefs,
         bool messagesRefs,
+        bool marksRefs,
       })
     >;
 typedef $$GuardiansTableCreateCompanionBuilder =
@@ -18048,6 +21278,34 @@ typedef $$TeachersTableUpdateCompanionBuilder =
       Value<DateTime?> deletedAt,
     });
 
+final class $$TeachersTableReferences
+    extends BaseReferences<_$AppDatabase, $TeachersTable, Teacher> {
+  $$TeachersTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$TimetableEntriesTable, List<TimetableEntry>>
+  _timetableEntriesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.timetableEntries,
+    aliasName: $_aliasNameGenerator(
+      db.teachers.id,
+      db.timetableEntries.teacherId,
+    ),
+  );
+
+  $$TimetableEntriesTableProcessedTableManager get timetableEntriesRefs {
+    final manager = $$TimetableEntriesTableTableManager(
+      $_db,
+      $_db.timetableEntries,
+    ).filter((f) => f.teacherId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _timetableEntriesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
 class $$TeachersTableFilterComposer
     extends Composer<_$AppDatabase, $TeachersTable> {
   $$TeachersTableFilterComposer({
@@ -18136,6 +21394,31 @@ class $$TeachersTableFilterComposer
     column: $table.deletedAt,
     builder: (column) => ColumnFilters(column),
   );
+
+  Expression<bool> timetableEntriesRefs(
+    Expression<bool> Function($$TimetableEntriesTableFilterComposer f) f,
+  ) {
+    final $$TimetableEntriesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.timetableEntries,
+      getReferencedColumn: (t) => t.teacherId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TimetableEntriesTableFilterComposer(
+            $db: $db,
+            $table: $db.timetableEntries,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$TeachersTableOrderingComposer
@@ -18294,6 +21577,31 @@ class $$TeachersTableAnnotationComposer
 
   GeneratedColumn<DateTime> get deletedAt =>
       $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  Expression<T> timetableEntriesRefs<T extends Object>(
+    Expression<T> Function($$TimetableEntriesTableAnnotationComposer a) f,
+  ) {
+    final $$TimetableEntriesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.timetableEntries,
+      getReferencedColumn: (t) => t.teacherId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TimetableEntriesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.timetableEntries,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$TeachersTableTableManager
@@ -18307,9 +21615,9 @@ class $$TeachersTableTableManager
           $$TeachersTableAnnotationComposer,
           $$TeachersTableCreateCompanionBuilder,
           $$TeachersTableUpdateCompanionBuilder,
-          (Teacher, BaseReferences<_$AppDatabase, $TeachersTable, Teacher>),
+          (Teacher, $$TeachersTableReferences),
           Teacher,
-          PrefetchHooks Function()
+          PrefetchHooks Function({bool timetableEntriesRefs})
         > {
   $$TeachersTableTableManager(_$AppDatabase db, $TeachersTable table)
     : super(
@@ -18395,9 +21703,44 @@ class $$TeachersTableTableManager
                 deletedAt: deletedAt,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$TeachersTableReferences(db, table, e),
+                ),
+              )
               .toList(),
-          prefetchHooksCallback: null,
+          prefetchHooksCallback: ({timetableEntriesRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [
+                if (timetableEntriesRefs) db.timetableEntries,
+              ],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (timetableEntriesRefs)
+                    await $_getPrefetchedData<
+                      Teacher,
+                      $TeachersTable,
+                      TimetableEntry
+                    >(
+                      currentTable: table,
+                      referencedTable: $$TeachersTableReferences
+                          ._timetableEntriesRefsTable(db),
+                      managerFromTypedResult: (p0) => $$TeachersTableReferences(
+                        db,
+                        table,
+                        p0,
+                      ).timetableEntriesRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where((e) => e.teacherId == item.id),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
         ),
       );
 }
@@ -18412,9 +21755,9 @@ typedef $$TeachersTableProcessedTableManager =
       $$TeachersTableAnnotationComposer,
       $$TeachersTableCreateCompanionBuilder,
       $$TeachersTableUpdateCompanionBuilder,
-      (Teacher, BaseReferences<_$AppDatabase, $TeachersTable, Teacher>),
+      (Teacher, $$TeachersTableReferences),
       Teacher,
-      PrefetchHooks Function()
+      PrefetchHooks Function({bool timetableEntriesRefs})
     >;
 typedef $$StaffMembersTableCreateCompanionBuilder =
     StaffMembersCompanion Function({
@@ -22855,6 +26198,2625 @@ typedef $$AppNotificationsTableProcessedTableManager =
       AppNotification,
       PrefetchHooks Function({bool guardianId})
     >;
+typedef $$TimeSlotsTableCreateCompanionBuilder =
+    TimeSlotsCompanion Function({
+      Value<int> id,
+      required String name,
+      required String startTime,
+      required String endTime,
+      Value<bool> isBreak,
+      Value<int> sortOrder,
+    });
+typedef $$TimeSlotsTableUpdateCompanionBuilder =
+    TimeSlotsCompanion Function({
+      Value<int> id,
+      Value<String> name,
+      Value<String> startTime,
+      Value<String> endTime,
+      Value<bool> isBreak,
+      Value<int> sortOrder,
+    });
+
+final class $$TimeSlotsTableReferences
+    extends BaseReferences<_$AppDatabase, $TimeSlotsTable, TimeSlot> {
+  $$TimeSlotsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$TimetableEntriesTable, List<TimetableEntry>>
+  _timetableEntriesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.timetableEntries,
+    aliasName: $_aliasNameGenerator(
+      db.timeSlots.id,
+      db.timetableEntries.slotId,
+    ),
+  );
+
+  $$TimetableEntriesTableProcessedTableManager get timetableEntriesRefs {
+    final manager = $$TimetableEntriesTableTableManager(
+      $_db,
+      $_db.timetableEntries,
+    ).filter((f) => f.slotId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _timetableEntriesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$TimeSlotsTableFilterComposer
+    extends Composer<_$AppDatabase, $TimeSlotsTable> {
+  $$TimeSlotsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get startTime => $composableBuilder(
+    column: $table.startTime,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get endTime => $composableBuilder(
+    column: $table.endTime,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isBreak => $composableBuilder(
+    column: $table.isBreak,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> timetableEntriesRefs(
+    Expression<bool> Function($$TimetableEntriesTableFilterComposer f) f,
+  ) {
+    final $$TimetableEntriesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.timetableEntries,
+      getReferencedColumn: (t) => t.slotId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TimetableEntriesTableFilterComposer(
+            $db: $db,
+            $table: $db.timetableEntries,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$TimeSlotsTableOrderingComposer
+    extends Composer<_$AppDatabase, $TimeSlotsTable> {
+  $$TimeSlotsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get startTime => $composableBuilder(
+    column: $table.startTime,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get endTime => $composableBuilder(
+    column: $table.endTime,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isBreak => $composableBuilder(
+    column: $table.isBreak,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$TimeSlotsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $TimeSlotsTable> {
+  $$TimeSlotsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get startTime =>
+      $composableBuilder(column: $table.startTime, builder: (column) => column);
+
+  GeneratedColumn<String> get endTime =>
+      $composableBuilder(column: $table.endTime, builder: (column) => column);
+
+  GeneratedColumn<bool> get isBreak =>
+      $composableBuilder(column: $table.isBreak, builder: (column) => column);
+
+  GeneratedColumn<int> get sortOrder =>
+      $composableBuilder(column: $table.sortOrder, builder: (column) => column);
+
+  Expression<T> timetableEntriesRefs<T extends Object>(
+    Expression<T> Function($$TimetableEntriesTableAnnotationComposer a) f,
+  ) {
+    final $$TimetableEntriesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.timetableEntries,
+      getReferencedColumn: (t) => t.slotId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TimetableEntriesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.timetableEntries,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$TimeSlotsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $TimeSlotsTable,
+          TimeSlot,
+          $$TimeSlotsTableFilterComposer,
+          $$TimeSlotsTableOrderingComposer,
+          $$TimeSlotsTableAnnotationComposer,
+          $$TimeSlotsTableCreateCompanionBuilder,
+          $$TimeSlotsTableUpdateCompanionBuilder,
+          (TimeSlot, $$TimeSlotsTableReferences),
+          TimeSlot,
+          PrefetchHooks Function({bool timetableEntriesRefs})
+        > {
+  $$TimeSlotsTableTableManager(_$AppDatabase db, $TimeSlotsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$TimeSlotsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$TimeSlotsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$TimeSlotsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String> startTime = const Value.absent(),
+                Value<String> endTime = const Value.absent(),
+                Value<bool> isBreak = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+              }) => TimeSlotsCompanion(
+                id: id,
+                name: name,
+                startTime: startTime,
+                endTime: endTime,
+                isBreak: isBreak,
+                sortOrder: sortOrder,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String name,
+                required String startTime,
+                required String endTime,
+                Value<bool> isBreak = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+              }) => TimeSlotsCompanion.insert(
+                id: id,
+                name: name,
+                startTime: startTime,
+                endTime: endTime,
+                isBreak: isBreak,
+                sortOrder: sortOrder,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$TimeSlotsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({timetableEntriesRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [
+                if (timetableEntriesRefs) db.timetableEntries,
+              ],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (timetableEntriesRefs)
+                    await $_getPrefetchedData<
+                      TimeSlot,
+                      $TimeSlotsTable,
+                      TimetableEntry
+                    >(
+                      currentTable: table,
+                      referencedTable: $$TimeSlotsTableReferences
+                          ._timetableEntriesRefsTable(db),
+                      managerFromTypedResult: (p0) =>
+                          $$TimeSlotsTableReferences(
+                            db,
+                            table,
+                            p0,
+                          ).timetableEntriesRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where((e) => e.slotId == item.id),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$TimeSlotsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $TimeSlotsTable,
+      TimeSlot,
+      $$TimeSlotsTableFilterComposer,
+      $$TimeSlotsTableOrderingComposer,
+      $$TimeSlotsTableAnnotationComposer,
+      $$TimeSlotsTableCreateCompanionBuilder,
+      $$TimeSlotsTableUpdateCompanionBuilder,
+      (TimeSlot, $$TimeSlotsTableReferences),
+      TimeSlot,
+      PrefetchHooks Function({bool timetableEntriesRefs})
+    >;
+typedef $$TimetableEntriesTableCreateCompanionBuilder =
+    TimetableEntriesCompanion Function({
+      Value<int> id,
+      required int sectionId,
+      required int dayOfWeek,
+      required int slotId,
+      required int subjectId,
+      Value<int?> teacherId,
+      Value<String?> room,
+      Value<DateTime> updatedAt,
+    });
+typedef $$TimetableEntriesTableUpdateCompanionBuilder =
+    TimetableEntriesCompanion Function({
+      Value<int> id,
+      Value<int> sectionId,
+      Value<int> dayOfWeek,
+      Value<int> slotId,
+      Value<int> subjectId,
+      Value<int?> teacherId,
+      Value<String?> room,
+      Value<DateTime> updatedAt,
+    });
+
+final class $$TimetableEntriesTableReferences
+    extends
+        BaseReferences<_$AppDatabase, $TimetableEntriesTable, TimetableEntry> {
+  $$TimetableEntriesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $SectionsTable _sectionIdTable(_$AppDatabase db) =>
+      db.sections.createAlias(
+        $_aliasNameGenerator(db.timetableEntries.sectionId, db.sections.id),
+      );
+
+  $$SectionsTableProcessedTableManager get sectionId {
+    final $_column = $_itemColumn<int>('section_id')!;
+
+    final manager = $$SectionsTableTableManager(
+      $_db,
+      $_db.sections,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_sectionIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $TimeSlotsTable _slotIdTable(_$AppDatabase db) =>
+      db.timeSlots.createAlias(
+        $_aliasNameGenerator(db.timetableEntries.slotId, db.timeSlots.id),
+      );
+
+  $$TimeSlotsTableProcessedTableManager get slotId {
+    final $_column = $_itemColumn<int>('slot_id')!;
+
+    final manager = $$TimeSlotsTableTableManager(
+      $_db,
+      $_db.timeSlots,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_slotIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $SubjectsTable _subjectIdTable(_$AppDatabase db) =>
+      db.subjects.createAlias(
+        $_aliasNameGenerator(db.timetableEntries.subjectId, db.subjects.id),
+      );
+
+  $$SubjectsTableProcessedTableManager get subjectId {
+    final $_column = $_itemColumn<int>('subject_id')!;
+
+    final manager = $$SubjectsTableTableManager(
+      $_db,
+      $_db.subjects,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_subjectIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $TeachersTable _teacherIdTable(_$AppDatabase db) =>
+      db.teachers.createAlias(
+        $_aliasNameGenerator(db.timetableEntries.teacherId, db.teachers.id),
+      );
+
+  $$TeachersTableProcessedTableManager? get teacherId {
+    final $_column = $_itemColumn<int>('teacher_id');
+    if ($_column == null) return null;
+    final manager = $$TeachersTableTableManager(
+      $_db,
+      $_db.teachers,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_teacherIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$TimetableEntriesTableFilterComposer
+    extends Composer<_$AppDatabase, $TimetableEntriesTable> {
+  $$TimetableEntriesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get dayOfWeek => $composableBuilder(
+    column: $table.dayOfWeek,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get room => $composableBuilder(
+    column: $table.room,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$SectionsTableFilterComposer get sectionId {
+    final $$SectionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.sectionId,
+      referencedTable: $db.sections,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SectionsTableFilterComposer(
+            $db: $db,
+            $table: $db.sections,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$TimeSlotsTableFilterComposer get slotId {
+    final $$TimeSlotsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.slotId,
+      referencedTable: $db.timeSlots,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TimeSlotsTableFilterComposer(
+            $db: $db,
+            $table: $db.timeSlots,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$SubjectsTableFilterComposer get subjectId {
+    final $$SubjectsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.subjectId,
+      referencedTable: $db.subjects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SubjectsTableFilterComposer(
+            $db: $db,
+            $table: $db.subjects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$TeachersTableFilterComposer get teacherId {
+    final $$TeachersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.teacherId,
+      referencedTable: $db.teachers,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TeachersTableFilterComposer(
+            $db: $db,
+            $table: $db.teachers,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TimetableEntriesTableOrderingComposer
+    extends Composer<_$AppDatabase, $TimetableEntriesTable> {
+  $$TimetableEntriesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get dayOfWeek => $composableBuilder(
+    column: $table.dayOfWeek,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get room => $composableBuilder(
+    column: $table.room,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$SectionsTableOrderingComposer get sectionId {
+    final $$SectionsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.sectionId,
+      referencedTable: $db.sections,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SectionsTableOrderingComposer(
+            $db: $db,
+            $table: $db.sections,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$TimeSlotsTableOrderingComposer get slotId {
+    final $$TimeSlotsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.slotId,
+      referencedTable: $db.timeSlots,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TimeSlotsTableOrderingComposer(
+            $db: $db,
+            $table: $db.timeSlots,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$SubjectsTableOrderingComposer get subjectId {
+    final $$SubjectsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.subjectId,
+      referencedTable: $db.subjects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SubjectsTableOrderingComposer(
+            $db: $db,
+            $table: $db.subjects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$TeachersTableOrderingComposer get teacherId {
+    final $$TeachersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.teacherId,
+      referencedTable: $db.teachers,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TeachersTableOrderingComposer(
+            $db: $db,
+            $table: $db.teachers,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TimetableEntriesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $TimetableEntriesTable> {
+  $$TimetableEntriesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get dayOfWeek =>
+      $composableBuilder(column: $table.dayOfWeek, builder: (column) => column);
+
+  GeneratedColumn<String> get room =>
+      $composableBuilder(column: $table.room, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  $$SectionsTableAnnotationComposer get sectionId {
+    final $$SectionsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.sectionId,
+      referencedTable: $db.sections,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SectionsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.sections,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$TimeSlotsTableAnnotationComposer get slotId {
+    final $$TimeSlotsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.slotId,
+      referencedTable: $db.timeSlots,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TimeSlotsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.timeSlots,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$SubjectsTableAnnotationComposer get subjectId {
+    final $$SubjectsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.subjectId,
+      referencedTable: $db.subjects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SubjectsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.subjects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$TeachersTableAnnotationComposer get teacherId {
+    final $$TeachersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.teacherId,
+      referencedTable: $db.teachers,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TeachersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.teachers,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TimetableEntriesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $TimetableEntriesTable,
+          TimetableEntry,
+          $$TimetableEntriesTableFilterComposer,
+          $$TimetableEntriesTableOrderingComposer,
+          $$TimetableEntriesTableAnnotationComposer,
+          $$TimetableEntriesTableCreateCompanionBuilder,
+          $$TimetableEntriesTableUpdateCompanionBuilder,
+          (TimetableEntry, $$TimetableEntriesTableReferences),
+          TimetableEntry,
+          PrefetchHooks Function({
+            bool sectionId,
+            bool slotId,
+            bool subjectId,
+            bool teacherId,
+          })
+        > {
+  $$TimetableEntriesTableTableManager(
+    _$AppDatabase db,
+    $TimetableEntriesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$TimetableEntriesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$TimetableEntriesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$TimetableEntriesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> sectionId = const Value.absent(),
+                Value<int> dayOfWeek = const Value.absent(),
+                Value<int> slotId = const Value.absent(),
+                Value<int> subjectId = const Value.absent(),
+                Value<int?> teacherId = const Value.absent(),
+                Value<String?> room = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+              }) => TimetableEntriesCompanion(
+                id: id,
+                sectionId: sectionId,
+                dayOfWeek: dayOfWeek,
+                slotId: slotId,
+                subjectId: subjectId,
+                teacherId: teacherId,
+                room: room,
+                updatedAt: updatedAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int sectionId,
+                required int dayOfWeek,
+                required int slotId,
+                required int subjectId,
+                Value<int?> teacherId = const Value.absent(),
+                Value<String?> room = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+              }) => TimetableEntriesCompanion.insert(
+                id: id,
+                sectionId: sectionId,
+                dayOfWeek: dayOfWeek,
+                slotId: slotId,
+                subjectId: subjectId,
+                teacherId: teacherId,
+                room: room,
+                updatedAt: updatedAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$TimetableEntriesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({
+                sectionId = false,
+                slotId = false,
+                subjectId = false,
+                teacherId = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (sectionId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.sectionId,
+                                    referencedTable:
+                                        $$TimetableEntriesTableReferences
+                                            ._sectionIdTable(db),
+                                    referencedColumn:
+                                        $$TimetableEntriesTableReferences
+                                            ._sectionIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (slotId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.slotId,
+                                    referencedTable:
+                                        $$TimetableEntriesTableReferences
+                                            ._slotIdTable(db),
+                                    referencedColumn:
+                                        $$TimetableEntriesTableReferences
+                                            ._slotIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (subjectId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.subjectId,
+                                    referencedTable:
+                                        $$TimetableEntriesTableReferences
+                                            ._subjectIdTable(db),
+                                    referencedColumn:
+                                        $$TimetableEntriesTableReferences
+                                            ._subjectIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (teacherId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.teacherId,
+                                    referencedTable:
+                                        $$TimetableEntriesTableReferences
+                                            ._teacherIdTable(db),
+                                    referencedColumn:
+                                        $$TimetableEntriesTableReferences
+                                            ._teacherIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$TimetableEntriesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $TimetableEntriesTable,
+      TimetableEntry,
+      $$TimetableEntriesTableFilterComposer,
+      $$TimetableEntriesTableOrderingComposer,
+      $$TimetableEntriesTableAnnotationComposer,
+      $$TimetableEntriesTableCreateCompanionBuilder,
+      $$TimetableEntriesTableUpdateCompanionBuilder,
+      (TimetableEntry, $$TimetableEntriesTableReferences),
+      TimetableEntry,
+      PrefetchHooks Function({
+        bool sectionId,
+        bool slotId,
+        bool subjectId,
+        bool teacherId,
+      })
+    >;
+typedef $$ExamsTableCreateCompanionBuilder =
+    ExamsCompanion Function({
+      Value<int> id,
+      required String name,
+      Value<String> examType,
+      required int academicYearId,
+      Value<int> term,
+      required DateTime startsOn,
+      required DateTime endsOn,
+      Value<bool> isPublished,
+      Value<DateTime?> publishedAt,
+      Value<DateTime> createdAt,
+      Value<DateTime?> deletedAt,
+    });
+typedef $$ExamsTableUpdateCompanionBuilder =
+    ExamsCompanion Function({
+      Value<int> id,
+      Value<String> name,
+      Value<String> examType,
+      Value<int> academicYearId,
+      Value<int> term,
+      Value<DateTime> startsOn,
+      Value<DateTime> endsOn,
+      Value<bool> isPublished,
+      Value<DateTime?> publishedAt,
+      Value<DateTime> createdAt,
+      Value<DateTime?> deletedAt,
+    });
+
+final class $$ExamsTableReferences
+    extends BaseReferences<_$AppDatabase, $ExamsTable, Exam> {
+  $$ExamsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $AcademicYearsTable _academicYearIdTable(_$AppDatabase db) =>
+      db.academicYears.createAlias(
+        $_aliasNameGenerator(db.exams.academicYearId, db.academicYears.id),
+      );
+
+  $$AcademicYearsTableProcessedTableManager get academicYearId {
+    final $_column = $_itemColumn<int>('academic_year_id')!;
+
+    final manager = $$AcademicYearsTableTableManager(
+      $_db,
+      $_db.academicYears,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_academicYearIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<$ExamSubjectsTable, List<ExamSubject>>
+  _examSubjectsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.examSubjects,
+    aliasName: $_aliasNameGenerator(db.exams.id, db.examSubjects.examId),
+  );
+
+  $$ExamSubjectsTableProcessedTableManager get examSubjectsRefs {
+    final manager = $$ExamSubjectsTableTableManager(
+      $_db,
+      $_db.examSubjects,
+    ).filter((f) => f.examId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_examSubjectsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$ExamsTableFilterComposer extends Composer<_$AppDatabase, $ExamsTable> {
+  $$ExamsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get examType => $composableBuilder(
+    column: $table.examType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get term => $composableBuilder(
+    column: $table.term,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get startsOn => $composableBuilder(
+    column: $table.startsOn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get endsOn => $composableBuilder(
+    column: $table.endsOn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isPublished => $composableBuilder(
+    column: $table.isPublished,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get publishedAt => $composableBuilder(
+    column: $table.publishedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$AcademicYearsTableFilterComposer get academicYearId {
+    final $$AcademicYearsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.academicYearId,
+      referencedTable: $db.academicYears,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AcademicYearsTableFilterComposer(
+            $db: $db,
+            $table: $db.academicYears,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> examSubjectsRefs(
+    Expression<bool> Function($$ExamSubjectsTableFilterComposer f) f,
+  ) {
+    final $$ExamSubjectsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.examSubjects,
+      getReferencedColumn: (t) => t.examId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ExamSubjectsTableFilterComposer(
+            $db: $db,
+            $table: $db.examSubjects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$ExamsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ExamsTable> {
+  $$ExamsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get examType => $composableBuilder(
+    column: $table.examType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get term => $composableBuilder(
+    column: $table.term,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get startsOn => $composableBuilder(
+    column: $table.startsOn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get endsOn => $composableBuilder(
+    column: $table.endsOn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isPublished => $composableBuilder(
+    column: $table.isPublished,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get publishedAt => $composableBuilder(
+    column: $table.publishedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$AcademicYearsTableOrderingComposer get academicYearId {
+    final $$AcademicYearsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.academicYearId,
+      referencedTable: $db.academicYears,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AcademicYearsTableOrderingComposer(
+            $db: $db,
+            $table: $db.academicYears,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ExamsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ExamsTable> {
+  $$ExamsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get examType =>
+      $composableBuilder(column: $table.examType, builder: (column) => column);
+
+  GeneratedColumn<int> get term =>
+      $composableBuilder(column: $table.term, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get startsOn =>
+      $composableBuilder(column: $table.startsOn, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get endsOn =>
+      $composableBuilder(column: $table.endsOn, builder: (column) => column);
+
+  GeneratedColumn<bool> get isPublished => $composableBuilder(
+    column: $table.isPublished,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get publishedAt => $composableBuilder(
+    column: $table.publishedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  $$AcademicYearsTableAnnotationComposer get academicYearId {
+    final $$AcademicYearsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.academicYearId,
+      referencedTable: $db.academicYears,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AcademicYearsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.academicYears,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> examSubjectsRefs<T extends Object>(
+    Expression<T> Function($$ExamSubjectsTableAnnotationComposer a) f,
+  ) {
+    final $$ExamSubjectsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.examSubjects,
+      getReferencedColumn: (t) => t.examId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ExamSubjectsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.examSubjects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$ExamsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ExamsTable,
+          Exam,
+          $$ExamsTableFilterComposer,
+          $$ExamsTableOrderingComposer,
+          $$ExamsTableAnnotationComposer,
+          $$ExamsTableCreateCompanionBuilder,
+          $$ExamsTableUpdateCompanionBuilder,
+          (Exam, $$ExamsTableReferences),
+          Exam,
+          PrefetchHooks Function({bool academicYearId, bool examSubjectsRefs})
+        > {
+  $$ExamsTableTableManager(_$AppDatabase db, $ExamsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ExamsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ExamsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ExamsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String> examType = const Value.absent(),
+                Value<int> academicYearId = const Value.absent(),
+                Value<int> term = const Value.absent(),
+                Value<DateTime> startsOn = const Value.absent(),
+                Value<DateTime> endsOn = const Value.absent(),
+                Value<bool> isPublished = const Value.absent(),
+                Value<DateTime?> publishedAt = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+              }) => ExamsCompanion(
+                id: id,
+                name: name,
+                examType: examType,
+                academicYearId: academicYearId,
+                term: term,
+                startsOn: startsOn,
+                endsOn: endsOn,
+                isPublished: isPublished,
+                publishedAt: publishedAt,
+                createdAt: createdAt,
+                deletedAt: deletedAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String name,
+                Value<String> examType = const Value.absent(),
+                required int academicYearId,
+                Value<int> term = const Value.absent(),
+                required DateTime startsOn,
+                required DateTime endsOn,
+                Value<bool> isPublished = const Value.absent(),
+                Value<DateTime?> publishedAt = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+              }) => ExamsCompanion.insert(
+                id: id,
+                name: name,
+                examType: examType,
+                academicYearId: academicYearId,
+                term: term,
+                startsOn: startsOn,
+                endsOn: endsOn,
+                isPublished: isPublished,
+                publishedAt: publishedAt,
+                createdAt: createdAt,
+                deletedAt: deletedAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) =>
+                    (e.readTable(table), $$ExamsTableReferences(db, table, e)),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({academicYearId = false, examSubjectsRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (examSubjectsRefs) db.examSubjects,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (academicYearId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.academicYearId,
+                                    referencedTable: $$ExamsTableReferences
+                                        ._academicYearIdTable(db),
+                                    referencedColumn: $$ExamsTableReferences
+                                        ._academicYearIdTable(db)
+                                        .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (examSubjectsRefs)
+                        await $_getPrefetchedData<
+                          Exam,
+                          $ExamsTable,
+                          ExamSubject
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ExamsTableReferences
+                              ._examSubjectsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ExamsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).examSubjectsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.examId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$ExamsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ExamsTable,
+      Exam,
+      $$ExamsTableFilterComposer,
+      $$ExamsTableOrderingComposer,
+      $$ExamsTableAnnotationComposer,
+      $$ExamsTableCreateCompanionBuilder,
+      $$ExamsTableUpdateCompanionBuilder,
+      (Exam, $$ExamsTableReferences),
+      Exam,
+      PrefetchHooks Function({bool academicYearId, bool examSubjectsRefs})
+    >;
+typedef $$ExamSubjectsTableCreateCompanionBuilder =
+    ExamSubjectsCompanion Function({
+      Value<int> id,
+      required int examId,
+      required int gradeId,
+      required int subjectId,
+      Value<int> fullMark,
+      Value<int> passMark,
+      Value<DateTime?> examDate,
+      Value<int> sortOrder,
+    });
+typedef $$ExamSubjectsTableUpdateCompanionBuilder =
+    ExamSubjectsCompanion Function({
+      Value<int> id,
+      Value<int> examId,
+      Value<int> gradeId,
+      Value<int> subjectId,
+      Value<int> fullMark,
+      Value<int> passMark,
+      Value<DateTime?> examDate,
+      Value<int> sortOrder,
+    });
+
+final class $$ExamSubjectsTableReferences
+    extends BaseReferences<_$AppDatabase, $ExamSubjectsTable, ExamSubject> {
+  $$ExamSubjectsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $ExamsTable _examIdTable(_$AppDatabase db) => db.exams.createAlias(
+    $_aliasNameGenerator(db.examSubjects.examId, db.exams.id),
+  );
+
+  $$ExamsTableProcessedTableManager get examId {
+    final $_column = $_itemColumn<int>('exam_id')!;
+
+    final manager = $$ExamsTableTableManager(
+      $_db,
+      $_db.exams,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_examIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $GradesTable _gradeIdTable(_$AppDatabase db) => db.grades.createAlias(
+    $_aliasNameGenerator(db.examSubjects.gradeId, db.grades.id),
+  );
+
+  $$GradesTableProcessedTableManager get gradeId {
+    final $_column = $_itemColumn<int>('grade_id')!;
+
+    final manager = $$GradesTableTableManager(
+      $_db,
+      $_db.grades,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_gradeIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $SubjectsTable _subjectIdTable(_$AppDatabase db) =>
+      db.subjects.createAlias(
+        $_aliasNameGenerator(db.examSubjects.subjectId, db.subjects.id),
+      );
+
+  $$SubjectsTableProcessedTableManager get subjectId {
+    final $_column = $_itemColumn<int>('subject_id')!;
+
+    final manager = $$SubjectsTableTableManager(
+      $_db,
+      $_db.subjects,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_subjectIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<$MarksTable, List<Mark>> _marksRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.marks,
+    aliasName: $_aliasNameGenerator(db.examSubjects.id, db.marks.examSubjectId),
+  );
+
+  $$MarksTableProcessedTableManager get marksRefs {
+    final manager = $$MarksTableTableManager(
+      $_db,
+      $_db.marks,
+    ).filter((f) => f.examSubjectId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_marksRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$ExamSubjectsTableFilterComposer
+    extends Composer<_$AppDatabase, $ExamSubjectsTable> {
+  $$ExamSubjectsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get fullMark => $composableBuilder(
+    column: $table.fullMark,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get passMark => $composableBuilder(
+    column: $table.passMark,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get examDate => $composableBuilder(
+    column: $table.examDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ExamsTableFilterComposer get examId {
+    final $$ExamsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.examId,
+      referencedTable: $db.exams,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ExamsTableFilterComposer(
+            $db: $db,
+            $table: $db.exams,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$GradesTableFilterComposer get gradeId {
+    final $$GradesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.gradeId,
+      referencedTable: $db.grades,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$GradesTableFilterComposer(
+            $db: $db,
+            $table: $db.grades,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$SubjectsTableFilterComposer get subjectId {
+    final $$SubjectsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.subjectId,
+      referencedTable: $db.subjects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SubjectsTableFilterComposer(
+            $db: $db,
+            $table: $db.subjects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> marksRefs(
+    Expression<bool> Function($$MarksTableFilterComposer f) f,
+  ) {
+    final $$MarksTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.marks,
+      getReferencedColumn: (t) => t.examSubjectId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MarksTableFilterComposer(
+            $db: $db,
+            $table: $db.marks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$ExamSubjectsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ExamSubjectsTable> {
+  $$ExamSubjectsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get fullMark => $composableBuilder(
+    column: $table.fullMark,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get passMark => $composableBuilder(
+    column: $table.passMark,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get examDate => $composableBuilder(
+    column: $table.examDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ExamsTableOrderingComposer get examId {
+    final $$ExamsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.examId,
+      referencedTable: $db.exams,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ExamsTableOrderingComposer(
+            $db: $db,
+            $table: $db.exams,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$GradesTableOrderingComposer get gradeId {
+    final $$GradesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.gradeId,
+      referencedTable: $db.grades,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$GradesTableOrderingComposer(
+            $db: $db,
+            $table: $db.grades,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$SubjectsTableOrderingComposer get subjectId {
+    final $$SubjectsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.subjectId,
+      referencedTable: $db.subjects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SubjectsTableOrderingComposer(
+            $db: $db,
+            $table: $db.subjects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ExamSubjectsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ExamSubjectsTable> {
+  $$ExamSubjectsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get fullMark =>
+      $composableBuilder(column: $table.fullMark, builder: (column) => column);
+
+  GeneratedColumn<int> get passMark =>
+      $composableBuilder(column: $table.passMark, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get examDate =>
+      $composableBuilder(column: $table.examDate, builder: (column) => column);
+
+  GeneratedColumn<int> get sortOrder =>
+      $composableBuilder(column: $table.sortOrder, builder: (column) => column);
+
+  $$ExamsTableAnnotationComposer get examId {
+    final $$ExamsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.examId,
+      referencedTable: $db.exams,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ExamsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.exams,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$GradesTableAnnotationComposer get gradeId {
+    final $$GradesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.gradeId,
+      referencedTable: $db.grades,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$GradesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.grades,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$SubjectsTableAnnotationComposer get subjectId {
+    final $$SubjectsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.subjectId,
+      referencedTable: $db.subjects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SubjectsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.subjects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> marksRefs<T extends Object>(
+    Expression<T> Function($$MarksTableAnnotationComposer a) f,
+  ) {
+    final $$MarksTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.marks,
+      getReferencedColumn: (t) => t.examSubjectId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MarksTableAnnotationComposer(
+            $db: $db,
+            $table: $db.marks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$ExamSubjectsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ExamSubjectsTable,
+          ExamSubject,
+          $$ExamSubjectsTableFilterComposer,
+          $$ExamSubjectsTableOrderingComposer,
+          $$ExamSubjectsTableAnnotationComposer,
+          $$ExamSubjectsTableCreateCompanionBuilder,
+          $$ExamSubjectsTableUpdateCompanionBuilder,
+          (ExamSubject, $$ExamSubjectsTableReferences),
+          ExamSubject,
+          PrefetchHooks Function({
+            bool examId,
+            bool gradeId,
+            bool subjectId,
+            bool marksRefs,
+          })
+        > {
+  $$ExamSubjectsTableTableManager(_$AppDatabase db, $ExamSubjectsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ExamSubjectsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ExamSubjectsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ExamSubjectsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> examId = const Value.absent(),
+                Value<int> gradeId = const Value.absent(),
+                Value<int> subjectId = const Value.absent(),
+                Value<int> fullMark = const Value.absent(),
+                Value<int> passMark = const Value.absent(),
+                Value<DateTime?> examDate = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+              }) => ExamSubjectsCompanion(
+                id: id,
+                examId: examId,
+                gradeId: gradeId,
+                subjectId: subjectId,
+                fullMark: fullMark,
+                passMark: passMark,
+                examDate: examDate,
+                sortOrder: sortOrder,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int examId,
+                required int gradeId,
+                required int subjectId,
+                Value<int> fullMark = const Value.absent(),
+                Value<int> passMark = const Value.absent(),
+                Value<DateTime?> examDate = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+              }) => ExamSubjectsCompanion.insert(
+                id: id,
+                examId: examId,
+                gradeId: gradeId,
+                subjectId: subjectId,
+                fullMark: fullMark,
+                passMark: passMark,
+                examDate: examDate,
+                sortOrder: sortOrder,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$ExamSubjectsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({
+                examId = false,
+                gradeId = false,
+                subjectId = false,
+                marksRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [if (marksRefs) db.marks],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (examId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.examId,
+                                    referencedTable:
+                                        $$ExamSubjectsTableReferences
+                                            ._examIdTable(db),
+                                    referencedColumn:
+                                        $$ExamSubjectsTableReferences
+                                            ._examIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (gradeId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.gradeId,
+                                    referencedTable:
+                                        $$ExamSubjectsTableReferences
+                                            ._gradeIdTable(db),
+                                    referencedColumn:
+                                        $$ExamSubjectsTableReferences
+                                            ._gradeIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (subjectId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.subjectId,
+                                    referencedTable:
+                                        $$ExamSubjectsTableReferences
+                                            ._subjectIdTable(db),
+                                    referencedColumn:
+                                        $$ExamSubjectsTableReferences
+                                            ._subjectIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (marksRefs)
+                        await $_getPrefetchedData<
+                          ExamSubject,
+                          $ExamSubjectsTable,
+                          Mark
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ExamSubjectsTableReferences
+                              ._marksRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ExamSubjectsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).marksRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.examSubjectId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$ExamSubjectsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ExamSubjectsTable,
+      ExamSubject,
+      $$ExamSubjectsTableFilterComposer,
+      $$ExamSubjectsTableOrderingComposer,
+      $$ExamSubjectsTableAnnotationComposer,
+      $$ExamSubjectsTableCreateCompanionBuilder,
+      $$ExamSubjectsTableUpdateCompanionBuilder,
+      (ExamSubject, $$ExamSubjectsTableReferences),
+      ExamSubject,
+      PrefetchHooks Function({
+        bool examId,
+        bool gradeId,
+        bool subjectId,
+        bool marksRefs,
+      })
+    >;
+typedef $$MarksTableCreateCompanionBuilder =
+    MarksCompanion Function({
+      Value<int> id,
+      required int examSubjectId,
+      required int studentId,
+      Value<double?> obtained,
+      Value<bool> isAbsent,
+      Value<String?> remarks,
+      Value<int?> enteredByUserId,
+      Value<DateTime> enteredAt,
+    });
+typedef $$MarksTableUpdateCompanionBuilder =
+    MarksCompanion Function({
+      Value<int> id,
+      Value<int> examSubjectId,
+      Value<int> studentId,
+      Value<double?> obtained,
+      Value<bool> isAbsent,
+      Value<String?> remarks,
+      Value<int?> enteredByUserId,
+      Value<DateTime> enteredAt,
+    });
+
+final class $$MarksTableReferences
+    extends BaseReferences<_$AppDatabase, $MarksTable, Mark> {
+  $$MarksTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $ExamSubjectsTable _examSubjectIdTable(_$AppDatabase db) =>
+      db.examSubjects.createAlias(
+        $_aliasNameGenerator(db.marks.examSubjectId, db.examSubjects.id),
+      );
+
+  $$ExamSubjectsTableProcessedTableManager get examSubjectId {
+    final $_column = $_itemColumn<int>('exam_subject_id')!;
+
+    final manager = $$ExamSubjectsTableTableManager(
+      $_db,
+      $_db.examSubjects,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_examSubjectIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $StudentsTable _studentIdTable(_$AppDatabase db) => db.students
+      .createAlias($_aliasNameGenerator(db.marks.studentId, db.students.id));
+
+  $$StudentsTableProcessedTableManager get studentId {
+    final $_column = $_itemColumn<int>('student_id')!;
+
+    final manager = $$StudentsTableTableManager(
+      $_db,
+      $_db.students,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_studentIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$MarksTableFilterComposer extends Composer<_$AppDatabase, $MarksTable> {
+  $$MarksTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get obtained => $composableBuilder(
+    column: $table.obtained,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isAbsent => $composableBuilder(
+    column: $table.isAbsent,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get remarks => $composableBuilder(
+    column: $table.remarks,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get enteredByUserId => $composableBuilder(
+    column: $table.enteredByUserId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get enteredAt => $composableBuilder(
+    column: $table.enteredAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ExamSubjectsTableFilterComposer get examSubjectId {
+    final $$ExamSubjectsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.examSubjectId,
+      referencedTable: $db.examSubjects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ExamSubjectsTableFilterComposer(
+            $db: $db,
+            $table: $db.examSubjects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$StudentsTableFilterComposer get studentId {
+    final $$StudentsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.studentId,
+      referencedTable: $db.students,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$StudentsTableFilterComposer(
+            $db: $db,
+            $table: $db.students,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$MarksTableOrderingComposer
+    extends Composer<_$AppDatabase, $MarksTable> {
+  $$MarksTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get obtained => $composableBuilder(
+    column: $table.obtained,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isAbsent => $composableBuilder(
+    column: $table.isAbsent,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get remarks => $composableBuilder(
+    column: $table.remarks,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get enteredByUserId => $composableBuilder(
+    column: $table.enteredByUserId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get enteredAt => $composableBuilder(
+    column: $table.enteredAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ExamSubjectsTableOrderingComposer get examSubjectId {
+    final $$ExamSubjectsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.examSubjectId,
+      referencedTable: $db.examSubjects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ExamSubjectsTableOrderingComposer(
+            $db: $db,
+            $table: $db.examSubjects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$StudentsTableOrderingComposer get studentId {
+    final $$StudentsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.studentId,
+      referencedTable: $db.students,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$StudentsTableOrderingComposer(
+            $db: $db,
+            $table: $db.students,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$MarksTableAnnotationComposer
+    extends Composer<_$AppDatabase, $MarksTable> {
+  $$MarksTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<double> get obtained =>
+      $composableBuilder(column: $table.obtained, builder: (column) => column);
+
+  GeneratedColumn<bool> get isAbsent =>
+      $composableBuilder(column: $table.isAbsent, builder: (column) => column);
+
+  GeneratedColumn<String> get remarks =>
+      $composableBuilder(column: $table.remarks, builder: (column) => column);
+
+  GeneratedColumn<int> get enteredByUserId => $composableBuilder(
+    column: $table.enteredByUserId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get enteredAt =>
+      $composableBuilder(column: $table.enteredAt, builder: (column) => column);
+
+  $$ExamSubjectsTableAnnotationComposer get examSubjectId {
+    final $$ExamSubjectsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.examSubjectId,
+      referencedTable: $db.examSubjects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ExamSubjectsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.examSubjects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$StudentsTableAnnotationComposer get studentId {
+    final $$StudentsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.studentId,
+      referencedTable: $db.students,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$StudentsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.students,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$MarksTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $MarksTable,
+          Mark,
+          $$MarksTableFilterComposer,
+          $$MarksTableOrderingComposer,
+          $$MarksTableAnnotationComposer,
+          $$MarksTableCreateCompanionBuilder,
+          $$MarksTableUpdateCompanionBuilder,
+          (Mark, $$MarksTableReferences),
+          Mark,
+          PrefetchHooks Function({bool examSubjectId, bool studentId})
+        > {
+  $$MarksTableTableManager(_$AppDatabase db, $MarksTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$MarksTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$MarksTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$MarksTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> examSubjectId = const Value.absent(),
+                Value<int> studentId = const Value.absent(),
+                Value<double?> obtained = const Value.absent(),
+                Value<bool> isAbsent = const Value.absent(),
+                Value<String?> remarks = const Value.absent(),
+                Value<int?> enteredByUserId = const Value.absent(),
+                Value<DateTime> enteredAt = const Value.absent(),
+              }) => MarksCompanion(
+                id: id,
+                examSubjectId: examSubjectId,
+                studentId: studentId,
+                obtained: obtained,
+                isAbsent: isAbsent,
+                remarks: remarks,
+                enteredByUserId: enteredByUserId,
+                enteredAt: enteredAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int examSubjectId,
+                required int studentId,
+                Value<double?> obtained = const Value.absent(),
+                Value<bool> isAbsent = const Value.absent(),
+                Value<String?> remarks = const Value.absent(),
+                Value<int?> enteredByUserId = const Value.absent(),
+                Value<DateTime> enteredAt = const Value.absent(),
+              }) => MarksCompanion.insert(
+                id: id,
+                examSubjectId: examSubjectId,
+                studentId: studentId,
+                obtained: obtained,
+                isAbsent: isAbsent,
+                remarks: remarks,
+                enteredByUserId: enteredByUserId,
+                enteredAt: enteredAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) =>
+                    (e.readTable(table), $$MarksTableReferences(db, table, e)),
+              )
+              .toList(),
+          prefetchHooksCallback: ({examSubjectId = false, studentId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (examSubjectId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.examSubjectId,
+                                referencedTable: $$MarksTableReferences
+                                    ._examSubjectIdTable(db),
+                                referencedColumn: $$MarksTableReferences
+                                    ._examSubjectIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+                    if (studentId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.studentId,
+                                referencedTable: $$MarksTableReferences
+                                    ._studentIdTable(db),
+                                referencedColumn: $$MarksTableReferences
+                                    ._studentIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$MarksTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $MarksTable,
+      Mark,
+      $$MarksTableFilterComposer,
+      $$MarksTableOrderingComposer,
+      $$MarksTableAnnotationComposer,
+      $$MarksTableCreateCompanionBuilder,
+      $$MarksTableUpdateCompanionBuilder,
+      (Mark, $$MarksTableReferences),
+      Mark,
+      PrefetchHooks Function({bool examSubjectId, bool studentId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -22899,4 +28861,14 @@ class $AppDatabaseManager {
       $$MessagesTableTableManager(_db, _db.messages);
   $$AppNotificationsTableTableManager get appNotifications =>
       $$AppNotificationsTableTableManager(_db, _db.appNotifications);
+  $$TimeSlotsTableTableManager get timeSlots =>
+      $$TimeSlotsTableTableManager(_db, _db.timeSlots);
+  $$TimetableEntriesTableTableManager get timetableEntries =>
+      $$TimetableEntriesTableTableManager(_db, _db.timetableEntries);
+  $$ExamsTableTableManager get exams =>
+      $$ExamsTableTableManager(_db, _db.exams);
+  $$ExamSubjectsTableTableManager get examSubjects =>
+      $$ExamSubjectsTableTableManager(_db, _db.examSubjects);
+  $$MarksTableTableManager get marks =>
+      $$MarksTableTableManager(_db, _db.marks);
 }
