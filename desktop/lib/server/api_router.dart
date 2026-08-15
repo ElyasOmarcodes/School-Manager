@@ -13,6 +13,7 @@ import '../data/repositories/exam_repository.dart';
 import '../data/repositories/leave_repository.dart';
 import '../data/repositories/message_repository.dart';
 import '../data/repositories/notification_repository.dart';
+import 'local_server.dart' show ServerStats;
 
 /// د API نسخه — اپ يې ګوري چې پوه شي ډیسکټاپ زوړ خو نه دی.
 const String apiVersion = '1';
@@ -35,6 +36,10 @@ class ApiDeps {
   /// د ښوونځي نوم — په پیغامونو او د اپ په سرلیک کې ښکاري.
   final String Function() schoolName;
 
+  /// د راغلو غوښتنو حساب — د تنظیماتو پاڼه يې د ستونزې د موندلو
+  /// لپاره ښیي.
+  final ServerStats stats;
+
   ApiDeps({
     required this.db,
     required this.devices,
@@ -44,7 +49,8 @@ class ApiDeps {
     required this.messages,
     required this.notifications,
     required this.schoolName,
-  });
+    ServerStats? stats,
+  }) : stats = stats ?? ServerStats();
 
   factory ApiDeps.of(AppDatabase db, {String Function()? schoolName}) => ApiDeps(
     db: db,
@@ -604,10 +610,20 @@ ORDER BY s.first_name
   root.all('/<ignored|.*>', (Request r) => _err(404, 'دا لار نشته'));
 
   return const Pipeline()
+      .addMiddleware(_count(d))
       .addMiddleware(_jsonErrors())
       .addMiddleware(_noCache())
       .addHandler(root.call);
 }
+
+/// هره راغلې غوښتنه شمېري — حتی هغه چې ۴۰۱ اخلي.
+///
+/// **ولې ناکامې هم؟** ځکه چې پوښتنه دا ده: «ایا څوک راورسېد؟»
+/// یو ناسم توکن هم دا ثابتوي چې شبکه او فایروال کار کوي.
+Middleware _count(ApiDeps d) => (inner) => (req) async {
+  d.stats.record(_clientIp(req));
+  return inner(req);
+};
 
 /// یوه استثنا باید د JSON غلطي شي، نه د HTML پاڼه.
 ///

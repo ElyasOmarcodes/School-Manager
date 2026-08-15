@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter_test/flutter_test.dart';
@@ -11,6 +12,7 @@ import 'package:school_manager/data/repositories/message_repository.dart';
 import 'package:school_manager/data/repositories/notification_repository.dart';
 import 'package:school_manager/data/repositories/student_repository.dart';
 import 'package:school_manager/server/api_router.dart';
+import 'package:school_manager/server/local_server.dart';
 import 'package:shelf/shelf.dart';
 
 /// د محلي سرور ازموینې.
@@ -639,6 +641,81 @@ void main() {
 
       final n = await db.select(db.appNotifications).getSingle();
       expect(n.actedAt, isNotNull);
+    });
+  });
+
+  group('ریښتینې سوکټ', () {
+    /// **دا ازموینه ولې پکار ده؟** ځکه چې پاتې ازموینې یوازې
+    /// `Handler` بلي — هغه نه ښيي چې سرور واقعاً یوه دروازه
+    /// پرانیزي او د شبکې له لارې ځواب ورکوي. دا يې ازمويي.
+    test('سرور ریښتیني پورټ نیسي او د شبکې له لارې ځواب ورکوي', () async {
+      final server = LocalServer(deps);
+      // پورټ صفر = عامل سیسټم يې پخپله ټاکي، نو د CI سره ټکر نه کوي.
+      final port = await server.start(port: 0);
+      addTearDown(server.stop);
+
+      expect(port, greaterThan(0));
+      expect(server.isRunning, isTrue);
+
+      final client = HttpClient();
+      addTearDown(client.close);
+
+      final req = await client.getUrl(
+        Uri.parse('http://127.0.0.1:$port/api/ping'),
+      );
+      final res = await req.close();
+      final body =
+          jsonDecode(await res.transform(utf8.decoder).join())
+              as Map<String, dynamic>;
+
+      expect(res.statusCode, 200);
+      expect(body['school'], 'د نور لیسه');
+    });
+
+    test('راغلې غوښتنې شمېرل کېږي — د فایروال د تشخیص لپاره', () async {
+      final server = LocalServer(deps);
+      final port = await server.start(port: 0);
+      addTearDown(server.stop);
+
+      expect(server.stats.silent, isTrue);
+
+      final client = HttpClient();
+      addTearDown(client.close);
+      final req = await client.getUrl(
+        Uri.parse('http://127.0.0.1:$port/api/ping'),
+      );
+      await (await req.close()).drain<void>();
+
+      expect(server.stats.requests, 1);
+      expect(server.stats.silent, isFalse);
+      expect(server.stats.clientIps, isNotEmpty);
+    });
+
+    test('ناسم توکن هم شمېرل کېږي — شبکه خو کار کوي', () async {
+      final server = LocalServer(deps);
+      final port = await server.start(port: 0);
+      addTearDown(server.stop);
+
+      final client = HttpClient();
+      addTearDown(client.close);
+      final req = await client.getUrl(
+        Uri.parse('http://127.0.0.1:$port/api/manager/summary'),
+      );
+      req.headers.set('authorization', 'Bearer wrong');
+      final res = await req.close();
+      await res.drain<void>();
+
+      expect(res.statusCode, 401);
+      expect(server.stats.requests, 1);
+    });
+
+    test('د فایروال بلنه پورټ او ټول پروفایلونه لري', () {
+      final server = LocalServer(deps);
+      final cmd = server.firewallCommand(port: 8787);
+      expect(cmd, contains('localport=8787'));
+      // ویندوز ځینې Wi-Fi «Public» ګڼي — نو باید ټول پروفایلونه.
+      expect(cmd, contains('profile=any'));
+      expect(cmd, contains('dir=in'));
     });
   });
 

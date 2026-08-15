@@ -5,6 +5,34 @@ import 'package:shelf/shelf_io.dart' as shelf_io;
 
 import 'api_router.dart';
 
+/// د سرور ژوندی حساب — څومره غوښتنې راغلې او له کومو پتو څخه.
+///
+/// **دا ولې پکار دی؟** ځکه چې «سرور روان دی» یوازې دا معنا لري چې
+/// پروګرام یوه دروازه پرانیسته. که د ویندوز فایروال مخې ته ولاړ وي،
+/// دروازه پرانیستې ده خو څوک ورڅخه نه شي راتلای — او پروګرام يې
+/// نه پوهېږي. یوازې د **راغلو غوښتنو شمېر** دا توپیر ښیي:
+/// صفر = هېڅ چا لاس نه دی رسولی.
+class ServerStats {
+  int requests = 0;
+  DateTime? lastRequestAt;
+  final Set<String> clientIps = {};
+
+  void record(String? ip) {
+    requests++;
+    lastRequestAt = DateTime.now();
+    if (ip != null) clientIps.add(ip);
+  }
+
+  void reset() {
+    requests = 0;
+    lastRequestAt = null;
+    clientIps.clear();
+  }
+
+  /// سرور روان دی خو هېڅوک نه دی راغلی — تر ټولو ډېر ځله فایروال.
+  bool get silent => requests == 0;
+}
+
 /// د محلي شبکې یوه پته چې تلیفون ورسره وصل کېدی شي.
 class LanEndpoint {
   final String interfaceName;
@@ -43,14 +71,32 @@ class LocalServer {
   HttpServer? _http;
   LocalServer(this.deps);
 
+  ServerStats get stats => deps.stats;
+
   bool get isRunning => _http != null;
   int? get port => _http?.port;
+
+  /// **د ویندوز فایروال قاعده.**
+  ///
+  /// دا هغه یوه بلنه ده چې تر ټولو ډېر ځله ستونزه حلوي. مدیر يې
+  /// کاپي کوي او په «Command Prompt (Administrator)» کې يې ځغلوي.
+  ///
+  /// `profile=any` ولې؟ ځکه چې ویندوز ځینې Wi-Fi شبکې «Public»
+  /// ګڼي. که قاعده یوازې د «Private» لپاره وي، په هغو شبکو کې به
+  /// بې‌کاره وه — او مدیر به يې لامل نه موند.
+  String firewallCommand({int? port}) {
+    final p = port ?? this.port ?? defaultPort;
+    return 'netsh advfirewall firewall add rule '
+        'name="School Manager ($p)" dir=in action=allow '
+        'protocol=TCP localport=$p profile=any';
+  }
 
   Future<int> start({int port = defaultPort}) async {
     if (_http != null) return _http!.port;
 
     // `anyIPv4` = د شبکې ټولې پتې. که یوازې localhost وای، د
     // ښوونځي تلیفون به ورسره نه شو وصلېدی — او دا خو ټول موخه ده.
+    deps.stats.reset();
     final server = await shelf_io.serve(
       buildApi(deps),
       InternetAddress.anyIPv4,

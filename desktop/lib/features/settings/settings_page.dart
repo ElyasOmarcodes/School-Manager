@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -81,6 +83,41 @@ class _SettingsPageState extends State<SettingsPage> {
       _guardians = guardians;
       _loading = false;
     });
+  }
+
+  /// د ویندوز فایروال قاعده په اداري اجازې سره ځغلوي.
+  ///
+  /// **ولې پخپله نه؟** ځکه چې دا د سیسټم بدلون دی — کارن باید
+  /// د ویندوز پوښتنې (UAC) ته «هو» ووايي. زه يې پرته له پوښتنې
+  /// نه کوم.
+  Future<void> _addFirewallRule() async {
+    if (!Platform.isWindows) return;
+    setState(() => _busy = true);
+    try {
+      final r = await Process.run('powershell', [
+        '-NoProfile',
+        '-Command',
+        "Start-Process cmd -ArgumentList '/c ${widget.server.firewallCommand()}'"
+            ' -Verb RunAs -Wait',
+      ]);
+      if (!mounted) return;
+      final ok = r.exitCode == 0;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          width: 560,
+          backgroundColor: ok ? AppColors.success : AppColors.danger,
+          content: Text(
+            ok
+                ? 'د فایروال قاعده زیاته شوه. اوس په تلیفون کې بیا هڅه وکړئ.'
+                : 'قاعده زیاته نه شوه. بلنه کاپي کړئ او په '
+                      '«Command Prompt (Administrator)» کې يې وځغلوئ.',
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
   }
 
   Future<void> _toggleServer() async {
@@ -387,6 +424,10 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
         const SizedBox(height: 14),
 
+        // ── تشخیص ────────────────────────────────────────
+        if (running) _buildDiagnostics(p),
+        if (running) const SizedBox(height: 14),
+
         // ── نوی تړاو ─────────────────────────────────────
         _Card(
           title: 'نوې وسیله وتړئ',
@@ -573,6 +614,181 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
         ),
       ],
+    );
+  }
+
+  /// **«سرور روان دی» بس نه دی.**
+  ///
+  /// دا کارت هغه پوښتنه ځواب کوي چې مدیر يې پوښتي: «ولې زما تلیفون
+  /// نه وصلېږي؟» — او لومړی ځواب دا دی چې ایا اصلاً څه راغلي که نه.
+  Widget _buildDiagnostics(AppPalette p) {
+    final locale = S.of(context).locale;
+    final stats = widget.server.stats;
+    final silent = stats.silent;
+
+    return _Card(
+      title: 'تشخیص',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: (silent ? AppColors.warning : AppColors.success)
+                      .withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  silent
+                      ? Icons.help_outline_rounded
+                      : Icons.check_circle_rounded,
+                  size: 19,
+                  color: silent ? AppColors.warning : AppColors.success,
+                ),
+              ),
+              const SizedBox(width: 13),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      silent
+                          ? 'لا هېڅ غوښتنه نه ده راغلې'
+                          : '${locale.grouped(stats.requests)} غوښتنې راغلې',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: p.ink,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      silent
+                          ? 'د دې معنا دا ده چې تلیفون تر دې کمپیوټر '
+                                'پورې نه دی رسېدلی — نه دا چې کوډ غلط دی.'
+                          : 'له '
+                                '${locale.num(stats.clientIps.length)} '
+                                'وسیلو څخه — شبکه کار کوي.',
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        height: 1.7,
+                        color: p.muted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                tooltip: 'بیا وګوره',
+                onPressed: () => setState(() {}),
+                icon: Icon(Icons.refresh_rounded, size: 18, color: p.muted),
+              ),
+            ],
+          ),
+
+          if (silent) ...[
+            const SizedBox(height: 18),
+            Divider(color: p.line, height: 1),
+            const SizedBox(height: 16),
+            Text(
+              'دا درې شیان په ترتیب سره وګورئ',
+              style: TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w700,
+                color: p.ink,
+              ),
+            ),
+            const SizedBox(height: 12),
+            const _Step(
+              n: 1,
+              title: 'د ویندوز فایروال',
+              body:
+                  'تر ټولو ډېر ځله همدا لامل دی. ویندوز پرته له '
+                  'پوښتنې د بهرنیو اړیکو مخه نیسي. لاندې تڼۍ يې '
+                  'حل کوي — ویندوز به یوه پوښتنه وکړي، «هو» ورکړئ.',
+            ),
+            const _Step(
+              n: 2,
+              title: 'یوه Wi-Fi، نه دوه',
+              body:
+                  'کمپیوټر ښايي په کیبل وصل وي او تلیفون په Wi-Fi — '
+                  'دا دوه بېلې شبکې دي. پورته پته وګورئ چې د تلیفون '
+                  'د Wi-Fi پتې سره سمون خوري (لومړي درې برخې يې یو '
+                  'شان وي).',
+            ),
+            const _Step(
+              n: 3,
+              title: 'د راوټر جلاوالی',
+              body:
+                  'ځینې راوټرونه «AP Isolation» یا «Client Isolation» '
+                  'لري چې د تلیفونونو خبرې اترې بندوي. په راوټر کې يې '
+                  'وګورئ او بند يې کړئ.',
+            ),
+            const SizedBox(height: 14),
+
+            if (Platform.isWindows)
+              FilledButton.icon(
+                onPressed: _busy ? null : _addFirewallRule,
+                icon: const Icon(Icons.shield_rounded, size: 17),
+                label: const Text('د فایروال قاعده زیاته کړه'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.warning,
+                  minimumSize: const Size.fromHeight(44),
+                  textStyle: const TextStyle(
+                    fontFamily: AppTheme.fontFamily,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13.5,
+                  ),
+                ),
+              ),
+            const SizedBox(height: 10),
+            Text(
+              'یا دا بلنه په «Command Prompt (Administrator)» کې '
+              'وځغلوئ:',
+              style: TextStyle(fontSize: 11.5, color: p.muted),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: p.surfaceAlt,
+                borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+                border: Border.all(color: p.line),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: SelectableText(
+                      widget.server.firewallCommand(),
+                      textDirection: TextDirection.ltr,
+                      style: const TextStyle(
+                        fontSize: 11.5,
+                        height: 1.6,
+                        fontFamily: 'monospace',
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'کاپي',
+                    icon: Icon(
+                      Icons.copy_rounded,
+                      size: 16,
+                      color: p.muted,
+                    ),
+                    onPressed: () => Clipboard.setData(
+                      ClipboardData(text: widget.server.firewallCommand()),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 
@@ -826,6 +1042,71 @@ class _Tab extends StatelessWidget {
             color: selected ? AppColors.modSettings : p.inkSoft,
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _Step extends StatelessWidget {
+  final int n;
+  final String title;
+  final String body;
+
+  const _Step({required this.n, required this.title, required this.body});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final locale = S.of(context).locale;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 13),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 22,
+            height: 22,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: AppColors.warning.withValues(alpha: 0.14),
+              shape: BoxShape.circle,
+            ),
+            child: Text(
+              locale.num(n),
+              style: const TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w800,
+                color: AppColors.warning,
+              ),
+            ),
+          ),
+          const SizedBox(width: 11),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
+                    color: p.ink,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  body,
+                  style: TextStyle(
+                    fontSize: 12,
+                    height: 1.75,
+                    color: p.muted,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
