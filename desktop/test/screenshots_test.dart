@@ -32,7 +32,13 @@ import 'package:school_manager/features/id_cards/id_cards_page.dart';
 import 'package:school_manager/data/repositories/exam_repository.dart';
 import 'package:school_manager/data/repositories/staff_repository.dart';
 import 'package:school_manager/data/repositories/timetable_repository.dart';
+import 'package:school_manager/data/repositories/fee_repository.dart';
+import 'package:school_manager/data/repositories/payroll_repository.dart';
+import 'package:school_manager/data/repositories/user_repository.dart';
 import 'package:school_manager/features/exams/exams_page.dart';
+import 'package:school_manager/features/fees/fees_page.dart';
+import 'package:school_manager/features/payroll/payroll_page.dart';
+import 'package:school_manager/features/users/users_page.dart';
 import 'package:school_manager/features/exams/mark_sheet.dart';
 import 'package:school_manager/features/exams/results_view.dart';
 import 'package:school_manager/features/messages/messages_page.dart';
@@ -582,6 +588,104 @@ void main() {
     );
   });
 
+  testWidgets('27 — فیس او تادیې', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await _seedSchool(db);
+    await _seedFees(db);
+
+    await _shoot(
+      tester,
+      name: '27-fees',
+      settle: const Duration(milliseconds: 700),
+      child: Scaffold(
+        body: FeesPage(
+          fees: FeeRepository(db),
+          academic: AcademicRepository(db),
+          session: _session,
+        ),
+      ),
+    );
+  });
+
+  testWidgets('28 — پوروړي', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await _seedSchool(db);
+    await _seedFees(db);
+
+    await _shoot(
+      tester,
+      name: '28-fee-defaulters',
+      settle: const Duration(milliseconds: 700),
+      child: Scaffold(
+        body: FeesPage(
+          fees: FeeRepository(db),
+          academic: AcademicRepository(db),
+          session: _session,
+        ),
+      ),
+      after: (tester) async {
+        await tester.tap(find.text('پوروړي'));
+        await tester.pumpAndSettle();
+      },
+    );
+  });
+
+  testWidgets('29 — معاشونه', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await _seedSchool(db);
+    await _seedTeachers(db);
+    await _seedStaff(db);
+    await _seedPayroll(db);
+
+    await _shoot(
+      tester,
+      name: '29-payroll',
+      settle: const Duration(milliseconds: 700),
+      child: Scaffold(
+        body: PayrollPage(payroll: PayrollRepository(db), session: _session),
+      ),
+    );
+  });
+
+  testWidgets('30 — کاروونکي او اجازې', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await _seedUsers(db);
+
+    await _shoot(
+      tester,
+      name: '30-users',
+      settle: const Duration(milliseconds: 700),
+      child: Scaffold(
+        body: UsersPage(users: UserRepository(db), session: _session),
+      ),
+    );
+  });
+
+  testWidgets('31 — فیس (تیاره)', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await _seedSchool(db);
+    await _seedFees(db);
+
+    await _shoot(
+      tester,
+      name: '31-fees-dark',
+      brightness: Brightness.dark,
+      settle: const Duration(milliseconds: 700),
+      child: Scaffold(
+        body: FeesPage(
+          fees: FeeRepository(db),
+          academic: AcademicRepository(db),
+          session: _session,
+        ),
+      ),
+    );
+  });
+
   testWidgets('06 — ډاشبورډ په انګلیسي (LTR)', (tester) async {
     await _shoot(
       tester,
@@ -603,7 +707,8 @@ void main() {
 //  نمونه ډیټا — د یوه ریښتیني ښوونځي په څېر
 // ═══════════════════════════════════════════════════════════
 
-const _session = Session(
+// `Session` اوس د اجازو یو شی جوړوي، نو const نه دی.
+final _session = Session(
   userId: 1,
   username: 'admin',
   fullName: 'الیاس عمر',
@@ -1150,4 +1255,129 @@ Future<void> _seedStaff(AppDatabase db) async {
       byUserName: 'admin',
     );
   }
+}
+
+/// دوه میاشتې بلونه، ځینې ورکړل شوي، ځینې نیمګړي.
+Future<void> _seedFees(AppDatabase db) async {
+  final fees = FeeRepository(db);
+  final academic = AcademicRepository(db);
+  await fees.seedDefaultTypes();
+
+  final year = (await academic.currentYear())!;
+  final monthly = (await fees.types())
+      .firstWhere((t) => t.name == 'میاشتنی فیس');
+
+  // **د ورکړې نېټې په قصد یوه تېره او یوه راتلونکې ده.**
+  // `isOverdue` د ریښتیني ساعت سره پرتله کوي — که دواړه یوه نېټه
+  // وای، عکس به سبا بدل شو. اوس تل یوه دوره «وخت تېر» ښیي او بله
+  // «نه دی ورکړل».
+  for (final (period, due) in [
+    ('1405-04', DateTime(2020, 5, 20)),
+    ('1405-05', DateTime(2099, 5, 20)),
+  ]) {
+    await fees.generate(
+      feeTypeId: monthly.id,
+      period: period,
+      dueDate: due,
+      academicYearId: year.id,
+      byUserId: 1,
+    );
+  }
+
+  // **ثابت الګو.** تصادفي به د گولډن عکس هر ځل بدل کړ.
+  final invoices = await db.select(db.feeInvoices).get()
+    ..sort((a, b) => a.id.compareTo(b.id));
+  for (final (i, inv) in invoices.indexed) {
+    switch (i % 4) {
+      case 0:
+        await fees.pay(
+          invoiceId: inv.id,
+          amount: 500,
+          byUserId: 1,
+          now: DateTime(2026, 5, 12, 9),
+        );
+      case 1:
+        await fees.pay(
+          invoiceId: inv.id,
+          amount: 200,
+          byUserId: 1,
+          now: DateTime(2026, 5, 12, 10),
+        );
+      case 2:
+        if (i == 2) {
+          await fees.waive(inv.id, reason: 'یتیم', byUserId: 1);
+        }
+      default:
+        break; // نه‌ورکړل شوی پاتې کېږي.
+    }
+  }
+}
+
+/// یوه د معاشونو دوره، له څو کسرونو سره.
+Future<void> _seedPayroll(AppDatabase db) async {
+  final payroll = PayrollRepository(db);
+  final runId = await payroll.createRun(period: '1405-05', byUserId: 1);
+
+  final items = await payroll.items(runId);
+  for (final (i, item) in items.indexed) {
+    if (i % 3 == 0) {
+      await payroll.updateItem(
+        itemId: item.id,
+        allowances: 2000,
+      );
+    } else if (i % 3 == 1) {
+      await payroll.updateItem(
+        itemId: item.id,
+        absenceDeduction: 800,
+        absentDays: 2,
+      );
+    }
+  }
+
+  // یوه تېره دوره چې ورکړل شوې — لیست تش نه وي.
+  final old = await payroll.createRun(period: '1405-04', byUserId: 1);
+  await payroll.approve(old, byUserId: 1);
+  await payroll.markPaid(old, at: DateTime(2026, 4, 30));
+}
+
+/// څو کاروونکي په بېلو رولونو.
+Future<void> _seedUsers(AppDatabase db) async {
+  final users = UserRepository(db);
+  const people = [
+    ('admin', 'الیاس عمر', 'admin'),
+    ('naeem', 'محمد نعیم صافي', 'deputy'),
+    ('zarghuna', 'زرغونه احمدي', 'teacher'),
+    ('ghaffar', 'عبدالغفار', 'accountant'),
+    ('reception', 'سمیع الله', 'reception'),
+  ];
+
+  for (final (username, name, role) in people) {
+    await users.create(
+      username: username,
+      fullName: name,
+      password: 'temporary-pass',
+      role: role,
+      byUserId: 1,
+      byUserName: 'admin',
+    );
+  }
+
+  // یو غیرفعال حساب — چې پرده دواړه حالتونه وښيي.
+  final all = await users.list();
+  await users.setActive(
+    userId: all.firstWhere((u) => u.user.username == 'reception').user.id,
+    active: false,
+    byUserId: 1,
+    byUserName: 'admin',
+  );
+
+  // یوه شخصي اجازه — «*» نښه پرې راځي.
+  await users.updatePermissions(
+    userId: all.firstWhere((u) => u.user.username == 'zarghuna').user.id,
+    permissions: {
+      'fees': {'view'},
+    },
+    byUserId: 1,
+    byUserName: 'admin',
+  );
 }

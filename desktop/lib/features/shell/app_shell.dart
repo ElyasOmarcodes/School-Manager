@@ -9,13 +9,16 @@ import '../../data/repositories/academic_repository.dart';
 import '../../data/repositories/attendance_repository.dart';
 import '../../data/repositories/device_repository.dart';
 import '../../data/repositories/exam_repository.dart';
+import '../../data/repositories/fee_repository.dart';
 import '../../data/repositories/leave_repository.dart';
 import '../../data/repositories/message_repository.dart';
 import '../../data/repositories/notification_repository.dart';
+import '../../data/repositories/payroll_repository.dart';
 import '../../data/repositories/staff_repository.dart';
 import '../../data/repositories/student_repository.dart';
 import '../../data/repositories/teacher_repository.dart';
 import '../../data/repositories/timetable_repository.dart';
+import '../../data/repositories/user_repository.dart';
 import '../../server/local_server.dart';
 import '../auth/auth_service.dart';
 import '../dashboard/dashboard_page.dart';
@@ -24,13 +27,16 @@ import '../attendance/attendance_page.dart';
 import '../classes/classes_page.dart';
 import '../leave/leave_page.dart';
 import '../exams/exams_page.dart';
+import '../fees/fees_page.dart';
 import '../id_cards/id_cards_page.dart';
 import '../messages/messages_page.dart';
+import '../payroll/payroll_page.dart';
 import '../settings/settings_page.dart';
 import '../staff/staff_page.dart';
 import '../students/students_page.dart';
 import '../teachers/teachers_page.dart';
 import '../timetable/timetable_page.dart';
+import '../users/users_page.dart';
 import 'nav_items.dart';
 import 'sidebar.dart';
 
@@ -62,6 +68,11 @@ class AppShell extends StatefulWidget {
   final ExamRepository? examRepo;
   final StaffRepository? staffRepo;
 
+  // ── اتم/نهم/لسم پړاو ──────────────────────────────────
+  final FeeRepository? feeRepo;
+  final PayrollRepository? payrollRepo;
+  final UserRepository? userRepo;
+
   const AppShell({
     super.key,
     required this.session,
@@ -85,6 +96,9 @@ class AppShell extends StatefulWidget {
     this.timetableRepo,
     this.examRepo,
     this.staffRepo,
+    this.feeRepo,
+    this.payrollRepo,
+    this.userRepo,
   });
 
   @override
@@ -121,7 +135,7 @@ class _AppShellState extends State<AppShell> {
         children: [
           Sidebar(
             currentRoute: _route,
-            role: widget.session.role,
+            permissions: widget.session.permissions,
             expanded: _expanded,
             schoolName: widget.schoolName,
             onToggle: () => setState(() => _expanded = !_expanded),
@@ -272,6 +286,22 @@ class _AppShellState extends State<AppShell> {
     }
     if (_route == '/staff' && widget.staffRepo != null) {
       return StaffPage(repo: widget.staffRepo!, session: widget.session);
+    }
+    if (_route == '/fees' && widget.feeRepo != null && academic != null) {
+      return FeesPage(
+        fees: widget.feeRepo!,
+        academic: academic,
+        session: widget.session,
+      );
+    }
+    if (_route == '/payroll' && widget.payrollRepo != null) {
+      return PayrollPage(
+        payroll: widget.payrollRepo!,
+        session: widget.session,
+      );
+    }
+    if (_route == '/users' && widget.userRepo != null) {
+      return UsersPage(users: widget.userRepo!, session: widget.session);
     }
     if (_route == '/settings' &&
         widget.db != null &&

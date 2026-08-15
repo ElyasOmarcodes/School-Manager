@@ -10,13 +10,16 @@ import 'data/repositories/academic_repository.dart';
 import 'data/repositories/attendance_repository.dart';
 import 'data/repositories/device_repository.dart';
 import 'data/repositories/exam_repository.dart';
+import 'data/repositories/fee_repository.dart';
 import 'data/repositories/leave_repository.dart';
 import 'data/repositories/message_repository.dart';
 import 'data/repositories/notification_repository.dart';
+import 'data/repositories/payroll_repository.dart';
 import 'data/repositories/staff_repository.dart';
 import 'data/repositories/student_repository.dart';
 import 'data/repositories/teacher_repository.dart';
 import 'data/repositories/timetable_repository.dart';
+import 'data/repositories/user_repository.dart';
 import 'server/api_router.dart';
 import 'server/local_server.dart';
 import 'features/auth/auth_service.dart';
@@ -116,6 +119,7 @@ class _SchoolManagerAppState extends State<SchoolManagerApp> {
     // مضمونونه او درسي ساعتونه — د مهالویش او ازموینو مخکې شرط.
     await AcademicRepository(db).seedDefaultSubjects();
     await TimetableRepository(db).seedDefaultSlots();
+    await FeeRepository(db).seedDefaultTypes();
     _server = LocalServer(
       ApiDeps.of(db, schoolName: () => _schoolName),
     );
@@ -320,6 +324,9 @@ class _SchoolManagerAppState extends State<SchoolManagerApp> {
       timetableRepo: TimetableRepository(_db!),
       examRepo: ExamRepository(_db!),
       staffRepo: StaffRepository(_db!),
+      feeRepo: FeeRepository(_db!),
+      payrollRepo: PayrollRepository(_db!),
+      userRepo: UserRepository(_db!),
       server: _server,
       db: _db,
       config: _config,

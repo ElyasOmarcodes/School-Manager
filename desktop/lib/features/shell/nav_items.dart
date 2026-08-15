@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/l10n/strings.dart';
 import '../../core/theme/app_colors.dart';
+import '../../data/repositories/user_repository.dart';
 
 /// د سایډبار د یوه توکي تعریف.
 class NavItem {
@@ -21,7 +22,19 @@ class NavItem {
     this.roles,
   });
 
-  bool visibleTo(String role) => roles == null || roles!.contains(role);
+  /// د اجازو ماډل کلی — «/students» → «students».
+  ///
+  /// ځینې لارې (ډاشبورډ، آی‌ډي کارتونه) د اجازو په لیست کې نشته —
+  /// هغه هر څوک ویني، ځکه چې یوازې هغه څه ښیي چې کارن يې لا وړاندې
+  /// لیدلی شي.
+  String get moduleKey => route.replaceFirst('/', '').replaceAll('-', '_');
+
+  bool visibleTo(Permissions perms) {
+    final known = permModules.any((m) => m.key == moduleKey);
+    if (known) return perms.canView(moduleKey);
+    // نه‌پېژندل شوی ماډل — زوړ د رول فلټر پلی کوو.
+    return roles == null || roles!.contains(perms.role);
+  }
 }
 
 class NavGroup {

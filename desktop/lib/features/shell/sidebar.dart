@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/l10n/strings.dart';
 import '../../core/theme/app_colors.dart';
+import '../../data/repositories/user_repository.dart';
 import '../../core/theme/app_motion.dart';
 import 'nav_items.dart';
 
@@ -12,7 +13,7 @@ import 'nav_items.dart';
 /// چې سترګه ورپسې لار ومومي، نه چې ناڅاپه ټوپ وکړي.
 class Sidebar extends StatelessWidget {
   final String currentRoute;
-  final String role;
+  final Permissions permissions;
   final bool expanded;
   final VoidCallback onToggle;
   final ValueChanged<String> onNavigate;
@@ -21,7 +22,7 @@ class Sidebar extends StatelessWidget {
   const Sidebar({
     super.key,
     required this.currentRoute,
-    required this.role,
+    required this.permissions,
     required this.expanded,
     required this.onToggle,
     required this.onNavigate,
@@ -61,7 +62,7 @@ class Sidebar extends StatelessWidget {
                   if (g.title(s).isNotEmpty)
                     _GroupLabel(text: g.title(s), expanded: expanded),
                   for (final item in g.items)
-                    if (item.visibleTo(role))
+                    if (item.visibleTo(permissions))
                       _NavTile(
                         item: item,
                         active: currentRoute == item.route,

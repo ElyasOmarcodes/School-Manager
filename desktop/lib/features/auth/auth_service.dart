@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 
 import '../../core/utils/password.dart';
 import '../../data/db/database.dart';
+import '../../data/repositories/user_repository.dart';
 
 /// د ننوتلې غونډې (session) معلومات.
 class Session {
@@ -10,14 +11,23 @@ class Session {
   final String fullName;
   final String role;
 
-  const Session({
+  /// **د دې کارن مؤثرې اجازې.** سایډبار او پاڼې پرې تکیه کوي —
+  /// نه پر رول یوازې. که یوه استاد ته د فیس د کتلو اجازه ورکړل
+  /// شي، هغه باید د فیس ماډل وویني، که څه هم رول يې «استاد» دی.
+  final Permissions permissions;
+
+  Session({
     required this.userId,
     required this.username,
     required this.fullName,
     required this.role,
-  });
+    Permissions? permissions,
+  }) : permissions = permissions ?? Permissions(role: role);
 
   bool get isAdmin => role == 'admin';
+
+  bool can(String module, Perm perm) => permissions.can(module, perm);
+  bool canView(String module) => permissions.canView(module);
 }
 
 sealed class SignInResult {
@@ -113,6 +123,7 @@ class AuthService {
         username: user.username,
         fullName: user.fullName,
         role: user.role,
+        permissions: Permissions.of(user),
       ),
     );
   }

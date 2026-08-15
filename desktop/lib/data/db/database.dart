@@ -7,6 +7,7 @@ import 'package:sqlite3/sqlite3.dart';
 import 'tables/academic_tables.dart';
 import 'tables/comm_tables.dart';
 import 'tables/core_tables.dart';
+import 'tables/finance_tables.dart';
 
 part 'database.g.dart';
 
@@ -39,6 +40,12 @@ part 'database.g.dart';
     Exams,
     ExamSubjects,
     Marks,
+    // ── اتم/نهم پړاو: پیسې ────────────────────────────────
+    FeeTypes,
+    FeeInvoices,
+    FeePayments,
+    PayrollRuns,
+    PayrollItems,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -75,7 +82,7 @@ class AppDatabase extends _$AppDatabase {
   );
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -103,6 +110,15 @@ class AppDatabase extends _$AppDatabase {
         await m.createTable(exams);
         await m.createTable(examSubjects);
         await m.createTable(marks);
+      }
+
+      // ── ۳ → ۴: فیس او معاشونه ───────────────────────────
+      if (from < 4) {
+        await m.createTable(feeTypes);
+        await m.createTable(feeInvoices);
+        await m.createTable(feePayments);
+        await m.createTable(payrollRuns);
+        await m.createTable(payrollItems);
       }
       await _createIndexes();
     },
@@ -203,6 +219,23 @@ class AppDatabase extends _$AppDatabase {
           'ON marks (student_id, exam_subject_id)',
       'CREATE INDEX IF NOT EXISTS ix_marks_subject '
           'ON marks (exam_subject_id)',
+
+      // ── فیس ───────────────────────────────────────────────
+      // «د دې شاګرد پاتې پور څومره دی؟» — د ریسیپشن تر ټولو عامه
+      // پوښتنه، نو باید فوري وي.
+      'CREATE INDEX IF NOT EXISTS ix_inv_student '
+          'ON fee_invoices (student_id, period)',
+      // «څوک يې نه دی ورکړی؟» — د میاشتې د پای رپوټ.
+      'CREATE INDEX IF NOT EXISTS ix_inv_status '
+          'ON fee_invoices (period, status)',
+      'CREATE INDEX IF NOT EXISTS ix_pay_invoice '
+          'ON fee_payments (invoice_id)',
+      'CREATE INDEX IF NOT EXISTS ix_pay_date '
+          'ON fee_payments (paid_on DESC)',
+
+      // ── معاشونه ───────────────────────────────────────────
+      'CREATE INDEX IF NOT EXISTS ix_payroll_items '
+          'ON payroll_items (run_id)',
     ];
     for (final s in stmts) {
       await customStatement(s);
