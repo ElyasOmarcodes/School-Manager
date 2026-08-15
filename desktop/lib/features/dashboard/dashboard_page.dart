@@ -6,6 +6,8 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_motion.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/numerals.dart';
+import '../attendance/live_attendance.dart';
+import '../attendance/live_badge.dart';
 
 /// د ډاشبورډ خلاصه — هغه څلور شمېرې چې مدیر سهار لومړی ګوري.
 class DashboardStats {
@@ -65,6 +67,10 @@ class DashboardPage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // **د ژوندۍ حاضرۍ کرښه** — یوازې هغه وخت ښکاري چې یوه
+          // ناسته روانه وي. که تل ښکارېده، سترګه به ورسره روږدې
+          // شوې وه او د اړتیا پر وخت به يې نه لیده.
+          const _LiveStrip(),
           FadeSlideIn(
             child: _KpiRow(stats: stats, s: s),
           ),
@@ -106,6 +112,62 @@ class DashboardPage extends StatelessWidget {
             child: _QuickActions(s: s),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// د ژوندۍ حاضرۍ کرښه — نښه او د پرمختګ کرښه.
+class _LiveStrip extends StatelessWidget {
+  const _LiveStrip();
+
+  @override
+  Widget build(BuildContext context) {
+    final live = LiveAttendanceScope.maybeOf(context);
+    if (live == null || !live.isLive) return const SizedBox.shrink();
+
+    final p = context.palette;
+    final totals = live.totals;
+    final ratio = totals.target == 0 ? 0.0 : totals.marked / totals.target;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(18, 14, 18, 14),
+        decoration: BoxDecoration(
+          color: p.surface,
+          borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+          border: Border.all(color: AppColors.success.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          children: [
+            const LiveBadge(),
+            const SizedBox(width: 16),
+            Expanded(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0, end: ratio.clamp(0.0, 1.0)),
+                  duration: AppMotion.slow,
+                  curve: AppMotion.emphasized,
+                  builder: (context, v, _) => LinearProgressIndicator(
+                    value: v,
+                    minHeight: 6,
+                    backgroundColor: p.surfaceAlt,
+                    valueColor: const AlwaysStoppedAnimation(
+                      AppColors.success,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Text(
+              'سکینر روان دی — پر هره پاڼه کار کوي.',
+              style: TextStyle(fontSize: 12, color: p.muted),
+            ),
+          ],
+        ),
       ),
     );
   }

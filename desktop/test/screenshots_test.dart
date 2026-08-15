@@ -59,6 +59,7 @@ import 'package:school_manager/features/attendance/manual_roster.dart';
 import 'package:school_manager/features/attendance/sessions_page.dart';
 import 'package:school_manager/features/leave/leave_create_page.dart';
 import 'package:school_manager/data/repositories/attendance_session_repository.dart';
+import 'package:school_manager/features/attendance/live_attendance.dart';
 
 /// د UI سکرین‌شاټونه — پرته له دې چې پروګرام په ویندوز کې وځغلوو.
 ///
@@ -1108,6 +1109,54 @@ void main() {
     );
   });
 
+  testWidgets('46 — د ژوندۍ حاضرۍ نښه پر ډاشبورډ', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await db.into(db.schools).insert(SchoolsCompanion.insert(name: 'د نور لیسه'));
+    await _seedSchool(db);
+
+    final sessions = AttendanceSessionRepository(db);
+    await sessions.create(
+      name: 'د لیلیه شاګردانو د شپې حاضري',
+      target: 'boarding',
+      startTime: '20:00',
+      endTime: '20:30',
+      days: '1,2,3,4,5,6,7',
+    );
+
+    // یو ریښتینی لیلیه شاګرد نښه کوو — که یو نهاري وای، د ناستې
+    // هدف به يې نه و او کارت به تل «۰ ثبت شوي» ښودل.
+    final boarders = await (db.select(
+      db.students,
+    )..where((s) => s.residency.equals('boarding'))).get();
+    await AttendanceRepository(db).markRoster(
+      date: DateTime(2026, 5, 12),
+      statusByStudentId: {boarders.first.id: 'present'},
+      byUserId: 1,
+      sessionId: (await sessions.list()).first.id,
+      now: DateTime(2026, 5, 12, 20, 10),
+    );
+
+    final live = LiveAttendance(
+      sessions: sessions,
+      attendance: AttendanceRepository(db),
+      clock: () => DateTime(2026, 5, 12, 20, 10),
+    );
+    await live.refresh();
+    addTearDown(live.dispose);
+
+    await _shoot(
+      tester,
+      name: '46-dashboard-live',
+      settle: const Duration(milliseconds: 700),
+      infiniteAnimation: true,
+      child: LiveAttendanceScope(
+        notifier: live,
+        child: const Scaffold(body: DashboardPage(stats: _stats)),
+      ),
+    );
+  });
+
   testWidgets('45 — فرعي سایډبار (شاګردان)', (tester) async {
     await _shoot(
       tester,
@@ -1192,6 +1241,11 @@ Future<void> _shoot(
   AppLocale locale = AppLocale.ps,
   Duration settle = const Duration(milliseconds: 50),
   Future<void> Function(WidgetTester)? after,
+
+  /// **د پای‌نه‌لرونکي انیمیشن لپاره.** د ژوندۍ حاضرۍ نښه تل ټکنده
+  /// ده — قصداً، چې سترګه ورشي. `pumpAndSettle` به تل ورسره وځنډېده،
+  /// نو دلته یوازې څو چوکاټونه وهو.
+  bool infiniteAnimation = false,
 }) async {
   await tester.binding.setSurfaceSize(_windowSize);
   addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -1209,7 +1263,16 @@ Future<void> _shoot(
   );
 
   // انیمیشنونه پای ته ورسوه — چې عکس د وروستي حالت وي، نه د نیمګړي.
-  await tester.pumpAndSettle(settle);
+  if (infiniteAnimation) {
+    // د ټکنده نښې لپاره یو ثابت ځای — تل هماغه چوکاټ، نو عکس ثابت.
+    // څو چوکاټه پکار دي: د ننوتلو انیمیشنونه ځنډېدلي پیل لري، نو
+    // یو `pump` يې یوازې پیلوي، نه بشپړوي.
+    for (var i = 0; i < 6; i++) {
+      await tester.pump(settle);
+    }
+  } else {
+    await tester.pumpAndSettle(settle);
+  }
   await after?.call(tester);
 
   await expectLater(

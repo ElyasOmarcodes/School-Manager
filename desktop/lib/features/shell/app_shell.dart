@@ -4,6 +4,7 @@ import '../../core/config/app_config.dart';
 import '../../core/l10n/strings.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_motion.dart';
+import '../../core/utils/tone.dart';
 import '../../data/db/database.dart';
 import '../../data/repositories/academic_repository.dart';
 import '../../data/repositories/attendance_repository.dart';
@@ -25,6 +26,8 @@ import '../../server/local_server.dart';
 import '../auth/auth_service.dart';
 import '../dashboard/dashboard_page.dart';
 import '../attendance/attendance_page.dart';
+import '../attendance/live_attendance.dart';
+import '../attendance/live_badge.dart';
 import '../attendance/session_settings_page.dart';
 import '../attendance/sessions_page.dart';
 import '../classes/classes_page.dart';
@@ -136,6 +139,36 @@ class _AppShellState extends State<AppShell> {
   /// کومه د حاضرۍ ناسته پرانیستل شوې — `null` یعنې لیست ښکاري.
   AttendanceSession? _openSession;
 
+  /// **د شالید حاضري.** د ناستو کړکۍ ګوري او د پورتنۍ کرښې نښه
+  /// خبروي — نو مدیر که د فیس پاڼه هم پرانیستې وي، پوهېږي چې د
+  /// لیلیه د شپې حاضري پیل شوه.
+  LiveAttendance? _live;
+
+  @override
+  void initState() {
+    super.initState();
+    final sessions = widget.sessionRepo;
+    final attendance = widget.attendanceRepo;
+    if (sessions != null && attendance != null) {
+      _live = LiveAttendance(sessions: sessions, attendance: attendance)
+        // **چوکاټ پخپله هم اورېدونکی دی**، نه یوازې د `Scope` ماشومان.
+        // `GlobalScanListener.enabled` د همدې حال پورې تړلی دی، نو که
+        // چوکاټ نه رسمېده، د ناستې پیل به يې سکینر نه و ژوندی کړی.
+        ..addListener(_onLiveChanged)
+        ..start();
+    }
+  }
+
+  void _onLiveChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    _live?..removeListener(_onLiveChanged)..dispose();
+    super.dispose();
+  }
+
   /// د توکي هغه لار چې سرلیک ترې راځي — فرعي لار د مور لار ته ځي.
   NavItem? get _currentItem {
     for (final g in buildNav()) {
@@ -179,8 +212,9 @@ class _AppShellState extends State<AppShell> {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
+    final live = _live;
 
-    return Scaffold(
+    final shell = Scaffold(
       backgroundColor: p.ground,
       body: Row(
         children: [
@@ -199,6 +233,7 @@ class _AppShellState extends State<AppShell> {
                   item: _currentItem,
                   sub: _currentSub,
                   session: widget.session,
+                  onOpenLive: () => _go('/attendance'),
                   themeMode: widget.themeMode,
                   onThemeChanged: widget.onThemeChanged,
                   onSignOut: widget.onSignOut,
@@ -239,6 +274,64 @@ class _AppShellState extends State<AppShell> {
         ],
       ),
     );
+
+    // که د ناستو ذخیره نه وي (زوړ حالت یا ازموینه)، نښه هېڅ نه ښیي —
+    // نو د scope نغښتل هم پکار نه دي.
+    if (live == null) return shell;
+
+    return LiveAttendanceScope(
+      notifier: live,
+      child: GlobalScanListener(
+        // **یوازې کله چې یوه ناسته روانه وي.** که تل اورېده، د
+        // شاګرد د نوم لیکل به يې «سکین» ګڼل او د حاضرۍ ماشین به
+        // پرې لګېده.
+        enabled: live.isLive && _route != '/attendance',
+        onScan: _onBackgroundScan,
+        child: shell,
+      ),
+    );
+  }
+
+  /// د شالید یو سکین — پایله يې د پردې پر سر د یوې لنډې پیغام
+  /// کرښې په بڼه ښکاري، ځکه چې مدیر بله پاڼه ګوري.
+  Future<void> _onBackgroundScan(String input) async {
+    final live = _live;
+    if (live == null) return;
+
+    final result = await live.scan(
+      input: input,
+      byUserId: widget.session.userId,
+    );
+    if (!mounted) return;
+
+    if (result == null) {
+      await Tone.play(Tone.error);
+      if (!mounted) return;
+      _toast('دا شاګرد د روانې ناستې هدف نه دی.', AppColors.warning);
+      return;
+    }
+
+    await Tone.play(switch (result) {
+      CheckInOk() || CheckInCheckedOut() => Tone.accept,
+      CheckInOnLeave() || CheckInAlreadyDone() => Tone.warn,
+      _ => Tone.error,
+    });
+    if (!mounted) return;
+
+    _toast(switch (result) {
+      CheckInOk(student: final s, status: final st) =>
+        '${s.firstName} — ${st == 'late' ? 'ناوخته' : 'حاضر'}',
+      CheckInAlreadyDone(student: final s) => '${s.firstName} — مخکې ثبت شوی',
+      CheckInOnLeave(student: final s) => '${s.firstName} — رخصت دی',
+      CheckInCheckedOut(student: final s) => '${s.firstName} — وتلی',
+      CheckInRevokedCard(student: final s) => '${s.firstName} — کارت باطل دی',
+      CheckInInvalidCard() => 'ناسم کارت',
+      CheckInUnknown(input: final i) => 'ونه پېژندل شو: $i',
+    }, switch (result) {
+      CheckInOk() || CheckInCheckedOut() => AppColors.success,
+      CheckInOnLeave() || CheckInAlreadyDone() => AppColors.info,
+      _ => AppColors.danger,
+    });
   }
 
   Widget _buildPage() {
@@ -471,10 +564,14 @@ class _TopBar extends StatelessWidget {
   final ValueChanged<ThemeMode> onThemeChanged;
   final VoidCallback onSignOut;
 
+  /// د ژوندۍ نښې پر کېکاږلو — د حاضرۍ پاڼې ته.
+  final VoidCallback? onOpenLive;
+
   const _TopBar({
     required this.item,
     required this.sub,
     required this.session,
+    this.onOpenLive,
     required this.themeMode,
     required this.onThemeChanged,
     required this.onSignOut,
@@ -523,6 +620,11 @@ class _TopBar extends StatelessWidget {
             ],
           ],
           const Spacer(),
+
+          // **د ژوندۍ حاضرۍ نښه** — هره پاڼه يې ویني، ځکه چې د
+          // ناستې وخت مدیر ته نه انتظار کوي.
+          LiveBadge(compact: true, onTap: onOpenLive),
+          const SizedBox(width: 10),
 
           // ژبه
           PopupMenuButton<AppLocale>(

@@ -174,6 +174,25 @@ class AttendanceRepository {
         : AttendanceRules.fromSchool(school);
   }
 
+  /// یوازې پیدا کوي — **هېڅ نه ثبتوي**.
+  ///
+  /// **دا ولې پکار ده؟** د شالید سکینر باید مخکې له ثبتولو وپوهېږي
+  /// چې دا شاګرد د کومې ژوندۍ ناستې هدف دی. که مستقیم `checkIn`
+  /// وهل کېده، لومړۍ ناسته به يې نیوله — او د لیلیه شاګرد به د
+  /// نهاریانو په ناسته کې ثبت شوی و.
+  ///
+  /// لاسلیک دلته نه کتل کېږي؛ هغه د `checkIn` کار دی.
+  Future<Student?> findByInput(String input) async {
+    final text = input.trim();
+    if (text.isEmpty) return null;
+
+    if (QrToken.looksLikeToken(text)) {
+      final byNo = _admissionNoFromToken(text);
+      return byNo == null ? null : _findByAdmissionNo(byNo);
+    }
+    return _findByAdmissionNo(Numerals.toLatin(text));
+  }
+
   /// د سکین یا لاسي آی‌ډي د ثبتولو اصلي لار.
   ///
   /// دواړه یوې خانې ته ځي: که متن د کارت بڼه ولري، لاسلیک پرې کتل
