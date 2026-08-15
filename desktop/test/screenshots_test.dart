@@ -861,6 +861,57 @@ void main() {
     );
   });
 
+  testWidgets('47 — د پروفایل کلنۍ حاضري', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await db.into(db.schools).insert(SchoolsCompanion.insert(name: 'د نور لیسه'));
+    await _seedSchool(db);
+
+    final student = (await db.select(db.students).get()).first;
+    final repo = StudentRepository(db);
+    // اته میاشتې حاضري — چې د کال کتنه ژوندۍ وښکاري.
+    for (var m = 3; m <= 10; m++) {
+      final days = DateTime(2026, m + 1, 0).day;
+      for (var d = 1; d <= days; d++) {
+        // د اونۍ رخصتي پرېږدو، پاتې يې د یوه ثابت نمونې له مخې.
+        final date = DateTime(2026, m, d);
+        if (date.weekday == 5) continue;
+        await repo.setAttendance(
+          studentId: student.id,
+          date: date,
+          status: switch ((d + m) % 11) {
+            0 || 1 => 'absent',
+            3 => 'leave',
+            5 => 'late',
+            _ => 'present',
+          },
+          byUserId: 1,
+          now: DateTime(2026, 10, 30, 9),
+        );
+      }
+    }
+
+    await _shoot(
+      tester,
+      name: '47-profile-year',
+      settle: const Duration(milliseconds: 700),
+      child: Scaffold(
+        body: StudentProfilePage(
+          studentId: student.id,
+          students: repo,
+          academic: AcademicRepository(db),
+          session: _session,
+          clock: () => DateTime(2026, 10, 30, 9),
+          onBack: () {},
+        ),
+      ),
+      after: (tester) async {
+        await tester.tap(find.text('کال'));
+        await tester.pumpAndSettle();
+      },
+    );
+  });
+
   testWidgets('37 — ډله ایزه نوم لیکنه', (tester) async {
     final db = AppDatabase.memory();
     addTearDown(db.close);

@@ -63,6 +63,10 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
 
   Map<int, String> _grid = const {};
 
+  /// `month` یا `year` — د حاضرۍ د کتنې کچه.
+  String _span = 'month';
+  List<({int month, int present, int absent, int leave})> _year = const [];
+
   // ── د سمون خانې ────────────────────────────────────────
   final _first = TextEditingController();
   final _last = TextEditingController();
@@ -136,6 +140,10 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
       studentId: widget.studentId,
       month: month,
     );
+    final year = await widget.students.yearlyRollup(
+      studentId: widget.studentId,
+      year: month.year,
+    );
 
     final st = profile.student;
     _first.text = st.firstName;
@@ -158,6 +166,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
       _sections = sections;
       _month = month;
       _grid = grid;
+      _year = year;
       _gender = st.gender;
       _residency = st.residency;
       _status = st.status;
@@ -174,8 +183,15 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
       studentId: widget.studentId,
       month: _month,
     );
+    final year = await widget.students.yearlyRollup(
+      studentId: widget.studentId,
+      year: _month.year,
+    );
     if (!mounted) return;
-    setState(() => _grid = grid);
+    setState(() {
+      _grid = grid;
+      _year = year;
+    });
   }
 
   Future<void> _save() async {
@@ -341,7 +357,10 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
               _AttendanceCard(
                 month: _month,
                 grid: _grid,
+                year: _year,
+                span: _span,
                 canEdit: _canEditAttendance,
+                onSpan: (v) => setState(() => _span = v),
                 onMonth: (m) {
                   setState(() => _month = m);
                   _loadGrid();
@@ -947,15 +966,98 @@ String statusLabelOf(String? status, S s) => switch (status) {
 class _AttendanceCard extends StatelessWidget {
   final DateTime month;
   final Map<int, String> grid;
+  final List<({int month, int present, int absent, int leave})> year;
+  final String span;
   final bool canEdit;
+  final ValueChanged<String> onSpan;
   final ValueChanged<DateTime> onMonth;
   final ValueChanged<int> onDay;
 
   const _AttendanceCard({
     required this.month,
     required this.grid,
+    required this.year,
+    required this.span,
     required this.canEdit,
+    required this.onSpan,
     required this.onMonth,
+    required this.onDay,
+  });
+
+  bool get _yearly => span == 'year';
+
+  @override
+  Widget build(BuildContext context) {
+    final locale = S.of(context).locale;
+
+    return Panel(
+      title: _yearly
+          ? 'حاضري — د ${locale.num(month.year)} کال'
+          : 'حاضري — ${locale.num(month.year)}/${locale.num(month.month)}',
+      subtitle: _yearly
+          ? 'میاشت‌په‌میاشت لنډیز. پر یوه میاشت کېکاږئ چې ورځې يې وګورئ.'
+          : (canEdit
+                ? 'پر یوه ورځ کېکاږئ چې حالت يې بدل کړئ.'
+                : 'د بدلولو اجازه نه لرئ.'),
+      icon: Icons.calendar_month_rounded,
+      color: AppColors.modAttendance,
+      actions: [
+        SegmentedChoice<String>(
+          value: span,
+          color: AppColors.modAttendance,
+          options: const [
+            (value: 'month', label: 'میاشت', icon: null),
+            (value: 'year', label: 'کال', icon: null),
+          ],
+          onChanged: onSpan,
+        ),
+        const SizedBox(width: 8),
+        IconButton(
+          tooltip: _yearly ? 'تېر کال' : 'تېره میاشت',
+          onPressed: () => onMonth(
+            _yearly
+                ? DateTime(month.year - 1, month.month)
+                : DateTime(month.year, month.month - 1),
+          ),
+          icon: const Icon(Icons.chevron_right_rounded, size: 20),
+        ),
+        IconButton(
+          tooltip: _yearly ? 'راتلونکی کال' : 'راتلونکې میاشت',
+          onPressed: () => onMonth(
+            _yearly
+                ? DateTime(month.year + 1, month.month)
+                : DateTime(month.year, month.month + 1),
+          ),
+          icon: const Icon(Icons.chevron_left_rounded, size: 20),
+        ),
+      ],
+      child: AnimatedSize(
+        duration: AppMotion.normal,
+        curve: AppMotion.standard,
+        alignment: Alignment.topCenter,
+        child: _yearly
+            ? _YearView(year: year, locale: locale, onMonth: onMonth, base: month)
+            : _MonthView(
+                month: month,
+                grid: grid,
+                canEdit: canEdit,
+                onDay: onDay,
+              ),
+      ),
+    );
+  }
+}
+
+class _MonthView extends StatelessWidget {
+  final DateTime month;
+  final Map<int, String> grid;
+  final bool canEdit;
+  final ValueChanged<int> onDay;
+
+  const _MonthView({
+    required this.month,
+    required this.grid,
+    required this.canEdit,
     required this.onDay,
   });
 
@@ -971,67 +1073,253 @@ class _AttendanceCard extends StatelessWidget {
       counts[v] = (counts[v] ?? 0) + 1;
     }
 
-    return Panel(
-      title: 'حاضري — ${locale.num(month.year)}/${locale.num(month.month)}',
-      subtitle: canEdit
-          ? 'پر یوه ورځ کېکاږئ چې حالت يې بدل کړئ.'
-          : 'د بدلولو اجازه نه لرئ.',
-      icon: Icons.calendar_month_rounded,
-      color: AppColors.modAttendance,
-      actions: [
-        IconButton(
-          tooltip: 'تېره میاشت',
-          onPressed: () => onMonth(DateTime(month.year, month.month - 1)),
-          icon: const Icon(Icons.chevron_right_rounded, size: 20),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Wrap(
+          spacing: 6,
+          runSpacing: 6,
+          children: [
+            for (var d = 1; d <= days; d++)
+              _DayCell(
+                day: d,
+                status: grid[d],
+                locale: locale,
+                onTap: canEdit ? () => onDay(d) : null,
+              ),
+          ],
         ),
-        IconButton(
-          tooltip: 'راتلونکې میاشت',
-          onPressed: () => onMonth(DateTime(month.year, month.month + 1)),
-          icon: const Icon(Icons.chevron_left_rounded, size: 20),
+        const SizedBox(height: 16),
+        Divider(height: 1, color: p.line),
+        const SizedBox(height: 14),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final key in const ['present', 'late', 'absent', 'leave'])
+              Pill(
+                color: statusColor(key),
+                text:
+                    '${statusLabelOf(key, s)}: ${locale.num(counts[key] ?? 0)}',
+              ),
+            Pill(
+              color: p.faint,
+              text: '${s.unmarked}: ${locale.num(days - grid.length)}',
+            ),
+          ],
         ),
       ],
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            children: [
-              for (var d = 1; d <= days; d++)
-                _DayCell(
-                  day: d,
-                  status: grid[d],
-                  locale: locale,
-                  onTap: canEdit ? () => onDay(d) : null,
-                ),
-            ],
+    );
+  }
+}
+
+/// **د کال کتنه** — دوولس کرښې، هره یوه یوه میاشت.
+///
+/// **ولې کرښې او نه یو چارټ؟** ځکه چې دلته پوښتنه «څو ورځې» ده، نه
+/// «څومره ښه شوی». یوه کرښه چې «۱۸ حاضر، ۲ غیرحاضر، ۱ رخصت» وايي،
+/// د یوه چارټ له کتلو ژر لوستل کېږي — او د والدینو سره د خبرو پر
+/// مهال هماغه شمېرې پکار دي.
+class _YearView extends StatelessWidget {
+  final List<({int month, int present, int absent, int leave})> year;
+  final AppLocale locale;
+  final DateTime base;
+  final ValueChanged<DateTime> onMonth;
+
+  const _YearView({
+    required this.year,
+    required this.locale,
+    required this.base,
+    required this.onMonth,
+  });
+
+  static const _names = [
+    'جنوري',
+    'فبروري',
+    'مارچ',
+    'اپریل',
+    'می',
+    'جون',
+    'جولای',
+    'اګست',
+    'سپتمبر',
+    'اکتوبر',
+    'نومبر',
+    'دسمبر',
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final s = S.of(context);
+    final p = context.palette;
+
+    if (year.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 26),
+        child: Center(
+          child: Text(
+            'د ${locale.num(base.year)} کال هېڅ حاضري نشته.',
+            style: TextStyle(fontSize: 12.5, color: p.muted),
           ),
-          const SizedBox(height: 16),
-          Divider(height: 1, color: p.line),
-          const SizedBox(height: 14),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final key in const [
-                'present',
-                'late',
-                'absent',
-                'leave',
-              ])
-                Pill(
-                  color: statusColor(key),
-                  text: '${statusLabelOf(key, s)}: '
-                      '${locale.num(counts[key] ?? 0)}',
+        ),
+      );
+    }
+
+    final byMonth = {for (final r in year) r.month: r};
+    final totalP = year.fold(0, (a, r) => a + r.present);
+    final totalA = year.fold(0, (a, r) => a + r.absent);
+    final totalL = year.fold(0, (a, r) => a + r.leave);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (var m = 1; m <= 12; m++)
+          _YearRow(
+            label: _names[m - 1],
+            row: byMonth[m],
+            locale: locale,
+            onTap: byMonth[m] == null
+                ? null
+                : () => onMonth(DateTime(base.year, m)),
+          ),
+        const SizedBox(height: 14),
+        Divider(height: 1, color: p.line),
+        const SizedBox(height: 14),
+        Wrap(
+          spacing: 8,
+          children: [
+            Pill(
+              color: AppColors.success,
+              text: '${s.present}: ${locale.num(totalP)}',
+            ),
+            Pill(
+              color: AppColors.danger,
+              text: '${s.absent}: ${locale.num(totalA)}',
+            ),
+            Pill(
+              color: AppColors.info,
+              text: '${s.onLeave}: ${locale.num(totalL)}',
+            ),
+            Pill(
+              color: AppColors.modReports,
+              text: totalP + totalA == 0
+                  ? '—'
+                  : 'سلنه: '
+                        '${locale.num((totalP * 100 / (totalP + totalA)).round())}٪',
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _YearRow extends StatelessWidget {
+  final String label;
+  final ({int month, int present, int absent, int leave})? row;
+  final AppLocale locale;
+  final VoidCallback? onTap;
+
+  const _YearRow({
+    required this.label,
+    required this.row,
+    required this.locale,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final r = row;
+    final total = r == null ? 0 : r.present + r.absent + r.leave;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(6),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 4),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 78,
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: r == null ? FontWeight.w400 : FontWeight.w600,
+                  color: r == null ? p.faint : p.inkSoft,
                 ),
-              Pill(
-                color: p.faint,
-                text: '${s.unmarked}: '
-                    '${locale.num(days - grid.length)}',
               ),
-            ],
-          ),
-        ],
+            ),
+            // د تناسب کرښه — د میاشتې حالتونه په یوه کتار کې.
+            Expanded(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(3),
+                child: SizedBox(
+                  height: 10,
+                  child: total == 0
+                      ? Container(color: p.surfaceAlt)
+                      : Row(
+                          children: [
+                            Expanded(
+                              flex: r!.present,
+                              child: Container(color: AppColors.success),
+                            ),
+                            Expanded(
+                              flex: r.leave,
+                              child: Container(color: AppColors.info),
+                            ),
+                            Expanded(
+                              flex: r.absent,
+                              child: Container(color: AppColors.danger),
+                            ),
+                          ],
+                        ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            // **شمېرې د کرښې په رنګ رنګ شوې دي.** یو خړ «۲۰/۵/۲»
+            // به لوستونکی د ترتیب په اړه اټکل ته اړ کړ؛ رنګ يې
+            // مستقیم د بار له برخو سره تړي.
+            SizedBox(
+              width: 150,
+              child: r == null
+                  ? Text(
+                      '—',
+                      textAlign: TextAlign.end,
+                      style: TextStyle(fontSize: 11.5, color: p.faint),
+                    )
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        for (final (value, color) in [
+                          (r.present, AppColors.success),
+                          (r.leave, AppColors.info),
+                          (r.absent, AppColors.danger),
+                        ]) ...[
+                          Text(
+                            locale.num(value),
+                            style: AppTheme.tabular(
+                              TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w700,
+                                color: value == 0 ? p.faint : color,
+                              ),
+                            ),
+                          ),
+                          if (color != AppColors.danger)
+                            Text(
+                              ' · ',
+                              style: TextStyle(fontSize: 11, color: p.faint),
+                            ),
+                        ],
+                      ],
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }
