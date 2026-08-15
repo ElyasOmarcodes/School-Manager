@@ -55,6 +55,7 @@ import '../reports/reports_page.dart';
 import '../settings/settings_page.dart';
 import '../staff/staff_page.dart';
 import '../students/students_page.dart';
+import '../teachers/teacher_profile_page.dart';
 import '../teachers/teachers_page.dart';
 import '../timetable/timetable_page.dart';
 import '../users/users_page.dart';
@@ -153,6 +154,9 @@ class _AppShellState extends State<AppShell> {
   /// کومه د حاضرۍ ناسته پرانیستل شوې — `null` یعنې لیست ښکاري.
   AttendanceSession? _openSession;
 
+  /// کوم استاد پرانیستل شوی — `null` یعنې لیست ښکاري.
+  int? _openTeacherId;
+
   /// کومه ازموینه پرانیستل شوې، او کومه کتنه يې ښکاري.
   Exam? _openExam;
 
@@ -218,6 +222,7 @@ class _AppShellState extends State<AppShell> {
     setState(() {
       _route = route;
       _openStudentId = null;
+      _openTeacherId = null;
       _openSession = null;
       _openExam = null;
       _examView = 'marks';
@@ -535,7 +540,21 @@ class _AppShellState extends State<AppShell> {
       );
     }
     if (_route == '/teachers' && teachers != null) {
-      return TeachersPage(repo: teachers, session: widget.session);
+      if (_openTeacherId != null) {
+        return TeacherProfilePage(
+          teacherId: _openTeacherId!,
+          repo: teachers,
+          staff: widget.staffAttendanceRepo,
+          session: widget.session,
+          onBack: () => setState(() => _openTeacherId = null),
+        );
+      }
+      return TeachersPage(
+        repo: teachers,
+        session: widget.session,
+        academic: academic,
+        onOpenTeacher: (id) => setState(() => _openTeacherId = id),
+      );
     }
     if (_route == '/classes' && academic != null && teachers != null) {
       return ClassesPage(

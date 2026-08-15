@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:school_manager/data/db/database.dart';
 import 'package:school_manager/data/repositories/academic_repository.dart';
 import 'package:school_manager/data/repositories/teacher_repository.dart';
+import 'package:school_manager/data/repositories/timetable_repository.dart';
 
 void main() {
   late AppDatabase db;
@@ -160,6 +161,204 @@ void main() {
       expect((await repo.list()).total, 0);
       // ریکارډ پاتې دی — د معاش تاریخچه ورپورې تړلې ده.
       expect(await db.select(db.teachers).get(), hasLength(1));
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  group('پرمختللي فلټرونه', () {
+    test('تخصص او تحصیل', () async {
+      await repo.add(
+        teacher: TeachersCompanion.insert(
+          employeeNo: await repo.nextEmployeeNo(),
+          fullName: 'احمد',
+          gender: 'male',
+          specialization: const Value('ریاضي'),
+          qualification: const Value('ماسټر'),
+        ),
+        byUserId: 1,
+        byUserName: 'admin',
+      );
+      await addTeacher('کریم', spec: 'فزیک');
+
+      expect(await repo.specializations(), ['ریاضي', 'فزیک']);
+      expect(await repo.qualifications(), ['ماسټر']);
+
+      final byS = await repo.list(
+        filter: const TeacherFilter(specialization: 'ریاضي'),
+      );
+      expect(byS.items.single.teacher.fullName, 'احمد');
+
+      final byQ = await repo.list(
+        filter: const TeacherFilter(qualification: 'ماسټر'),
+      );
+      expect(byQ.total, 1);
+    });
+
+    test('د مشرۍ فلټر دواړه لوري لري', () async {
+      await academic.seedDefaults(
+        yearLabel: '1405',
+        startsOn: DateTime(2026),
+        endsOn: DateTime(2026, 12, 31),
+        fromLevel: 1,
+        toLevel: 2,
+        sectionNames: const ['الف', 'ب'],
+      );
+      final head = await addTeacher('مشر');
+      await addTeacher('عادي');
+
+      final sections = await academic.sections();
+      // دوه بخشونه یوه استاد ته — چې د دوه‌ځلي راوړلو ستونزه وازمویو.
+      await repo.assignHomeroom(
+        sectionId: sections[0].sectionId,
+        teacherId: head,
+      );
+      await repo.assignHomeroom(
+        sectionId: sections[1].sectionId,
+        teacherId: head,
+      );
+
+      final withHome = await repo.list(
+        filter: const TeacherFilter(homeroom: true),
+      );
+      expect(withHome.total, 1);
+      expect(withHome.items, hasLength(1));
+      expect(withHome.items.single.teacher.fullName, 'مشر');
+
+      final without = await repo.list(
+        filter: const TeacherFilter(homeroom: false),
+      );
+      expect(without.items.single.teacher.fullName, 'عادي');
+    });
+
+    test('د معاش ترتیب — تش معاش تل وروستی', () async {
+      await repo.add(
+        teacher: TeachersCompanion.insert(
+          employeeNo: await repo.nextEmployeeNo(),
+          fullName: 'لوړ',
+          gender: 'male',
+          monthlySalary: const Value(30000),
+        ),
+        byUserId: 1,
+        byUserName: 'admin',
+      );
+      await repo.add(
+        teacher: TeachersCompanion.insert(
+          employeeNo: await repo.nextEmployeeNo(),
+          fullName: 'ټیټ',
+          gender: 'male',
+          monthlySalary: const Value(10000),
+        ),
+        byUserId: 1,
+        byUserName: 'admin',
+      );
+      await addTeacher('بې‌معاشه');
+
+      final asc = await repo.list(
+        filter: const TeacherFilter(sort: 'salary'),
+      );
+      expect(asc.items.map((r) => r.teacher.fullName), [
+        'ټیټ',
+        'لوړ',
+        'بې‌معاشه',
+      ]);
+
+      final desc = await repo.list(
+        filter: const TeacherFilter(sort: 'salary', descending: true),
+      );
+      expect(desc.items.map((r) => r.teacher.fullName), [
+        'لوړ',
+        'ټیټ',
+        'بې‌معاشه',
+      ]);
+    });
+
+    test('د فلټرونو شمېره تلواله نه شمېري', () async {
+      const base = TeacherFilter();
+      expect(base.activeCount, 0);
+      expect(base.copyWith(gender: 'male').activeCount, 1);
+      expect(base.copyWith(status: 'resigned').activeCount, 1);
+      // د ترتیب بدلون فلټر نه دی — کارن يې د شمېرې په څېر نه ګوري.
+      expect(base.copyWith(sort: 'salary').activeCount, 0);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  group('سمون او پروفایل', () {
+    test('سمون یوازې ورکړل شوې ساحې بدلوي', () async {
+      final id = await addTeacher('احمد', spec: 'ریاضي', phone: '0700000000');
+
+      await repo.update(
+        id: id,
+        patch: const TeachersCompanion(fullName: Value('احمد کریمي')),
+        byUserId: 1,
+        byUserName: 'admin',
+      );
+
+      final t = await repo.byId(id);
+      expect(t!.fullName, 'احمد کریمي');
+      // نور ساحې لا هماغه دي.
+      expect(t.specialization, 'ریاضي');
+      expect(t.phone, '0700000000');
+    });
+
+    test('پروفایل مشري، بار او حاضري راوړي', () async {
+      await academic.seedDefaults(
+        yearLabel: '1405',
+        startsOn: DateTime(2026),
+        endsOn: DateTime(2026, 12, 31),
+        fromLevel: 1,
+        toLevel: 1,
+        sectionNames: const ['الف'],
+      );
+      final id = await addTeacher('احمد', spec: 'ریاضي');
+      final sections = await academic.sections();
+      await repo.assignHomeroom(
+        sectionId: sections.first.sectionId,
+        teacherId: id,
+      );
+
+      // دوه ساعته ریاضي په هماغه بخش کې.
+      final subjectId = await db
+          .into(db.subjects)
+          .insert(SubjectsCompanion.insert(name: 'ریاضي'));
+      final timetable = TimetableRepository(db);
+      await timetable.seedDefaultSlots();
+      final slots = await timetable.slots();
+      for (var i = 0; i < 2; i++) {
+        await db
+            .into(db.timetableEntries)
+            .insert(
+              TimetableEntriesCompanion.insert(
+                sectionId: sections.first.sectionId,
+                dayOfWeek: 1 + i,
+                slotId: slots.first.id,
+                subjectId: subjectId,
+                teacherId: Value(id),
+              ),
+            );
+      }
+
+      await db
+          .into(db.staffAttendances)
+          .insert(
+            StaffAttendancesCompanion.insert(
+              personKind: 'teacher',
+              personId: id,
+              date: DateTime(2026, 5, 12),
+              status: 'present',
+            ),
+          );
+
+      final p = await repo.profile(id, month: DateTime(2026, 5));
+      expect(p, isNotNull);
+      expect(p!.homeroom.single.students, isNonNegative);
+      expect(p.weeklyPeriods, 2);
+      expect(p.subjectCount, 1);
+      expect(p.attendance[12], 'present');
+    });
+
+    test('د نشتوالي پروفایل `null` دی', () async {
+      expect(await repo.profile(999), isNull);
     });
   });
 

@@ -52,6 +52,7 @@ import 'package:school_manager/features/timetable/timetable_page.dart';
 import 'package:school_manager/features/settings/settings_page.dart';
 import 'package:school_manager/server/api_router.dart';
 import 'package:school_manager/server/local_server.dart';
+import 'package:school_manager/features/teachers/teacher_profile_page.dart';
 import 'package:school_manager/features/teachers/teachers_page.dart';
 import 'package:school_manager/features/students/admission_wizard.dart';
 import 'package:school_manager/features/students/students_page.dart';
@@ -677,6 +678,83 @@ void main() {
             user: _session,
             clock: () => now,
           ),
+        ),
+      ),
+    );
+  });
+
+  testWidgets('52 — استادان له فلټرونو سره', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await _seedSchool(db);
+    await _seedTeachers(db);
+
+    await _shoot(
+      tester,
+      name: '52-teachers-filters',
+      settle: const Duration(milliseconds: 700),
+      child: Scaffold(
+        body: TeachersPage(
+          repo: TeacherRepository(db),
+          academic: AcademicRepository(db),
+          session: _session,
+          onOpenTeacher: (_) {},
+        ),
+      ),
+      after: (tester) async {
+        // د فلټرونو تخته پرانیزه — چې ټول اختیارونه ښکاره شي.
+        await tester.tap(find.byIcon(Icons.tune_rounded));
+        await tester.pumpAndSettle();
+      },
+    );
+  });
+
+  testWidgets('53 — د استاد پروفایل', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await _seedSchool(db);
+    await _seedTeachers(db);
+    await _seedTimetable(db);
+
+    final teacher = (await db.select(db.teachers).get()).first;
+    // د میاشتې حاضري — چې د کرښې رنګونه ښکاره شي.
+    const marks = {
+      1: 'present',
+      2: 'present',
+      3: 'late',
+      4: 'present',
+      5: 'absent',
+      6: 'present',
+      8: 'leave',
+      9: 'present',
+      10: 'present',
+    };
+    for (final e in marks.entries) {
+      await db
+          .into(db.staffAttendances)
+          .insert(
+            StaffAttendancesCompanion.insert(
+              personKind: 'teacher',
+              personId: teacher.id,
+              date: DateTime(2026, 5, e.key),
+              status: e.value,
+              recordedAt: Value(DateTime(2026, 5, e.key, 7, 10)),
+            ),
+          );
+    }
+
+    await _shoot(
+      tester,
+      name: '53-teacher-profile',
+      settle: const Duration(milliseconds: 800),
+      child: Scaffold(
+        body: TeacherProfilePage(
+          teacherId: teacher.id,
+          repo: TeacherRepository(db),
+          session: _session,
+          clock: () => DateTime(2026, 5, 12, 9),
+          onBack: () {},
+          onEdit: () {},
         ),
       ),
     );
