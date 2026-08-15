@@ -190,7 +190,23 @@ class AttendanceRepository {
       final byNo = _admissionNoFromToken(text);
       return byNo == null ? null : _findByAdmissionNo(byNo);
     }
-    return _findByAdmissionNo(Numerals.toLatin(text));
+    return _findByAdmissionNo(Numerals.toLatin(text)) //
+        .then((s) => s ?? _findByFingerprint(text));
+  }
+
+  /// د ګوتې نښې له پېژندنې څخه شاګرد.
+  ///
+  /// **ولې همدې یوې خانې ته؟** ځکه چې د ګوتو ډېری لوستونکي (لکه
+  /// ZKTeco) خپله ثبت شوې پېژندنه د کیبورډ په بڼه لیکي — بېخي لکه
+  /// د QR سکینر. که مو بېله خانه جوړه کړې وای، د دروازې کارکوونکی
+  /// به د حالت بدلولو ته اړ و — او هغه هم په هغه شېبه کې چې درې
+  /// سوه شاګردان ورسره ولاړ وي.
+  Future<Student?> _findByFingerprint(String token) {
+    return (db.select(db.students)
+          ..where((s) => s.fingerprintId.equals(token))
+          ..where((s) => s.deletedAt.isNull())
+          ..limit(1))
+        .getSingleOrNull();
   }
 
   /// د سکین یا لاسي آی‌ډي د ثبتولو اصلي لار.
@@ -237,6 +253,13 @@ class AttendanceRepository {
     } else {
       // لاسي آی‌ډي — کارن يې ښايي په ختیځو شمېرو ولیکي.
       student = await _findByAdmissionNo(Numerals.toLatin(text));
+
+      // **بیا د ګوتې نښه.** د ګوتو لوستونکی هم هماغې خانې ته لیکي،
+      // نو که د داخلې نمبر ونه موندل شو، دا هڅه کوو.
+      if (student == null) {
+        student = await _findByFingerprint(text);
+        if (student != null) method = 'finger';
+      }
       if (student == null) return CheckInUnknown(text);
     }
 

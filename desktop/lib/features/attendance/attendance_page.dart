@@ -13,6 +13,7 @@ import '../../data/repositories/academic_repository.dart';
 import '../../data/repositories/attendance_repository.dart';
 import '../../data/repositories/attendance_session_repository.dart';
 import '../auth/auth_service.dart';
+import 'camera_scan.dart';
 import 'manual_roster.dart';
 import 'scan_feedback.dart';
 
@@ -23,8 +24,8 @@ import 'scan_feedback.dart';
 ///   - د متن خانه **تل** فوکس ساتي — USB سکینر ځان کیبورډ ښیي او
 ///     متن + Enter لیکي. که فوکس ورک شي، سکین ضایع کېږي.
 ///   - پایله **لویه او رنګینه** ده — کارکوونکی له یوه متره ګوري.
-///   - QR او لاسي آی‌ډي **یوې خانې** ته ځي، نو د حالت بدلولو ته
-///     اړتیا نشته.
+///   - QR، د ګوتې نښه او لاسي آی‌ډي **یوې خانې** ته ځي، نو د حالت
+///     بدلولو ته اړتیا نشته — د ګوتو لوستونکی هم کیبورډ ښیي.
 class AttendancePage extends StatefulWidget {
   final AttendanceRepository attendance;
   final AcademicRepository academic;
@@ -66,7 +67,12 @@ class _AttendancePageState extends State<AttendancePage> {
   bool _busy = false;
   bool _locking = false;
 
-  /// `scan` یا `list` — سکینر یا لاسي لیست.
+  /// `scan` | `camera` | `list` — د ننوتلو درې لارې.
+  ///
+  /// **درې لارې ولې؟** یو ښوونځی USB سکینر لري، بل نه لري. یو
+  /// شاګرد کارت هېر کړی، بل ناروغ دی. هره لار یو ریښتینی حالت حل
+  /// کوي — او د ګوتې نښه څلورمه نه ده، ځکه چې لوستونکی يې هم
+  /// کیبورډ ښیي، نو هماغې خانې ته ځي.
   String _tab = 'scan';
 
   /// **د تلوالې ناستې حاضري د صفر لاندې ثبتېږي** — نه د هغې د
@@ -246,6 +252,11 @@ class _AttendancePageState extends State<AttendancePage> {
                     icon: Icons.qr_code_scanner_rounded,
                   ),
                   (
+                    value: 'camera',
+                    label: 'کیمره',
+                    icon: Icons.photo_camera_rounded,
+                  ),
+                  (
                     value: 'list',
                     label: 'لیست',
                     icon: Icons.checklist_rounded,
@@ -282,6 +293,62 @@ class _AttendancePageState extends State<AttendancePage> {
                       onChanged: _refresh,
                     ),
             )
+          else if (_tab == 'camera')
+            Expanded(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(
+                    flex: 3,
+                    child: Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: p.surface,
+                        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+                        border: Border.all(color: p.line),
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.photo_camera_rounded,
+                                size: 19,
+                                color: AppColors.modAttendance,
+                              ),
+                              const SizedBox(width: 9),
+                              Text(
+                                'کارت د کیمرې مخې ته ونیسئ',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                  color: p.ink,
+                                ),
+                              ),
+                              const Spacer(),
+                              _RuleHint(rules: _rules, locale: locale),
+                            ],
+                          ),
+                          const SizedBox(height: 14),
+                          Expanded(
+                            child: Center(
+                              child: CameraScanPanel(onCode: _submit),
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          SizedBox(
+                            height: 132,
+                            child: ScanFeedback(result: _last, locale: locale),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(flex: 2, child: _recentPanel(p, locale)),
+                ],
+              ),
+            )
           else
           Expanded(
             child: Row(
@@ -308,7 +375,7 @@ class _AttendancePageState extends State<AttendancePage> {
                             ),
                             const SizedBox(width: 9),
                             Text(
-                              'کارت سکین کړئ یا آی‌ډي نمبر ولیکئ',
+                              'کارت سکین کړئ، ګوته کېږدئ، یا آی‌ډي نمبر ولیکئ',
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w700,
@@ -357,75 +424,65 @@ class _AttendancePageState extends State<AttendancePage> {
                   ),
                 ),
                 const SizedBox(width: 16),
-
-                // ── وروستي سکینونه ──────────────────────────
-                Expanded(
-                  flex: 2,
-                  child: Container(
-                    padding: const EdgeInsets.all(18),
-                    decoration: BoxDecoration(
-                      color: p.surface,
-                      borderRadius: BorderRadius.circular(AppTheme.radiusLg),
-                      border: Border.all(color: p.line),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Row(
-                          children: [
-                            Text(
-                              'وروستي',
-                              style: TextStyle(
-                                fontSize: 13.5,
-                                fontWeight: FontWeight.w700,
-                                color: p.ink,
-                              ),
-                            ),
-                            const Spacer(),
-                            OutlinedButton.icon(
-                              onPressed: _locking ? null : _lockDay,
-                              style: OutlinedButton.styleFrom(
-                                minimumSize: const Size(0, 34),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                ),
-                              ),
-                              icon: const Icon(
-                                Icons.lock_clock_rounded,
-                                size: 15,
-                              ),
-                              label: const Text('ورځ بنده کړه'),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        Expanded(
-                          child: _recent.isEmpty
-                              ? Center(
-                                  child: Text(
-                                    'لا هېڅ سکین نه دی شوی.',
-                                    style: TextStyle(
-                                      fontSize: 12.5,
-                                      color: p.muted,
-                                    ),
-                                  ),
-                                )
-                              : ListView.separated(
-                                  itemCount: _recent.length,
-                                  separatorBuilder: (_, __) =>
-                                      Divider(height: 13, color: p.line),
-                                  itemBuilder: (context, i) => _RecentRow(
-                                    result: _recent[i],
-                                    locale: locale,
-                                  ),
-                                ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+                Expanded(flex: 2, child: _recentPanel(p, locale)),
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// د وروستیو سکینونو تخته — سکینر او کیمره دواړه يې کاروي.
+  Widget _recentPanel(AppPalette p, AppLocale locale) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: p.surface,
+        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+        border: Border.all(color: p.line),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Text(
+                'وروستي',
+                style: TextStyle(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w700,
+                  color: p.ink,
+                ),
+              ),
+              const Spacer(),
+              OutlinedButton.icon(
+                onPressed: _locking ? null : _lockDay,
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(0, 34),
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                ),
+                icon: const Icon(Icons.lock_clock_rounded, size: 15),
+                label: const Text('ورځ بنده کړه'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Expanded(
+            child: _recent.isEmpty
+                ? Center(
+                    child: Text(
+                      'لا هېڅ سکین نه دی شوی.',
+                      style: TextStyle(fontSize: 12.5, color: p.muted),
+                    ),
+                  )
+                : ListView.separated(
+                    itemCount: _recent.length,
+                    separatorBuilder: (_, _) =>
+                        Divider(height: 13, color: p.line),
+                    itemBuilder: (context, i) =>
+                        _RecentRow(result: _recent[i], locale: locale),
+                  ),
           ),
         ],
       ),
