@@ -91,6 +91,18 @@ String _lblNewSession(S s) => s.newSession;
 String _lblSessionSettings(S s) => s.sessionSettings;
 String _lblLeaveList(S s) => s.leaveRequests;
 String _lblNewLeave(S s) => s.newLeave;
+String _lblExamList(S s) => s.exams;
+String _lblExamSettings(S s) => s.examSettings;
+String _lblQuestionPapers(S s) => s.questionPapers;
+String _lblTimetableGrid(S s) => s.timetable;
+String _lblTimetableSettings(S s) => s.timetableSettings;
+String _lblCardsStudents(S s) => s.students;
+String _lblCardsTeachers(S s) => s.teachers;
+String _lblCardsStaff(S s) => s.staff;
+String _lblSettingsGeneral(S s) => s.settingsGeneral;
+String _lblSettingsSchool(S s) => s.settingsSchool;
+String _lblSettingsDatabase(S s) => s.settingsDatabase;
+String _lblSettingsNetwork(S s) => s.settingsNetwork;
 
 List<NavGroup> buildNav() => [
   NavGroup((s) => '', [
@@ -178,12 +190,41 @@ List<NavGroup> buildNav() => [
       icon: Icons.calendar_view_week_rounded,
       color: AppColors.modTimetable,
       label: (s) => s.timetable,
+      children: const [
+        NavSubItem(
+          route: '/timetable',
+          icon: Icons.grid_on_rounded,
+          label: _lblTimetableGrid,
+        ),
+        NavSubItem(
+          route: '/timetable/settings',
+          icon: Icons.tune_rounded,
+          label: _lblTimetableSettings,
+        ),
+      ],
     ),
     NavItem(
       route: '/exams',
       icon: Icons.assignment_rounded,
       color: AppColors.modExams,
       label: (s) => s.exams,
+      children: const [
+        NavSubItem(
+          route: '/exams',
+          icon: Icons.assignment_turned_in_rounded,
+          label: _lblExamList,
+        ),
+        NavSubItem(
+          route: '/exams/settings',
+          icon: Icons.tune_rounded,
+          label: _lblExamSettings,
+        ),
+        NavSubItem(
+          route: '/exams/papers',
+          icon: Icons.description_rounded,
+          label: _lblQuestionPapers,
+        ),
+      ],
     ),
   ]),
   NavGroup((s) => s.grpAdmin, [
@@ -206,6 +247,23 @@ List<NavGroup> buildNav() => [
       icon: Icons.qr_code_2_rounded,
       color: AppColors.modIdCards,
       label: (s) => s.idCards,
+      children: const [
+        NavSubItem(
+          route: '/id-cards',
+          icon: Icons.school_rounded,
+          label: _lblCardsStudents,
+        ),
+        NavSubItem(
+          route: '/id-cards/teachers',
+          icon: Icons.person_rounded,
+          label: _lblCardsTeachers,
+        ),
+        NavSubItem(
+          route: '/id-cards/staff',
+          icon: Icons.badge_rounded,
+          label: _lblCardsStaff,
+        ),
+      ],
     ),
     NavItem(
       route: '/messages',
@@ -249,6 +307,28 @@ List<NavGroup> buildNav() => [
       icon: Icons.settings_rounded,
       color: AppColors.modSettings,
       label: (s) => s.settings,
+      children: const [
+        NavSubItem(
+          route: '/settings',
+          icon: Icons.tune_rounded,
+          label: _lblSettingsGeneral,
+        ),
+        NavSubItem(
+          route: '/settings/school',
+          icon: Icons.account_balance_rounded,
+          label: _lblSettingsSchool,
+        ),
+        NavSubItem(
+          route: '/settings/database',
+          icon: Icons.storage_rounded,
+          label: _lblSettingsDatabase,
+        ),
+        NavSubItem(
+          route: '/settings/network',
+          icon: Icons.wifi_tethering_rounded,
+          label: _lblSettingsNetwork,
+        ),
+      ],
     ),
   ]),
 ];

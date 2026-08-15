@@ -43,6 +43,22 @@ class Schools extends Table {
   /// د ټولګیو د ښودلو بڼه: `rows` (هر ټولګی یو کتار) | `grid`
   TextColumn get classesView => text().withDefault(const Constant('rows'))();
 
+  // ── د مهالویش جوړښت ─────────────────────────────────────
+  //
+  // **دا ولې په ښوونځي کې دي او نه په کوډ کې؟** ځکه چې هر ښوونځی
+  // بېل دی: یو شپږ ساعته لري، بل اته؛ یو د څلورم وروسته تفریح لري،
+  // بل د دریم. که ټینګ وای، هر ښوونځی به نوې نسخې ته اړ و.
+  IntColumn get periodsPerDay => integer().withDefault(const Constant(6))();
+  IntColumn get periodMinutes => integer().withDefault(const Constant(45))();
+
+  /// د څو ساعتونو وروسته تفریح راځي.
+  IntColumn get breakAfterPeriods =>
+      integer().withDefault(const Constant(4))();
+  IntColumn get breakMinutes => integer().withDefault(const Constant(15))();
+
+  /// په ورځ کې څو تفریحې. که ۲ وي، دویمه يې د دویم بند په منځ کې ده.
+  IntColumn get breaksPerDay => integer().withDefault(const Constant(1))();
+
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
 
@@ -260,6 +276,11 @@ class Teachers extends Table {
 
   IntColumn get monthlySalary => integer().nullable()();
   TextColumn get qrSecret => text().nullable()();
+
+  /// د ګوتې نښه — د استادانو د حاضرۍ لپاره، اختیاري.
+  TextColumn get fingerprintId => text().nullable()();
+  IntColumn get cardVersion => integer().withDefault(const Constant(1))();
+
   DateTimeColumn get deletedAt => dateTime().nullable()();
 
   @override
@@ -280,12 +301,89 @@ class StaffMembers extends Table {
   DateTimeColumn get hiredOn => dateTime().nullable()();
   IntColumn get monthlySalary => integer().nullable()();
   TextColumn get status => text().withDefault(const Constant('active'))();
+
+  TextColumn get qrSecret => text().nullable()();
+  TextColumn get fingerprintId => text().nullable()();
+  IntColumn get cardVersion => integer().withDefault(const Constant(1))();
+  TextColumn get photoPath => text().nullable()();
+
   DateTimeColumn get deletedAt => dateTime().nullable()();
 
   @override
   List<Set<Column>> get uniqueKeys => [
     {employeeNo},
   ];
+}
+
+/// **د استادانو او کارمندانو حاضري — جلا جدول.**
+///
+/// **ولې د شاګردانو له جدول سره یو ځای نه؟**
+/// ځکه چې د شاګرد حاضري د ټولګي، د اجازت‌نامې، د والدینو د خبرتیا او
+/// د کارنامې پورې تړلې ده — د استاد حاضري له دې هېڅ یوه سره نه ده.
+/// که یو جدول وای، هره پوښتنه به يې `WHERE person_kind = ...` ته
+/// اړه درلوده او یوه هېره شوې به د رپوټونو شمېرې خرابې کړې.
+class StaffAttendances extends Table {
+  IntColumn get id => integer().autoIncrement()();
+
+  /// `teacher` | `staff`
+  TextColumn get personKind => text()();
+  IntColumn get personId => integer()();
+
+  DateTimeColumn get date => dateTime()();
+
+  /// `present` | `late` | `absent` | `leave` | `holiday`
+  TextColumn get status => text()();
+
+  DateTimeColumn get checkInAt => dateTime().nullable()();
+  DateTimeColumn get checkOutAt => dateTime().nullable()();
+
+  TextColumn get method => text().withDefault(const Constant('roster'))();
+  IntColumn get sessionId => integer().withDefault(const Constant(0))();
+
+  TextColumn get note => text().nullable()();
+  IntColumn get recordedByUserId => integer().nullable()();
+  DateTimeColumn get recordedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  List<Set<Column>> get uniqueKeys => [
+    {personKind, personId, date, sessionId},
+  ];
+}
+
+/// **د آی‌ډي کارت یوه نمونه.**
+///
+/// د کارت جوړښت (کوم ساحې، چېرې، په کوم رنګ) په JSON کې ساتل کېږي،
+/// نه په کوډ کې. **ولې؟** ځکه چې د یوه ښوونځي کارت له بل سره توپیر
+/// لري — یو لوګو پورته غواړي، بل په څنګ کې؛ یو د پلار نوم ښیي، بل
+/// نه. که په کوډ کې وای، هر بدلون به نوې نسخې ته اړ و.
+class CardTemplates extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get name => text()();
+
+  /// `student` | `teacher` | `staff`
+  TextColumn get audience => text()();
+
+  /// د کارت اندازه په ملي‌مترو — CR80 معیار ۸۵.۶ × ۵۴ دی، خو ځینې
+  /// ښوونځي لوی کارت غواړي چې له لرې ولوستل شي.
+  RealColumn get widthMm => real().withDefault(const Constant(85.6))();
+  RealColumn get heightMm => real().withDefault(const Constant(54.0))();
+
+  /// `landscape` | `portrait`
+  TextColumn get orientation =>
+      text().withDefault(const Constant('landscape'))();
+
+  /// د عناصرو بشپړ جوړښت — JSON.
+  TextColumn get layoutJson => text()();
+
+  /// **دا نمونه اوس کارېږي؟** هر لیدونکي (audience) لپاره یوازې یوه.
+  BoolColumn get isActive => boolean().withDefault(const Constant(false))();
+
+  /// د پروګرام سره راغلې نمونه — ړنګېدی نه شي، خو کاپي کېدی شي.
+  BoolColumn get isBuiltIn => boolean().withDefault(const Constant(false))();
+
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
 }
 
 /// شاګرد په کوم کال او کوم بخش کې دی — تاریخچه ساتي.

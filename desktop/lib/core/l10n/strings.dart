@@ -204,6 +204,34 @@ class S {
     'New leave',
   );
 
+  String get examSettings =>
+      _pick('د ازموینو تنظیمات', 'تنظیمات امتحانات', 'Exam settings');
+  String get questionPapers => _pick(
+    'د سوالیه پاڼې جوړول',
+    'ایجاد ورقه سوالات',
+    'Question papers',
+  );
+  String get timetableSettings =>
+      _pick('د مهالویش تنظیمات', 'تنظیمات تقسیم اوقات', 'Timetable settings');
+  String get settingsGeneral => _pick('عمومي', 'عمومی', 'General');
+  String get settingsSchool => _pick('ښوونځی', 'مکتب', 'School');
+  String get settingsDatabase => _pick('ډیټابیس', 'دیتابیس', 'Database');
+  String get settingsNetwork => _pick('اړیکه', 'ارتباط', 'Network');
+
+  // ── ازموینې ───────────────────────────────────────────
+  String get marks => _pick('نمرې', 'نمرات', 'Marks');
+  String get enterMarks => _pick('د نمرو ثبت', 'ثبت نمرات', 'Enter marks');
+  String get results => _pick('پایلې', 'نتایج', 'Results');
+  String get topStudents => _pick('ممتاز شاګردان', 'ممتازین', 'Top students');
+  String get combinedResults =>
+      _pick('راټولې پایلې', 'نتایج مجموعی', 'Combined results');
+  String get passed => _pick('کامیاب', 'کامیاب', 'Passed');
+  String get failed => _pick('ناکام', 'ناکام', 'Failed');
+  String get sortByMarks => _pick('د نمرو له مخې', 'بر اساس نمره', 'By marks');
+  String get sortByName => _pick('د نوم له مخې', 'بر اساس نام', 'By name');
+  String get export => _pick('اکسپورټ', 'خروجی', 'Export');
+  String get weight => _pick('وزن', 'وزن', 'Weight');
+
   // ── ګډ ────────────────────────────────────────────────
   String get edit => _pick('سمون', 'ویرایش', 'Edit');
   String get delete => _pick('ړنګول', 'حذف', 'Delete');

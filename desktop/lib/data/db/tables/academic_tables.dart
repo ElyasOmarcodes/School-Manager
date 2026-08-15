@@ -111,7 +111,20 @@ class Exams extends Table {
   IntColumn get academicYearId => integer().references(AcademicYears, #id)();
 
   /// ربع/سمستر — ۱ یا ۲. د کلني نتیجې لپاره پکار دی.
+  ///
+  /// **مدرسه سمستر نه لري.** د مدرسې په حالت کې دا تل ۱ پاتې کېږي
+  /// او پرده يې خانه نه ښیي — یوه ساحه چې معنا نه لري، یوازې
+  /// د تېروتنې لار ده.
   IntColumn get term => integer().withDefault(const Constant(1))();
+
+  /// **دا ازموینه د کال په ۱۰۰ نمرو کې څومره برخه لري؟**
+  ///
+  /// په ډېرو ښوونځیو کې څلورنیم‌میاشتنۍ ازموینه ۴۰ او کلنۍ ۶۰ نمرې
+  /// وړي — مجموعه ۱۰۰. که دا ستنه نه وای، د دواړو راټولول به یوازې
+  /// د لاس په حساب ممکن و، او هر ښوونځی به يې بېل کاوه.
+  ///
+  /// تلواله ۱۰۰ ده، یعنې «دا ازموینه پخپله بشپړه ده».
+  IntColumn get weightPercent => integer().withDefault(const Constant(100))();
 
   DateTimeColumn get startsOn => dateTime()();
   DateTimeColumn get endsOn => dateTime()();

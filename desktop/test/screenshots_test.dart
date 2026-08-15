@@ -35,14 +35,17 @@ import 'package:school_manager/data/repositories/timetable_repository.dart';
 import 'package:school_manager/data/repositories/fee_repository.dart';
 import 'package:school_manager/data/repositories/payroll_repository.dart';
 import 'package:school_manager/data/repositories/user_repository.dart';
-import 'package:school_manager/features/exams/exams_page.dart';
+import 'package:school_manager/features/exams/exam_list_page.dart';
+import 'package:school_manager/features/exams/exam_settings_page.dart';
+import 'package:school_manager/features/exams/mark_entry_page.dart';
+import 'package:school_manager/features/exams/results_page.dart';
+import 'package:school_manager/features/exams/top_students_page.dart';
+import 'package:school_manager/features/exams/combined_results_page.dart';
 import 'package:school_manager/data/repositories/report_repository.dart';
 import 'package:school_manager/features/fees/fees_page.dart';
 import 'package:school_manager/features/reports/reports_page.dart';
 import 'package:school_manager/features/payroll/payroll_page.dart';
 import 'package:school_manager/features/users/users_page.dart';
-import 'package:school_manager/features/exams/mark_sheet.dart';
-import 'package:school_manager/features/exams/results_view.dart';
 import 'package:school_manager/features/messages/messages_page.dart';
 import 'package:school_manager/features/staff/staff_page.dart';
 import 'package:school_manager/features/timetable/timetable_page.dart';
@@ -500,18 +503,21 @@ void main() {
     final db = AppDatabase.memory();
     addTearDown(db.close);
     await _seedSchool(db);
-    await _seedExam(db);
+    await _seedExam(db, withMarks: true);
 
     await _shoot(
       tester,
       name: '22-exams',
       settle: const Duration(milliseconds: 700),
       child: Scaffold(
-        body: ExamsPage(
+        body: ExamListPage(
           exams: ExamRepository(db),
           academic: AcademicRepository(db),
-          session: _session,
-          schoolName: 'د نور لیسه',
+          onEnterMarks: (_) {},
+          onResults: (_) {},
+          onTopStudents: (_) {},
+          onCombined: () {},
+          onSettings: () {},
         ),
       ),
     );
@@ -521,17 +527,17 @@ void main() {
     final db = AppDatabase.memory();
     addTearDown(db.close);
     await _seedSchool(db);
-    final exam = await _seedExam(db);
+    final exam = await _seedExam(db, withMarks: true);
 
     await _shoot(
       tester,
       name: '23-mark-sheet',
       settle: const Duration(milliseconds: 700),
       child: Scaffold(
-        body: MarkSheetView(
-          exams: ExamRepository(db),
+        body: MarkEntryPage(
           exam: exam,
-          sections: await AcademicRepository(db).sections(),
+          exams: ExamRepository(db),
+          academic: AcademicRepository(db),
           session: _session,
           onBack: () {},
         ),
@@ -550,13 +556,74 @@ void main() {
       name: '24-results',
       settle: const Duration(milliseconds: 700),
       child: Scaffold(
-        body: ResultsView(
-          exams: ExamRepository(db),
+        body: ResultsPage(
           exam: exam,
-          sections: await AcademicRepository(db).sections(),
-          schoolName: 'د نور لیسه',
+          exams: ExamRepository(db),
+          academic: AcademicRepository(db),
           onBack: () {},
-          onPrint: (_) async {},
+          onTopStudents: () {},
+        ),
+      ),
+    );
+  });
+
+  testWidgets('48 — ممتاز شاګردان', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await _seedSchool(db);
+    final exam = await _seedExam(db, withMarks: true);
+
+    await _shoot(
+      tester,
+      name: '48-top-students',
+      settle: const Duration(milliseconds: 700),
+      child: Scaffold(
+        body: TopStudentsPage(
+          exam: exam,
+          exams: ExamRepository(db),
+          academic: AcademicRepository(db),
+          onBack: () {},
+        ),
+      ),
+    );
+  });
+
+  testWidgets('49 — راټولې پایلې (۴۰ + ۶۰)', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await _seedSchool(db);
+    await _seedExam(db, withMarks: true, name: 'څلورنیم‌میاشتنۍ', weight: 40);
+    await _seedExam(db, withMarks: true, name: 'کلنۍ ازموینه', weight: 60);
+
+    await _shoot(
+      tester,
+      name: '49-combined-results',
+      settle: const Duration(milliseconds: 800),
+      child: Scaffold(
+        body: CombinedResultsPage(
+          exams: ExamRepository(db),
+          academic: AcademicRepository(db),
+          onBack: () {},
+        ),
+      ),
+    );
+  });
+
+  testWidgets('50 — د ازموینو تنظیمات', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await _seedSchool(db);
+    await _seedExam(db, withMarks: true, name: 'څلورنیم‌میاشتنۍ', weight: 40);
+    await _seedExam(db, name: 'کلنۍ ازموینه', weight: 60);
+
+    await _shoot(
+      tester,
+      name: '50-exam-settings',
+      settle: const Duration(milliseconds: 700),
+      child: Scaffold(
+        body: ExamSettingsPage(
+          exams: ExamRepository(db),
+          academic: AcademicRepository(db),
         ),
       ),
     );
@@ -1762,7 +1829,13 @@ Future<void> _seedTimetable(AppDatabase db) async {
 }
 
 /// یوه ازموینه — که `withMarks` سم وي، نمرې يې هم ډکې دي.
-Future<Exam> _seedExam(AppDatabase db, {bool withMarks = false}) async {
+Future<Exam> _seedExam(
+  AppDatabase db, {
+  bool withMarks = false,
+  String name = 'د لومړۍ ربعې ازموینه',
+  int weight = 100,
+  bool withSecond = true,
+}) async {
   final academic = AcademicRepository(db);
   final exams = ExamRepository(db);
   await academic.seedDefaultSubjects();
@@ -1778,56 +1851,64 @@ Future<Exam> _seedExam(AppDatabase db, {bool withMarks = false}) async {
   ];
 
   final id = await exams.create(
-    name: 'د لومړۍ ربعې ازموینه',
-    examType: 'midterm',
+    name: name,
+    examType: weight == 60 ? 'final' : 'midterm',
     academicYearId: year.id,
     startsOn: DateTime(2026, 5, 10),
     endsOn: DateTime(2026, 5, 20),
   );
+  if (weight != 100) await exams.update(id: id, weightPercent: weight);
+
   for (final gradeId in sections.map((s) => s.gradeId).toSet()) {
-    await exams.addSubjects(
-      examId: id,
-      gradeId: gradeId,
-      subjectIds: chosen,
-    );
+    await exams.addSubjects(examId: id, gradeId: gradeId, subjectIds: chosen);
   }
 
   // یوه دویمه ازموینه چې لیست تش نه وي.
-  await exams.create(
-    name: 'د میاشتنۍ ازموینه — ثور',
-    examType: 'monthly',
-    academicYearId: year.id,
-    startsOn: DateTime(2026, 4, 12),
-    endsOn: DateTime(2026, 4, 14),
-  );
+  if (withSecond && weight == 100) {
+    await exams.create(
+      name: 'د میاشتنۍ ازموینه — ثور',
+      examType: 'monthly',
+      academicYearId: year.id,
+      startsOn: DateTime(2026, 4, 12),
+      endsOn: DateTime(2026, 4, 14),
+    );
+  }
 
   if (withMarks) {
-    final section = sections.first;
-    final subs = await exams.subjectsOf(id, gradeId: section.gradeId);
-    final roster = await db
-        .customSelect(
-          'SELECT student_id FROM enrollments '
-          'WHERE section_id = ? AND is_active = 1',
-          variables: [Variable<int>(section.sectionId)],
-          readsFrom: {db.enrollments},
-        )
-        .get();
-    final ids = roster.map((r) => r.read<int>('student_id')).toList();
+    // **ټول بخشونه، نه یوازې لومړی** — که یوازې یو ډکېده، د
+    // ممتازینو پاڼه به يې یوازې یو ټولګی ښود.
+    const pattern = [92, 78, 55, 34, 88, 61, 45, 97, 70, 39, 83, 66];
+    final seedShift = weight == 60 ? 5 : 0;
 
-    // **ثابتې نمرې.** تصادفي به د گولډن عکس هر ځل بدل کړ.
-    const pattern = [92, 78, 55, 34, 88, 61, 45, 97, 70, 39];
-    for (var s = 0; s < subs.length; s++) {
-      await exams.saveMarks(
-        examSubjectId: subs[s].examSubject.id,
-        byStudent: {
-          for (var i = 0; i < ids.length; i++)
-            ids[i]: (
-              obtained: (pattern[(i + s * 3) % pattern.length]).toDouble(),
-              isAbsent: i == 2 && s == 1,
-            ),
-        },
-        byUserId: 1,
-      );
+    for (final section in sections) {
+      final subs = await exams.subjectsOf(id, gradeId: section.gradeId);
+      final roster = await db
+          .customSelect(
+            'SELECT student_id FROM enrollments '
+            'WHERE section_id = ? AND is_active = 1',
+            variables: [Variable<int>(section.sectionId)],
+            readsFrom: {db.enrollments},
+          )
+          .get();
+      final ids = roster.map((r) => r.read<int>('student_id')).toList();
+      if (ids.isEmpty) continue;
+
+      // **ثابتې نمرې.** تصادفي به د گولډن عکس هر ځل بدل کړ.
+      for (var s = 0; s < subs.length; s++) {
+        await exams.saveMarks(
+          examSubjectId: subs[s].examSubject.id,
+          byStudent: {
+            for (var i = 0; i < ids.length; i++)
+              ids[i]: (
+                obtained: pattern[(ids[i] + i + s * 3 + seedShift) %
+                        pattern.length]
+                    .toDouble(),
+                isAbsent: ids[i] == 3 && s == 1,
+              ),
+          },
+          byUserId: 1,
+        );
+      }
     }
   }
 

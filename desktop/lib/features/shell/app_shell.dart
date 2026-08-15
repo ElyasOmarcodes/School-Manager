@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/config/app_config.dart';
@@ -36,7 +39,13 @@ import '../leave/leave_page.dart';
 import '../students/enroll_page.dart';
 import '../students/student_profile_page.dart';
 import '../subjects/subjects_page.dart';
-import '../exams/exams_page.dart';
+import '../exams/combined_results_page.dart';
+import '../exams/exam_list_page.dart';
+import '../exams/exam_settings_page.dart';
+import '../exams/mark_entry_page.dart';
+import '../exams/question_papers_page.dart';
+import '../exams/results_page.dart';
+import '../exams/top_students_page.dart';
 import '../fees/fees_page.dart';
 import '../id_cards/id_cards_page.dart';
 import '../messages/messages_page.dart';
@@ -139,6 +148,12 @@ class _AppShellState extends State<AppShell> {
   /// کومه د حاضرۍ ناسته پرانیستل شوې — `null` یعنې لیست ښکاري.
   AttendanceSession? _openSession;
 
+  /// کومه ازموینه پرانیستل شوې، او کومه کتنه يې ښکاري.
+  Exam? _openExam;
+
+  /// `marks` | `results` | `top` | `combined`
+  String _examView = 'marks';
+
   /// **د شالید حاضري.** د ناستو کړکۍ ګوري او د پورتنۍ کرښې نښه
   /// خبروي — نو مدیر که د فیس پاڼه هم پرانیستې وي، پوهېږي چې د
   /// لیلیه د شپې حاضري پیل شوه.
@@ -195,7 +210,22 @@ class _AppShellState extends State<AppShell> {
       _route = route;
       _openStudentId = null;
       _openSession = null;
+      _openExam = null;
+      _examView = 'marks';
     });
+  }
+
+  /// یو CSV د کارن ټاکلي ځای ته ساتي.
+  ///
+  /// **ولې دلته او نه په هره پاڼه کې؟** ځکه چې د فایل ساتل د پردې
+  /// کار نه دی — هره پاڼه چې يې خپله کوله، هره یوه به بېل چلند
+  /// درلود او د تېروتنې پیغامونه به يې سره توپیر درلود.
+  Future<void> _saveCsv(String csv, String suggestedName) async {
+    final location = await getSaveLocation(suggestedName: suggestedName);
+    if (location == null) return;
+    await File(location.path).writeAsString(csv);
+    if (!mounted) return;
+    _toast('فایل وساتل شو: ${location.path}', AppColors.success);
   }
 
   void _toast(String text, Color color) {
@@ -496,12 +526,79 @@ class _AppShellState extends State<AppShell> {
         teachers: teachers,
       );
     }
-    if (_route == '/exams' && widget.examRepo != null && academic != null) {
-      return ExamsPage(
-        exams: widget.examRepo!,
+    // ── ازموینې ─────────────────────────────────────────
+    final examRepo = widget.examRepo;
+    if (_route.startsWith('/exams') && examRepo != null && academic != null) {
+      if (_route == '/exams/papers') return const QuestionPapersPage();
+
+      if (_route == '/exams/settings' || _route == '/exams/new') {
+        return ExamSettingsPage(
+          key: ValueKey(_route),
+          exams: examRepo,
+          academic: academic,
+          startWithNew: _route == '/exams/new',
+          canEdit: widget.session.permissions.can('exams', Perm.edit),
+        );
+      }
+
+      // د یوې ازموینې دننه — نمرې، پایلې، ممتازین.
+      final open = _openExam;
+      if (open != null) {
+        return switch (_examView) {
+          'results' => ResultsPage(
+            exam: open,
+            exams: examRepo,
+            academic: academic,
+            onBack: () => setState(() => _openExam = null),
+            onTopStudents: () => setState(() => _examView = 'top'),
+            onExport: _saveCsv,
+          ),
+          'top' => TopStudentsPage(
+            exam: open,
+            exams: examRepo,
+            academic: academic,
+            onBack: () => setState(() => _examView = 'results'),
+            onExport: _saveCsv,
+          ),
+          _ => MarkEntryPage(
+            exam: open,
+            exams: examRepo,
+            academic: academic,
+            session: widget.session,
+            onBack: () => setState(() => _openExam = null),
+            onExport: _saveCsv,
+          ),
+        };
+      }
+
+      if (_examView == 'combined') {
+        return CombinedResultsPage(
+          exams: examRepo,
+          academic: academic,
+          onBack: () => setState(() => _examView = 'marks'),
+          onExport: _saveCsv,
+        );
+      }
+
+      return ExamListPage(
+        exams: examRepo,
         academic: academic,
-        session: widget.session,
-        schoolName: widget.schoolName,
+        onEnterMarks: (e) => setState(() {
+          _openExam = e;
+          _examView = 'marks';
+        }),
+        onResults: (e) => setState(() {
+          _openExam = e;
+          _examView = 'results';
+        }),
+        onTopStudents: (e) => setState(() {
+          _openExam = e;
+          _examView = 'top';
+        }),
+        onCombined: () => setState(() => _examView = 'combined'),
+        onSettings: widget.session.permissions.can('exams', Perm.create)
+            ? () => _go('/exams/new')
+            : null,
       );
     }
     if (_route == '/staff' && widget.staffRepo != null) {

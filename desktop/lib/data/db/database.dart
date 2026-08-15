@@ -26,6 +26,8 @@ part 'database.g.dart';
     StaffMembers,
     Enrollments,
     Attendances,
+    StaffAttendances,
+    CardTemplates,
     LeaveRequests,
     AuditLogs,
     // ── څلورم پړاو: اړیکه ─────────────────────────────────
@@ -83,7 +85,7 @@ class AppDatabase extends _$AppDatabase {
   );
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -160,6 +162,29 @@ class AppDatabase extends _$AppDatabase {
           ),
         );
       }
+
+      // ── ۵ → ۶: د کارمندانو حاضري، د کارت نمونې، د مهالویش
+      //           جوړښت، او د ازموینې وزن ───────────────────
+      if (from < 6) {
+        await m.createTable(staffAttendances);
+        await m.createTable(cardTemplates);
+
+        await m.addColumn(schools, schools.periodsPerDay);
+        await m.addColumn(schools, schools.periodMinutes);
+        await m.addColumn(schools, schools.breakAfterPeriods);
+        await m.addColumn(schools, schools.breakMinutes);
+        await m.addColumn(schools, schools.breaksPerDay);
+
+        await m.addColumn(teachers, teachers.fingerprintId);
+        await m.addColumn(teachers, teachers.cardVersion);
+
+        await m.addColumn(staffMembers, staffMembers.qrSecret);
+        await m.addColumn(staffMembers, staffMembers.fingerprintId);
+        await m.addColumn(staffMembers, staffMembers.cardVersion);
+        await m.addColumn(staffMembers, staffMembers.photoPath);
+
+        await m.addColumn(exams, exams.weightPercent);
+      }
       await _createIndexes();
     },
     beforeOpen: (details) async {
@@ -210,6 +235,16 @@ class AppDatabase extends _$AppDatabase {
       // سرپرستان.
       'CREATE INDEX IF NOT EXISTS ix_sg_student '
           'ON student_guardians (student_id)',
+
+      // د کارمندانو حاضري — د شاګردانو په څېر، خو خپل جدول.
+      'CREATE INDEX IF NOT EXISTS ix_satt_person_date '
+          'ON staff_attendances (person_kind, person_id, date DESC)',
+      'CREATE INDEX IF NOT EXISTS ix_satt_date '
+          'ON staff_attendances (date, session_id)',
+
+      // د کارت نمونې — هر لیدونکي لپاره فعاله یوه.
+      'CREATE INDEX IF NOT EXISTS ix_card_audience '
+          'ON card_templates (audience, is_active) WHERE deleted_at IS NULL',
 
       // تفتیش.
       'CREATE INDEX IF NOT EXISTS ix_audit_at ON audit_logs (at DESC)',
