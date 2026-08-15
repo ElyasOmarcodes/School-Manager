@@ -59,6 +59,8 @@ import 'package:school_manager/features/students/enroll_page.dart';
 import 'package:school_manager/features/students/student_profile_page.dart';
 import 'package:school_manager/features/subjects/subjects_page.dart';
 import 'package:school_manager/features/attendance/manual_roster.dart';
+import 'package:school_manager/features/attendance/personnel_roster.dart';
+import 'package:school_manager/data/repositories/staff_attendance_repository.dart';
 import 'package:school_manager/features/attendance/sessions_page.dart';
 import 'package:school_manager/features/leave/leave_create_page.dart';
 import 'package:school_manager/data/repositories/attendance_session_repository.dart';
@@ -624,6 +626,57 @@ void main() {
         body: ExamSettingsPage(
           exams: ExamRepository(db),
           academic: AcademicRepository(db),
+        ),
+      ),
+    );
+  });
+
+  testWidgets('51 — د استادانو او کارمندانو حاضري', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await _seedSchool(db);
+    await _seedTeachers(db);
+    await _seedStaff(db);
+
+    final staff = StaffAttendanceRepository(db);
+    final sessions = AttendanceSessionRepository(db);
+    final now = DateTime(2026, 5, 12, 7, 20);
+    final id = await sessions.create(
+      name: 'د کارکوونکو سهار',
+      target: 'personnel',
+      startTime: '07:00',
+      endTime: '08:00',
+      days: '1,2,3,4,5,6,7',
+    );
+    final session = (await sessions.list()).firstWhere((x) => x.id == id);
+
+    // یو څه ثبت شوي، یو څه نه — چې د نښو رنګونه دواړه ښکاره شي.
+    final people = await staff.personnel();
+    const marks = ['present', 'present', 'late', 'leave', 'absent'];
+    for (var i = 0; i < marks.length && i < people.length; i++) {
+      await staff.mark(
+        personKind: people[i].kind,
+        personId: people[i].id,
+        date: now,
+        status: marks[i],
+        sessionId: session.storageId,
+        now: now,
+      );
+    }
+
+    await _shoot(
+      tester,
+      name: '51-personnel-attendance',
+      settle: const Duration(milliseconds: 700),
+      child: Scaffold(
+        body: Padding(
+          padding: const EdgeInsets.all(20),
+          child: PersonnelRoster(
+            staff: staff,
+            session: session,
+            user: _session,
+            clock: () => now,
+          ),
         ),
       ),
     );

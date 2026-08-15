@@ -12,9 +12,11 @@ import '../../data/db/database.dart';
 import '../../data/repositories/academic_repository.dart';
 import '../../data/repositories/attendance_repository.dart';
 import '../../data/repositories/attendance_session_repository.dart';
+import '../../data/repositories/staff_attendance_repository.dart';
 import '../auth/auth_service.dart';
 import 'camera_scan.dart';
 import 'manual_roster.dart';
+import 'personnel_roster.dart';
 import 'scan_feedback.dart';
 
 /// د حاضرۍ پاڼه — د دروازې پرده.
@@ -35,6 +37,9 @@ class AttendancePage extends StatefulWidget {
   final AttendanceSession? attendanceSession;
   final AttendanceSessionRepository? sessions;
 
+  /// د استادانو/کارمندانو حاضري — که ناسته يې هدف وي، دا کارېږي.
+  final StaffAttendanceRepository? staff;
+
   /// بېرته د ناستو لیست ته — که له لیست څخه راغلی وي.
   final VoidCallback? onBack;
 
@@ -48,6 +53,7 @@ class AttendancePage extends StatefulWidget {
     required this.session,
     this.attendanceSession,
     this.sessions,
+    this.staff,
     this.onBack,
     this.clock = DateTime.now,
   });
@@ -62,8 +68,8 @@ class _AttendancePageState extends State<AttendancePage> {
 
   AttendanceRules _rules = const AttendanceRules();
   DaySummary? _summary;
-  CheckInResult? _last;
-  final List<CheckInResult> _recent = [];
+  ScanVisual? _last;
+  final List<ScanVisual> _recent = [];
   bool _busy = false;
   bool _locking = false;
 
@@ -78,6 +84,15 @@ class _AttendancePageState extends State<AttendancePage> {
   /// **د تلوالې ناستې حاضري د صفر لاندې ثبتېږي** — نه د هغې د
   /// کرښې id لاندې. `storageId` همدا پرېکړه یو ځای ساتي.
   int get _sessionId => widget.attendanceSession?.storageId ?? 0;
+
+  /// **دا ناسته د کارمندانو ده؟**
+  ///
+  /// همدا یوه پوښتنه ټوله پاڼه اړوي: لیست د استادانو شي، سکین د
+  /// کارمند نمبر ولټوي، او لنډیز له بل جدوله راشي. د شاګردانو او
+  /// د استادانو ناستې هېڅکله سره نه ګډېږي، ځکه چې دا پرېکړه د
+  /// ناستې پر هدف ولاړه ده — نه پر هغه څه چې کارن سکین کوي.
+  bool get _personnel =>
+      widget.staff != null && (widget.attendanceSession?.isPersonnel ?? false);
 
   @override
   void initState() {
@@ -101,6 +116,43 @@ class _AttendancePageState extends State<AttendancePage> {
   }
 
   Future<void> _refresh() async {
+    if (_personnel) {
+      final r = await widget.staff!.summary(
+        date: widget.clock(),
+        sessionId: _sessionId,
+        kind: widget.attendanceSession?.personnelKind,
+      );
+      final rows = await widget.staff!.roster(
+        date: widget.clock(),
+        sessionId: _sessionId,
+        kind: widget.attendanceSession?.personnelKind,
+      );
+      var late = 0;
+      var leave = 0;
+      var absent = 0;
+      for (final e in rows) {
+        switch (e.status) {
+          case 'late':
+            late++;
+          case 'leave':
+            leave++;
+          case 'absent':
+            absent++;
+        }
+      }
+      if (!mounted) return;
+      setState(
+        () => _summary = DaySummary(
+          total: r.target,
+          present: r.present - late,
+          late: late,
+          onLeave: leave,
+          absent: absent,
+          locked: false,
+        ),
+      );
+      return;
+    }
     final s = await widget.attendance.summary(
       widget.clock(),
       sessionId: _sessionId,
@@ -109,32 +161,75 @@ class _AttendancePageState extends State<AttendancePage> {
     setState(() => _summary = s);
   }
 
+  /// د یوه استاد/کارمند سکین — د شاګرد له لارې جلا، خو له همدې خانې.
+  Future<ScanVisual> _submitPersonnel(String raw) async {
+    final person = await widget.staff!.findByInput(raw);
+    if (person == null) {
+      return ScanVisual(
+        color: AppColors.danger,
+        icon: Icons.person_search_rounded,
+        label: 'دا نمبر هېڅ استاد یا کارمند ته نه ورګرځي',
+        name: raw,
+      );
+    }
+    final kind = widget.attendanceSession?.personnelKind;
+    if (kind != null && kind != person.kind) {
+      return ScanVisual.noSession(person.fullName);
+    }
+    final status = await widget.staff!.checkIn(
+      person: person,
+      now: widget.clock(),
+      rules: _rules,
+      sessionId: _sessionId,
+      byUserId: widget.session.userId,
+    );
+    return ScanVisual.personnel(
+      name: person.fullName,
+      employeeNo: person.employeeNo,
+      kind: person.kind,
+      status: status,
+    );
+  }
+
   Future<void> _submit(String raw) async {
     if (_busy || raw.trim().isEmpty) return;
     setState(() => _busy = true);
 
-    final result = await widget.attendance.checkIn(
-      input: raw,
-      now: widget.clock(),
-      byUserId: widget.session.userId,
-      withRules: _rules,
-      sessionId: _sessionId,
-    );
+    final ScanVisual visual;
+    if (_personnel) {
+      visual = await _submitPersonnel(raw);
+      await Tone.play(
+        visual.color == AppColors.success
+            ? Tone.accept
+            : visual.color == AppColors.warning
+            ? Tone.warn
+            : Tone.error,
+      );
+    } else {
+      final result = await widget.attendance.checkIn(
+        input: raw,
+        now: widget.clock(),
+        byUserId: widget.session.userId,
+        withRules: _rules,
+        sessionId: _sessionId,
+      );
 
-    // **غږ — ځکه چې شاګرد سکرین ته نه ګوري.**
-    // هغه کارت وهي او ژر تېرېږي. که یوازې رنګ بدل شي، د غلط کارت
-    // خاوند به سبا «غیرحاضر» ولیدل او نه به پوهېده ولې.
-    await Tone.play(switch (result) {
-      CheckInOk() => Tone.accept,
-      CheckInCheckedOut() => Tone.accept,
-      CheckInOnLeave() || CheckInAlreadyDone() => Tone.warn,
-      _ => Tone.error,
-    });
+      // **غږ — ځکه چې شاګرد سکرین ته نه ګوري.**
+      // هغه کارت وهي او ژر تېرېږي. که یوازې رنګ بدل شي، د غلط کارت
+      // خاوند به سبا «غیرحاضر» ولیدل او نه به پوهېده ولې.
+      await Tone.play(switch (result) {
+        CheckInOk() => Tone.accept,
+        CheckInCheckedOut() => Tone.accept,
+        CheckInOnLeave() || CheckInAlreadyDone() => Tone.warn,
+        _ => Tone.error,
+      });
+      visual = ScanVisual.of(result);
+    }
 
     if (!mounted) return;
     setState(() {
-      _last = result;
-      _recent.insert(0, result);
+      _last = visual;
+      _recent.insert(0, visual);
       if (_recent.length > 8) _recent.removeLast();
       _busy = false;
       _input.clear();
@@ -233,9 +328,7 @@ class _AttendancePageState extends State<AttendancePage> {
                 Pill(
                   color: live ? AppColors.success : p.faint,
                   filled: live,
-                  icon: live
-                      ? Icons.sensors_rounded
-                      : Icons.schedule_rounded,
+                  icon: live ? Icons.sensors_rounded : Icons.schedule_rounded,
                   text: live
                       ? s.live
                       : '${locale.num(session.startTime)}–'
@@ -256,11 +349,7 @@ class _AttendancePageState extends State<AttendancePage> {
                     label: 'کیمره',
                     icon: Icons.photo_camera_rounded,
                   ),
-                  (
-                    value: 'list',
-                    label: 'لیست',
-                    icon: Icons.checklist_rounded,
-                  ),
+                  (value: 'list', label: 'لیست', icon: Icons.checklist_rounded),
                 ],
                 onChanged: (v) {
                   setState(() => _tab = v);
@@ -278,7 +367,15 @@ class _AttendancePageState extends State<AttendancePage> {
 
           if (_tab == 'list')
             Expanded(
-              child: widget.sessions == null
+              child: _personnel
+                  ? PersonnelRoster(
+                      staff: widget.staff!,
+                      session: session,
+                      user: widget.session,
+                      clock: widget.clock,
+                      onChanged: _refresh,
+                    )
+                  : widget.sessions == null
                   ? const EmptyState(
                       icon: Icons.checklist_rounded,
                       text: 'لاسي لیست شتون نه لري.',
@@ -338,7 +435,7 @@ class _AttendancePageState extends State<AttendancePage> {
                           const SizedBox(height: 14),
                           SizedBox(
                             height: 132,
-                            child: ScanFeedback(result: _last, locale: locale),
+                            child: ScanFeedback(visual: _last, locale: locale),
                           ),
                         ],
                       ),
@@ -350,84 +447,88 @@ class _AttendancePageState extends State<AttendancePage> {
               ),
             )
           else
-          Expanded(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // ── د سکین برخه ─────────────────────────────
-                Expanded(
-                  flex: 3,
-                  child: Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: p.surface,
-                      borderRadius: BorderRadius.circular(AppTheme.radiusLg),
-                      border: Border.all(color: p.line),
-                    ),
-                    child: Column(
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.qr_code_scanner_rounded,
-                              size: 19,
-                              color: AppColors.modAttendance,
-                            ),
-                            const SizedBox(width: 9),
-                            Text(
-                              'کارت سکین کړئ، ګوته کېږدئ، یا آی‌ډي نمبر ولیکئ',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w700,
-                                color: p.ink,
+            Expanded(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // ── د سکین برخه ─────────────────────────────
+                  Expanded(
+                    flex: 3,
+                    child: Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: p.surface,
+                        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+                        border: Border.all(color: p.line),
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.qr_code_scanner_rounded,
+                                size: 19,
+                                color: AppColors.modAttendance,
                               ),
-                            ),
-                            const Spacer(),
-                            _RuleHint(rules: _rules, locale: locale),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        TextField(
-                          controller: _input,
-                          focusNode: _focus,
-                          autofocus: true,
-                          textDirection: TextDirection.ltr,
-                          textAlign: TextAlign.center,
-                          enabled: !_busy,
-                          onSubmitted: _submit,
-                          inputFormatters: [
-                            // نوې کرښه د USB سکینر له خوا راځي —
-                            // هغه پخپله Enter لیکي.
-                            FilteringTextInputFormatter.deny(RegExp(r'\n')),
-                          ],
-                          style: const TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 1.5,
+                              const SizedBox(width: 9),
+                              Text(
+                                _personnel
+                                    ? 'د استاد/کارمند کارت سکین کړئ یا '
+                                          'د کارمند نمبر ولیکئ'
+                                    : 'کارت سکین کړئ، ګوته کېږدئ، یا '
+                                          'آی‌ډي نمبر ولیکئ',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                  color: p.ink,
+                                ),
+                              ),
+                              const Spacer(),
+                              _RuleHint(rules: _rules, locale: locale),
+                            ],
                           ),
-                          decoration: InputDecoration(
-                            hintText: '1405-0001',
-                            hintStyle: TextStyle(
-                              fontSize: 20,
-                              color: p.faint,
+                          const SizedBox(height: 16),
+                          TextField(
+                            controller: _input,
+                            focusNode: _focus,
+                            autofocus: true,
+                            textDirection: TextDirection.ltr,
+                            textAlign: TextAlign.center,
+                            enabled: !_busy,
+                            onSubmitted: _submit,
+                            inputFormatters: [
+                              // نوې کرښه د USB سکینر له خوا راځي —
+                              // هغه پخپله Enter لیکي.
+                              FilteringTextInputFormatter.deny(RegExp(r'\n')),
+                            ],
+                            style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w700,
                               letterSpacing: 1.5,
                             ),
-                            prefixIcon: const Icon(Icons.badge_rounded),
+                            decoration: InputDecoration(
+                              hintText: _personnel ? 'T-001' : '1405-0001',
+                              hintStyle: TextStyle(
+                                fontSize: 20,
+                                color: p.faint,
+                                letterSpacing: 1.5,
+                              ),
+                              prefixIcon: const Icon(Icons.badge_rounded),
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 20),
-                        Expanded(
-                          child: ScanFeedback(result: _last, locale: locale),
-                        ),
-                      ],
+                          const SizedBox(height: 20),
+                          Expanded(
+                            child: ScanFeedback(visual: _last, locale: locale),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(flex: 2, child: _recentPanel(p, locale)),
-              ],
+                  const SizedBox(width: 16),
+                  Expanded(flex: 2, child: _recentPanel(p, locale)),
+                ],
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -456,15 +557,19 @@ class _AttendancePageState extends State<AttendancePage> {
                 ),
               ),
               const Spacer(),
-              OutlinedButton.icon(
-                onPressed: _locking ? null : _lockDay,
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size(0, 34),
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
+              // **د کارمندانو ناسته «ورځ بندول» نه لري** — هغه د
+              // شاګردانو جدول ته لیکي، نو دلته به يې غلط ریکارډ
+              // جوړ کړ.
+              if (!_personnel)
+                OutlinedButton.icon(
+                  onPressed: _locking ? null : _lockDay,
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(0, 34),
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                  ),
+                  icon: const Icon(Icons.lock_clock_rounded, size: 15),
+                  label: const Text('ورځ بنده کړه'),
                 ),
-                icon: const Icon(Icons.lock_clock_rounded, size: 15),
-                label: const Text('ورځ بنده کړه'),
-              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -481,7 +586,7 @@ class _AttendancePageState extends State<AttendancePage> {
                     separatorBuilder: (_, _) =>
                         Divider(height: 13, color: p.line),
                     itemBuilder: (context, i) =>
-                        _RecentRow(result: _recent[i], locale: locale),
+                        _RecentRow(visual: _recent[i], locale: locale),
                   ),
           ),
         ],
@@ -620,15 +725,15 @@ class _RuleHint extends StatelessWidget {
 }
 
 class _RecentRow extends StatelessWidget {
-  final CheckInResult result;
+  final ScanVisual visual;
   final AppLocale locale;
 
-  const _RecentRow({required this.result, required this.locale});
+  const _RecentRow({required this.visual, required this.locale});
 
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    final v = ScanVisual.of(result);
+    final v = visual;
 
     return Row(
       children: [

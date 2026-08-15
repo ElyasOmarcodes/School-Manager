@@ -220,7 +220,7 @@ void main() {
       expect(rows.firstWhere((r) => r.studentId == dayId).sessionId, dayOnly);
     });
 
-    test('که هېڅ ناسته يې هدف نه ګڼي، `null` راګرځي', () async {
+    test('که هېڅ ناسته يې هدف نه ګڼي، `NoMatchingSession` راګرځي', () async {
       await admit('1405-0001', 'نهاري', residency: 'day');
       await sessions.create(
         name: 'د لیلیه شپه',
@@ -232,7 +232,10 @@ void main() {
 
       final live = make(at(20, 15));
       await live.refresh();
-      expect(await live.scan(input: '1405-0001', byUserId: 1), isNull);
+      expect(
+        await live.scan(input: '1405-0001', byUserId: 1),
+        isA<NoMatchingSession>(),
+      );
       expect(await db.select(db.attendances).get(), isEmpty);
     });
 
@@ -257,7 +260,8 @@ void main() {
       // شاګرد نشته، خو ناسته «ټول» ده — نو `isTargeted` نه پلې کېږي
       // او `checkIn` خپله «ونه پېژندل شو» راګرځوي.
       final r = await live.scan(input: '9999-9999', byUserId: 1);
-      expect(r, isA<CheckInUnknown>());
+      expect(r, isA<StudentScan>());
+      expect((r as StudentScan).result, isA<CheckInUnknown>());
     });
   });
 }

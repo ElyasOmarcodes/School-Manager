@@ -94,6 +94,45 @@ class ScanVisual {
     ),
   };
 
+  /// د استاد یا کارمند سکین.
+  ///
+  /// **ولې همدا ټولګی، نه بل؟** ځکه چې کارکوونکی د دروازې مخې ته
+  /// یو شی ویني — یوه لویه پایله. که د استاد لپاره بله بڼه جوړه
+  /// شوې وای، سهار ۷ بجې چې دواړه ناستې روانې وي، پرده به د هر
+  /// سکین سره بڼه بدلوله.
+  static ScanVisual personnel({
+    required String name,
+    required String employeeNo,
+    required String kind,
+    required String status,
+  }) => ScanVisual(
+    color: switch (status) {
+      'present' => AppColors.success,
+      'late' => AppColors.warning,
+      _ => AppColors.danger,
+    },
+    icon: switch (status) {
+      'present' => Icons.check_circle_rounded,
+      'late' => Icons.schedule_rounded,
+      _ => Icons.running_with_errors_rounded,
+    },
+    label: switch (status) {
+      'present' => kind == 'teacher' ? 'استاد — حاضر' : 'کارمند — حاضر',
+      'late' => 'ناوخته راغی',
+      _ => 'ډېر ناوخته — غیرحاضر ګڼل شو',
+    },
+    name: name,
+    detail: employeeNo,
+  );
+
+  /// پېژندنه سمه ده، خو د دې کس لپاره اوس هېڅ ناسته نه ده روانه.
+  static ScanVisual noSession(String name) => ScanVisual(
+    color: AppColors.modSettings,
+    icon: Icons.event_busy_rounded,
+    label: 'د دې کس لپاره اوس حاضري نه ده روانه',
+    name: name,
+  );
+
   static String _name(dynamic s) => [
     s.firstName as String,
     if (s.lastName != null && (s.lastName as String).isNotEmpty)
@@ -107,16 +146,16 @@ class ScanVisual {
 /// کارکوونکی پوهېږي چې سکین ونیول شو — حتی که هماغه شاګرد دوه ځله
 /// سکین شي او متن بدل نه شي.
 class ScanFeedback extends StatelessWidget {
-  final CheckInResult? result;
+  final ScanVisual? visual;
   final AppLocale locale;
 
-  const ScanFeedback({super.key, required this.result, required this.locale});
+  const ScanFeedback({super.key, required this.visual, required this.locale});
 
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
 
-    if (result == null) {
+    if (visual == null) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -132,7 +171,7 @@ class ScanFeedback extends StatelessWidget {
       );
     }
 
-    final v = ScanVisual.of(result!);
+    final v = visual!;
 
     return AnimatedSwitcher(
       duration: AppMotion.normal,
@@ -147,7 +186,7 @@ class ScanFeedback extends StatelessWidget {
       child: Container(
         // کلید د پایلې پر هویت ولاړ دی، نه یوازې پر متن — چې د یوه
         // شاګرد دوه‌ځلی سکین هم انیمیشن راولي.
-        key: ValueKey('${v.name}/${v.label}/${identityHashCode(result)}'),
+        key: ValueKey('${v.name}/${v.label}/${identityHashCode(v)}'),
         width: double.infinity,
         padding: const EdgeInsets.all(26),
         decoration: BoxDecoration(

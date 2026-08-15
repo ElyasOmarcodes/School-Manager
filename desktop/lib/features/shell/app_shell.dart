@@ -20,6 +20,7 @@ import '../../data/repositories/message_repository.dart';
 import '../../data/repositories/notification_repository.dart';
 import '../../data/repositories/payroll_repository.dart';
 import '../../data/repositories/report_repository.dart';
+import '../../data/repositories/staff_attendance_repository.dart';
 import '../../data/repositories/staff_repository.dart';
 import '../../data/repositories/student_repository.dart';
 import '../../data/repositories/teacher_repository.dart';
@@ -97,6 +98,9 @@ class AppShell extends StatefulWidget {
   /// د حاضرۍ ناستې — که `null` وي، یوازې د ورځې عمومي حاضري ښکاري.
   final AttendanceSessionRepository? sessionRepo;
 
+  /// د استادانو او کارمندانو حاضري.
+  final StaffAttendanceRepository? staffAttendanceRepo;
+
   const AppShell({
     super.key,
     required this.session,
@@ -125,6 +129,7 @@ class AppShell extends StatefulWidget {
     this.userRepo,
     this.reportRepo,
     this.sessionRepo,
+    this.staffAttendanceRepo,
   });
 
   @override
@@ -165,7 +170,11 @@ class _AppShellState extends State<AppShell> {
     final sessions = widget.sessionRepo;
     final attendance = widget.attendanceRepo;
     if (sessions != null && attendance != null) {
-      _live = LiveAttendance(sessions: sessions, attendance: attendance)
+      _live = LiveAttendance(
+        sessions: sessions,
+        attendance: attendance,
+        staff: widget.staffAttendanceRepo,
+      )
         // **چوکاټ پخپله هم اورېدونکی دی**، نه یوازې د `Scope` ماشومان.
         // `GlobalScanListener.enabled` د همدې حال پورې تړلی دی، نو که
         // چوکاټ نه رسمېده، د ناستې پیل به يې سکینر نه و ژوندی کړی.
@@ -328,41 +337,71 @@ class _AppShellState extends State<AppShell> {
     final live = _live;
     if (live == null) return;
 
-    final result = await live.scan(
+    final outcome = await live.scan(
       input: input,
       byUserId: widget.session.userId,
     );
     if (!mounted) return;
 
-    if (result == null) {
-      await Tone.play(Tone.error);
-      if (!mounted) return;
-      _toast('دا شاګرد د روانې ناستې هدف نه دی.', AppColors.warning);
-      return;
+    switch (outcome) {
+      case null:
+        await Tone.play(Tone.error);
+        if (!mounted) return;
+        _toast('اوس هېڅ حاضري نه ده روانه.', AppColors.warning);
+
+      case NoMatchingSession(name: final n):
+        await Tone.play(Tone.error);
+        if (!mounted) return;
+        _toast(
+          n == null
+              ? 'ونه پېژندل شو.'
+              : '$n — د روانې حاضرۍ هدف نه دی.',
+          AppColors.warning,
+        );
+
+      // **استاد او شاګرد بېل پیغامونه لري.** که یو شان وو، د
+      // دروازې کارکوونکی به نه پوهېده چې کوم لیست بدل شو.
+      case PersonnelScan(person: final person, status: final st):
+        await Tone.play(st == 'absent' ? Tone.warn : Tone.accept);
+        if (!mounted) return;
+        _toast(
+          '${person.fullName} (${person.isTeacher ? 'استاد' : 'کارمند'}) '
+          '— ${_statusWord(st)}',
+          st == 'absent' ? AppColors.warning : AppColors.success,
+        );
+
+      case StudentScan(result: final result):
+        await Tone.play(switch (result) {
+          CheckInOk() || CheckInCheckedOut() => Tone.accept,
+          CheckInOnLeave() || CheckInAlreadyDone() => Tone.warn,
+          _ => Tone.error,
+        });
+        if (!mounted) return;
+        _toast(switch (result) {
+          CheckInOk(student: final s, status: final st) =>
+            '${s.firstName} — ${_statusWord(st)}',
+          CheckInAlreadyDone(student: final s) =>
+            '${s.firstName} — مخکې ثبت شوی',
+          CheckInOnLeave(student: final s) => '${s.firstName} — رخصت دی',
+          CheckInCheckedOut(student: final s) => '${s.firstName} — وتلی',
+          CheckInRevokedCard(student: final s) =>
+            '${s.firstName} — کارت باطل دی',
+          CheckInInvalidCard() => 'ناسم کارت',
+          CheckInUnknown(input: final i) => 'ونه پېژندل شو: $i',
+        }, switch (result) {
+          CheckInOk() || CheckInCheckedOut() => AppColors.success,
+          CheckInOnLeave() || CheckInAlreadyDone() => AppColors.info,
+          _ => AppColors.danger,
+        });
     }
-
-    await Tone.play(switch (result) {
-      CheckInOk() || CheckInCheckedOut() => Tone.accept,
-      CheckInOnLeave() || CheckInAlreadyDone() => Tone.warn,
-      _ => Tone.error,
-    });
-    if (!mounted) return;
-
-    _toast(switch (result) {
-      CheckInOk(student: final s, status: final st) =>
-        '${s.firstName} — ${st == 'late' ? 'ناوخته' : 'حاضر'}',
-      CheckInAlreadyDone(student: final s) => '${s.firstName} — مخکې ثبت شوی',
-      CheckInOnLeave(student: final s) => '${s.firstName} — رخصت دی',
-      CheckInCheckedOut(student: final s) => '${s.firstName} — وتلی',
-      CheckInRevokedCard(student: final s) => '${s.firstName} — کارت باطل دی',
-      CheckInInvalidCard() => 'ناسم کارت',
-      CheckInUnknown(input: final i) => 'ونه پېژندل شو: $i',
-    }, switch (result) {
-      CheckInOk() || CheckInCheckedOut() => AppColors.success,
-      CheckInOnLeave() || CheckInAlreadyDone() => AppColors.info,
-      _ => AppColors.danger,
-    });
   }
+
+  static String _statusWord(String status) => switch (status) {
+    'late' => 'ناوخته',
+    'absent' => 'غیرحاضر',
+    'leave' => 'رخصت',
+    _ => 'حاضر',
+  };
 
   Widget _buildPage() {
     if (_route == '/dashboard') {
@@ -453,6 +492,7 @@ class _AppShellState extends State<AppShell> {
           academic: academic,
           session: widget.session,
           sessions: sessions,
+          staff: widget.staffAttendanceRepo,
           attendanceSession: _openSession,
           onBack: () => setState(() => _openSession = null),
         );

@@ -67,7 +67,12 @@ class AttendanceSessions extends Table {
   TextColumn get name => text()();
 
   /// څوک يې هدف دی: `all` | `day` (نهاري) | `boarding` (لیلیه)
-  /// | `section` | `grade`
+  /// | `section` | `grade` | `teacher` | `staff` | `personnel`
+  ///
+  /// **د استادانو ناسته ولې همدې جدول کې ده؟** ځکه چې قاعده يې
+  /// یو شان ده — یو نوم، یو وخت، یوه کړکۍ. یوازې د حاضرۍ کرښې
+  /// بېل جدول ته ځي (`staff_attendances`)، ځکه چې د استاد حاضري
+  /// نه ټولګی لري نه اجازت‌نامه.
   TextColumn get target => text().withDefault(const Constant('all'))();
 
   /// که `target` بخش یا ټولګی وي — کوم یو.

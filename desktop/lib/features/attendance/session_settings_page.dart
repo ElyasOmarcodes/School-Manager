@@ -385,6 +385,12 @@ class _SessionFormDialogState extends State<SessionFormDialog> {
                     'boarding',
                     'grade',
                     'section',
+                    // **د استادانو او کارمندانو ناستې.** هغوی خپل
+                    // جدول لري، خو هماغه قاعده — یو نوم، یو وخت،
+                    // یوه کړکۍ.
+                    'teacher',
+                    'staff',
+                    'personnel',
                   ])
                     ChoiceChip(
                       label: Text(

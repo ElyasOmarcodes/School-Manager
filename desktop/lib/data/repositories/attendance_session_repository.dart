@@ -39,6 +39,21 @@ class SessionStatus {
 extension AttendanceSessionStorage on AttendanceSession {
   int get storageId =>
       isDefault ? AttendanceSessionRepository.generalSessionId : id;
+
+  /// **دا ناسته د کارمندانو ده، نه د شاګردانو.**
+  ///
+  /// د استادانو حاضري بېل جدول ته ځي، نو هره پوښتنه باید مخکې
+  /// وپوهېږي چې کوم لور ته ولاړه شي. یو نومول شوی کتونکی د پنځو
+  /// تارونو د پرتله کولو تکرار ختموي — او هېڅ ځای هېرېږي نه.
+  bool get isPersonnel =>
+      target == 'teacher' || target == 'staff' || target == 'personnel';
+
+  /// که د کارمندانو وي — کوم ډول. `null` = دواړه.
+  String? get personnelKind => switch (target) {
+    'teacher' => 'teacher',
+    'staff' => 'staff',
+    _ => null,
+  };
 }
 
 /// د یوې ناستې د لیست یوه کرښه — شاګرد، ټولګی او اوسنی حالت.
@@ -409,6 +424,21 @@ ORDER BY g.sort_order, sec.name, e.roll_no, s.first_name
   }) async {
     final day = dateOnly(now);
     final sid = session?.storageId ?? generalSessionId;
+
+    // **د کارمندانو ناسته بل جدول لولي.** که دا څانګه نه وای، د
+    // استادانو کارت به تل «۰ له ۰» ښودل — ځکه چې د شاګردانو جدول
+    // کې يې هېڅ نشته.
+    if (session != null && session.isPersonnel) {
+      final st = await _personnelStatus(session, day, sid);
+      return SessionStatus(
+        session: session,
+        targetCount: st.target,
+        markedCount: st.marked,
+        presentCount: st.present,
+        isLive: isLiveAt(session, now),
+      );
+    }
+
     final target = targetClause(session);
 
     final row = await db
@@ -457,6 +487,47 @@ WHERE s.deleted_at IS NULL AND s.status = 'active' AND ${target.where}
       markedCount: row.data['marked'] as int? ?? 0,
       presentCount: row.data['present'] as int? ?? 0,
       isLive: session == null ? true : isLiveAt(session, now),
+    );
+  }
+
+  /// د یوې کارمندانو-ناستې لنډیز.
+  Future<({int target, int marked, int present})> _personnelStatus(
+    AttendanceSession session,
+    DateTime day,
+    int sessionId,
+  ) async {
+    final kind = session.personnelKind;
+    final where = kind == null ? '' : "AND kind = '$kind'";
+
+    final row = await db
+        .customSelect(
+          '''
+WITH people AS (
+  SELECT 'teacher' AS kind, id FROM teachers
+    WHERE deleted_at IS NULL AND status = 'active'
+  UNION ALL
+  SELECT 'staff' AS kind, id FROM staff_members
+    WHERE deleted_at IS NULL AND status = 'active'
+)
+SELECT
+  COUNT(*) AS target_count,
+  SUM(CASE WHEN a.status IS NOT NULL THEN 1 ELSE 0 END) AS marked,
+  SUM(CASE WHEN a.status IN ('present','late') THEN 1 ELSE 0 END) AS present
+FROM people
+LEFT JOIN staff_attendances a
+  ON a.person_kind = people.kind AND a.person_id = people.id
+  AND a.date = ? AND a.session_id = ?
+WHERE 1 = 1 $where
+''',
+          variables: [Variable<DateTime>(day), Variable<int>(sessionId)],
+          readsFrom: {db.teachers, db.staffMembers, db.staffAttendances},
+        )
+        .getSingle();
+
+    return (
+      target: row.read<int>('target_count'),
+      marked: row.data['marked'] as int? ?? 0,
+      present: row.data['present'] as int? ?? 0,
     );
   }
 

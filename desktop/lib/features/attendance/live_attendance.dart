@@ -6,6 +6,7 @@ import 'package:flutter/widgets.dart';
 import '../../data/db/database.dart';
 import '../../data/repositories/attendance_repository.dart';
 import '../../data/repositories/attendance_session_repository.dart';
+import '../../data/repositories/staff_attendance_repository.dart';
 
 /// **د حاضرۍ شالید ساتونکی** — کله چې د یوې ناستې وخت راشي، سکینر
 /// پخپله ژوندی شي، که څه هم مدیر په بله پاڼه کې وي.
@@ -25,6 +26,9 @@ class LiveAttendance extends ChangeNotifier {
   final AttendanceSessionRepository sessions;
   final AttendanceRepository attendance;
 
+  /// د استادانو/کارمندانو حاضري — که `null` وي، یوازې شاګردان.
+  final StaffAttendanceRepository? staff;
+
   /// د ازموینې لپاره — چې «اوس» ثابت وي.
   final DateTime Function() clock;
 
@@ -36,6 +40,7 @@ class LiveAttendance extends ChangeNotifier {
   LiveAttendance({
     required this.sessions,
     required this.attendance,
+    this.staff,
     this.clock = DateTime.now,
     this.interval = const Duration(minutes: 1),
   });
@@ -119,21 +124,58 @@ class LiveAttendance extends ChangeNotifier {
     if (changed || progressChanged) notifyListeners();
   }
 
-  /// د شالید له لارې یو سکین — د هرې ژوندۍ ناستې لپاره هڅه کوي.
+  /// د شالید له لارې یو سکین.
   ///
-  /// **ولې د لومړۍ ژوندۍ ناستې پر ځای «هغه چې شاګرد يې هدف دی»؟**
-  /// ځکه چې د شپې ۸:۰۰ بجې ښايي دوه ناستې روانې وي — د لیلیه
-  /// عمومي حاضري او د یوې درجې ځانګړې. که کوره لومړۍ ټاکل کېده، د
-  /// درجې شاګرد به په ناسمه ناسته کې ثبت شوی و.
-  Future<CheckInResult?> scan({
+  /// **دا هغه ټکی دی چې د دوو یو ځای روانو حاضریو ستونزه حلوي.**
+  ///
+  /// سهار ۷ بجې ښايي دوه ناستې روانې وي — د شاګردانو او د استادانو.
+  /// یو سکینر، یوه خانه. څنګه پوهېږي چې دا کارت د چا دی؟
+  ///
+  /// **کارت پخپله وايي.** د شاګرد کارت د داخلې نمبر وړي (`1405-0043`)،
+  /// د استاد کارت د کارمند نمبر. نو لومړی پېژندنه حل کېږي، بیا هغه
+  /// ناسته ټاکل کېږي چې **د دې کس ډول يې هدف دی**. دوه ناستې چې یوه
+  /// د شاګردانو وي او بله د استادانو، په جوړښت کې سره نه ټکر کوي.
+  ///
+  /// همدا قاعده د شاګردانو ترمنځ هم کار کوي: د شپې ۸:۰۰ ښايي د
+  /// لیلیه عمومي ناسته او د یوې درجې ځانګړې دواړه روانې وي — سکین
+  /// هغې ته ځي چې دا شاګرد يې واقعاً هدف دی، نه لومړۍ.
+  Future<ScanOutcome?> scan({
     required String input,
     required int byUserId,
   }) async {
     if (_live.isEmpty) return null;
     final now = clock();
 
+    // ── لومړی: کارمند دی؟ ─────────────────────────────────
+    final staffRepo = staff;
+    if (staffRepo != null) {
+      final person = await staffRepo.findByInput(input);
+      if (person != null) {
+        for (final s in _live) {
+          if (!s.isPersonnel) continue;
+          if (s.personnelKind != null && s.personnelKind != person.kind) {
+            continue;
+          }
+          final status = await staffRepo.checkIn(
+            person: person,
+            now: now,
+            rules: await attendance.rules(),
+            sessionId: s.storageId,
+            byUserId: byUserId,
+          );
+          await refresh();
+          return PersonnelScan(person: person, status: status, session: s);
+        }
+        // کارمند دی، خو د هغه لپاره ناسته نه ده روانه.
+        return NoMatchingSession(name: person.fullName);
+      }
+    }
+
+    // ── بیا: شاګرد ─────────────────────────────────────────
     final student = await attendance.findByInput(input);
     for (final s in _live) {
+      // د کارمندانو ناسته شاګرد نه مني.
+      if (s.isPersonnel) continue;
       if (student != null &&
           !await sessions.isTargeted(session: s, studentId: student.id)) {
         continue;
@@ -145,12 +187,41 @@ class LiveAttendance extends ChangeNotifier {
         sessionId: s.storageId,
       );
       await refresh();
-      return result;
+      return StudentScan(result);
     }
 
     // هېڅ ژوندۍ ناسته يې هدف نه ګڼي — دا پخپله یوه پایله ده.
-    return null;
+    return NoMatchingSession(name: student?.firstName);
   }
+}
+
+/// د شالید د یوه سکین پایله.
+sealed class ScanOutcome {
+  const ScanOutcome();
+}
+
+/// شاګرد ثبت شو (یا رد شو) — بشپړ تفصیل يې دننه دی.
+class StudentScan extends ScanOutcome {
+  final CheckInResult result;
+  const StudentScan(this.result);
+}
+
+/// استاد یا کارمند ثبت شو.
+class PersonnelScan extends ScanOutcome {
+  final Personnel person;
+  final String status;
+  final AttendanceSession session;
+  const PersonnelScan({
+    required this.person,
+    required this.status,
+    required this.session,
+  });
+}
+
+/// پېژندنه سمه ده، خو د دې کس لپاره اوس هېڅ ناسته نه ده روانه.
+class NoMatchingSession extends ScanOutcome {
+  final String? name;
+  const NoMatchingSession({this.name});
 }
 
 /// د ژوندۍ حاضرۍ حال ټولې ونې ته رسوي.

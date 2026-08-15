@@ -299,6 +299,9 @@ class _SessionCardState extends State<SessionCard> {
     'day' => Icons.wb_sunny_rounded,
     'section' => Icons.meeting_room_rounded,
     'grade' => Icons.school_rounded,
+    'teacher' => Icons.person_rounded,
+    'staff' => Icons.badge_rounded,
+    'personnel' => Icons.groups_2_rounded,
     _ => Icons.groups_rounded,
   };
 }
@@ -308,6 +311,9 @@ String targetLabel(String target, S s) => switch (target) {
   'boarding' => s.boarder,
   'section' => 'یو بخش',
   'grade' => 'یوه درجه',
+  'teacher' => s.teachers,
+  'staff' => s.staff,
+  'personnel' => 'استادان او کارمندان',
   _ => 'ټول شاګردان',
 };
 
