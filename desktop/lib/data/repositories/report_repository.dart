@@ -46,7 +46,15 @@ enum ReportKind {
 
 class ReportRepository {
   final AppDatabase db;
-  ReportRepository(this.db);
+
+  /// **«نن» له بهره راځي.**
+  ///
+  /// رپوټونه خپله نېټه په سرلیک کې لیکي — او هغه نېټه د عکس د
+  /// ازموینې لپاره باید ثابته وي. که مستقیم `DateTime.now()` وای،
+  /// د رپوټ عکس به هره ورځ بدل شوی و او ازموینه به سبا ماته وه.
+  final DateTime Function() clock;
+
+  ReportRepository(this.db, {this.clock = DateTime.now});
 
   static String _n(num v) => v.toStringAsFixed(0);
   static String _pct(num v) => '${v.toStringAsFixed(0)}٪';
@@ -508,7 +516,7 @@ WHERE s.deleted_at IS NULL AND s.status = 'active'
 
     return ReportTable(
       title: ReportKind.enrollment.label,
-      subtitle: 'د ${_iso(dateOnly(DateTime.now()))} حالت',
+      subtitle: 'د ${_iso(dateOnly(clock()))} حالت',
       columns: const [
         'ټولګی',
         'هلکان',
@@ -585,7 +593,7 @@ GROUP BY department
 
     return ReportTable(
       title: ReportKind.staff.label,
-      subtitle: 'میاشتنی — د ${_iso(dateOnly(DateTime.now()))} حالت',
+      subtitle: 'میاشتنی — د ${_iso(dateOnly(clock()))} حالت',
       columns: const ['څانګه', 'کارکوونکي', 'میاشتنی معاش', 'اوسط'],
       rows: out,
       totals: [

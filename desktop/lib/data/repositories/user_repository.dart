@@ -162,6 +162,21 @@ class UserRow {
       user.lockedUntil != null && user.lockedUntil!.isAfter(DateTime.now());
 }
 
+/// د پېژندنې د سمون پایله — ولې ونه شوه، نه یوازې «ونه شوه».
+enum UpdateProfileResult {
+  ok,
+  emptyName,
+  shortUsername,
+  usernameTaken;
+
+  String get message => switch (this) {
+    UpdateProfileResult.ok => 'وساتل شو.',
+    UpdateProfileResult.emptyName => 'نوم نه شي تش پاتې کېدی.',
+    UpdateProfileResult.shortUsername => 'کارن‌نوم لږ تر لږه درې توري.',
+    UpdateProfileResult.usernameTaken => 'دا کارن‌نوم لا دمخه نیول شوی.',
+  };
+}
+
 class UserRepository {
   final AppDatabase db;
   UserRepository(this.db);
@@ -289,6 +304,74 @@ class UserRepository {
     await _audit('update', userId, byUserId, byUserName, {
       'password': 'reset',
     });
+  }
+
+  /// **د یوه کارونکي پېژندنه سمول** — نوم، کارن‌نوم.
+  ///
+  /// **کارن‌نوم ولې سمېږي؟** ځکه چې یو غلط لیکل شوی کارن‌نوم د
+  /// ننوتلو خنډ دی، او هغه کس چې ورسره ننوځي، پخپله يې نه شي
+  /// سمولی. که یوازې «نوی کارونکی جوړ کړه» لار وه، د هغه ټوله
+  /// تاریخچه به ورکه شوې وه.
+  Future<UpdateProfileResult> updateProfile({
+    required int userId,
+    required String fullName,
+    required String username,
+    required int byUserId,
+    required String byUserName,
+  }) async {
+    final name = fullName.trim();
+    final user = username.trim();
+    if (name.isEmpty) return UpdateProfileResult.emptyName;
+    if (user.length < 3) return UpdateProfileResult.shortUsername;
+    if (await usernameTaken(user, exceptId: userId)) {
+      return UpdateProfileResult.usernameTaken;
+    }
+
+    await (db.update(db.appUsers)..where((u) => u.id.equals(userId))).write(
+      AppUsersCompanion(fullName: Value(name), username: Value(user)),
+    );
+    await _audit('update', userId, byUserId, byUserName, {
+      'fullName': name,
+      'username': user,
+    });
+    return UpdateProfileResult.ok;
+  }
+
+  /// **خپل پاسورډ بدلول — زوړ پاسورډ پکار دی.**
+  ///
+  /// دا له `resetPassword` سره توپیر لري: هغه د مدیر کار دی (هغه
+  /// چې زوړ پاسورډ نه پېژني). دا د کارونکي خپل کار دی — او که
+  /// زوړ پاسورډ نه غوښتل کېده، هر څوک چې یوه خلاصه پرده ومومي،
+  /// د حساب خاوند به يې بدل کړ.
+  Future<bool> changeOwnPassword({
+    required int userId,
+    required String oldPassword,
+    required String newPassword,
+  }) async {
+    final u = await (db.select(
+      db.appUsers,
+    )..where((x) => x.id.equals(userId))).getSingleOrNull();
+    if (u == null) return false;
+
+    final ok = Password.verify(
+      password: oldPassword,
+      salt: u.passwordSalt,
+      expectedHash: u.passwordHash,
+      iterations: u.passwordIterations,
+    );
+    if (!ok) return false;
+
+    final salt = Password.newSalt();
+    await (db.update(db.appUsers)..where((x) => x.id.equals(userId))).write(
+      AppUsersCompanion(
+        passwordHash: Value(Password.hash(password: newPassword, salt: salt)),
+        passwordSalt: Value(salt),
+        failedAttempts: const Value(0),
+        lockedUntil: const Value(null),
+      ),
+    );
+    await _audit('update', userId, userId, u.username, {'password': 'self'});
+    return true;
   }
 
   /// د بند شوي حساب خلاصول — مخکې له وخته.

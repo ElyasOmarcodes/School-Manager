@@ -449,6 +449,33 @@ ORDER BY g.level, sec.name
     return null;
   }
 
+  /// **د ښوونځي پېژندنه سمول — خو `kind` نه.**
+  ///
+  /// ډول (ښوونځی/مدرسه) قصداً نه دی سمېدونکی. په هغه پورې د نصاب
+  /// جوړښت، د مهالویش بڼه، د درجو نومونه او د حفظ ماډل تړلي دي.
+  /// د ډول بدلول به د دې ټولو معنا بدله کړه — او هغه معلومات چې
+  /// لا دمخه ثبت شوي، بې‌ځایه شوي وای. که چا واقعاً بدلول غوښتل،
+  /// نوی ډیټابیس پکار دی، نه یو ډراپ‌ډاون.
+  Future<void> updateSchool({
+    required String name,
+    String? nameEn,
+    String? address,
+    String? phone,
+    String? email,
+    String? logoPath,
+  }) => db
+      .update(db.schools)
+      .write(
+        SchoolsCompanion(
+          name: Value(name),
+          nameEn: Value(nameEn),
+          address: Value(address),
+          phone: Value(phone),
+          email: Value(email),
+          logoPath: Value(logoPath),
+        ),
+      );
+
   /// د ټولګیو د پاڼې بڼه — `rows` یا `grid`. په ښوونځي کې ساتل کېږي
   /// چې د پروګرام په بیا-پرانیستو کې هماغه پاتې شي.
   Future<void> setClassesView(String view) =>

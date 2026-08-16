@@ -466,6 +466,122 @@ void main() {
       expect(row.permissions.can('fees', Perm.edit), isTrue);
     });
 
+    test('پېژندنه سمېږي — نوم او کارن‌نوم دواړه', () async {
+      final id = await makeAdmin();
+      final r = await users.updateProfile(
+        userId: id,
+        fullName: 'مدیر احمد',
+        username: 'ahmad',
+        byUserId: id,
+        byUserName: 'admin',
+      );
+      expect(r, UpdateProfileResult.ok);
+
+      final row = (await users.list()).firstWhere((u) => u.user.id == id);
+      expect(row.user.fullName, 'مدیر احمد');
+      expect(row.user.username, 'ahmad');
+    });
+
+    test('نیول شوی کارن‌نوم رد کېږي، خو خپل يې منل کېږي', () async {
+      final admin = await makeAdmin();
+      final other = await users.create(
+        username: 'karim',
+        fullName: 'کریم',
+        password: 'pass1234',
+        role: 'teacher',
+        byUserId: 1,
+        byUserName: 'admin',
+      );
+
+      expect(
+        await users.updateProfile(
+          userId: other,
+          fullName: 'کریم',
+          username: 'admin',
+          byUserId: admin,
+          byUserName: 'admin',
+        ),
+        UpdateProfileResult.usernameTaken,
+      );
+
+      // خپل کارن‌نوم بیا لیکل ستونزه نه ده — `exceptId` يې ساتي.
+      expect(
+        await users.updateProfile(
+          userId: other,
+          fullName: 'کریم جان',
+          username: 'karim',
+          byUserId: admin,
+          byUserName: 'admin',
+        ),
+        UpdateProfileResult.ok,
+      );
+    });
+
+    test('تش نوم او لنډ کارن‌نوم رد کېږي', () async {
+      final id = await makeAdmin();
+      expect(
+        await users.updateProfile(
+          userId: id,
+          fullName: '   ',
+          username: 'admin',
+          byUserId: id,
+          byUserName: 'admin',
+        ),
+        UpdateProfileResult.emptyName,
+      );
+      expect(
+        await users.updateProfile(
+          userId: id,
+          fullName: 'مدیر',
+          username: 'ab',
+          byUserId: id,
+          byUserName: 'admin',
+        ),
+        UpdateProfileResult.shortUsername,
+      );
+    });
+
+    test('خپل پاسورډ بدلول زوړ پاسورډ غواړي', () async {
+      final id = await makeAdmin();
+
+      // غلط زوړ پاسورډ — هېڅ نه بدلېږي.
+      expect(
+        await users.changeOwnPassword(
+          userId: id,
+          oldPassword: 'wrongpass',
+          newPassword: 'brandnew123',
+        ),
+        isFalse,
+      );
+
+      expect(
+        await users.changeOwnPassword(
+          userId: id,
+          oldPassword: 'secret123',
+          newPassword: 'brandnew123',
+        ),
+        isTrue,
+      );
+
+      // زوړ پاسورډ نور نه کار کوي، نوی کوي.
+      expect(
+        await users.changeOwnPassword(
+          userId: id,
+          oldPassword: 'secret123',
+          newPassword: 'x' * 9,
+        ),
+        isFalse,
+      );
+      expect(
+        await users.changeOwnPassword(
+          userId: id,
+          oldPassword: 'brandnew123',
+          newPassword: 'x' * 9,
+        ),
+        isTrue,
+      );
+    });
+
     test('خراب JSON کارن له سیسټمه نه بندوي', () {
       final p = Permissions(role: 'teacher', explicit: Permissions.decode('{['));
       expect(p.can('attendance', Perm.view), isTrue);

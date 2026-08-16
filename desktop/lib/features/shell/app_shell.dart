@@ -85,6 +85,9 @@ class AppShell extends StatefulWidget {
   final AppConfig? config;
   final ValueChanged<AppConfig>? onConfigChanged;
 
+  /// کله چې د ښوونځي نوم په تنظیماتو کې بدل شي.
+  final VoidCallback? onSchoolChanged;
+
   // ── پنځم/شپږم/اووم پړاو ───────────────────────────────
   final TimetableRepository? timetableRepo;
   final ExamRepository? examRepo;
@@ -122,6 +125,7 @@ class AppShell extends StatefulWidget {
     this.db,
     this.config,
     this.onConfigChanged,
+    this.onSchoolChanged,
     this.timetableRepo,
     this.examRepo,
     this.staffRepo,
@@ -690,12 +694,13 @@ class _AppShellState extends State<AppShell> {
         schoolName: widget.schoolName,
       );
     }
-    if (_route == '/settings' &&
+    if (_route.startsWith('/settings') &&
         widget.db != null &&
         widget.deviceRepo != null &&
         widget.server != null &&
         widget.config != null) {
       return SettingsPage(
+        key: ValueKey(_route),
         db: widget.db!,
         devices: widget.deviceRepo!,
         server: widget.server!,
@@ -703,6 +708,16 @@ class _AppShellState extends State<AppShell> {
         config: widget.config!,
         onConfigChanged: widget.onConfigChanged ?? (_) {},
         schoolName: widget.schoolName,
+        academic: academic,
+        themeMode: widget.themeMode,
+        onThemeChanged: widget.onThemeChanged,
+        onSchoolChanged: widget.onSchoolChanged,
+        section: switch (_route) {
+          '/settings/school' => 'school',
+          '/settings/database' => 'database',
+          '/settings/network' => 'network',
+          _ => 'general',
+        },
       );
     }
 

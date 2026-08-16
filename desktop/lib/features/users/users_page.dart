@@ -23,6 +23,15 @@ class UsersPage extends StatefulWidget {
 
 class _UsersPageState extends State<UsersPage> {
   int _tab = 0;
+
+  /// **مدیر هر څه کولی شي؛ نور یوازې خپل ځان.**
+  ///
+  /// دا یوه کرښه د ټولې پاڼې قاعده ده. که هره تڼۍ يې پخپله
+  /// پرېکړه کوله، یوه به تل هېره شوې وه — او هغه یوه به هغه وه
+  /// چې د یوه محاسب ته يې د مدیر پاسورډ بدلولو اجازه ورکوله.
+  bool get _isAdmin => widget.session.role == 'admin';
+
+  bool _isSelf(UserRow r) => r.user.id == widget.session.userId;
   bool _loading = true;
   List<UserRow> _users = const [];
   List<AuditLog> _activity = const [];
@@ -127,6 +136,58 @@ class _UsersPageState extends State<UsersPage> {
     await _load();
   }
 
+  /// د نوم او کارن‌نوم سمون — یوازې مدیر.
+  Future<void> _editProfile(UserRow row) async {
+    final draft = await showDialog<({String fullName, String username})>(
+      context: context,
+      builder: (_) => _ProfileDialog(user: row.user),
+    );
+    if (draft == null || !mounted) return;
+
+    final result = await widget.users.updateProfile(
+      userId: row.user.id,
+      fullName: draft.fullName,
+      username: draft.username,
+      byUserId: widget.session.userId,
+      byUserName: widget.session.username,
+    );
+    if (!mounted) return;
+    await _load();
+    if (!mounted) return;
+    _toast(
+      result.message,
+      result == UpdateProfileResult.ok
+          ? AppColors.success
+          : AppColors.danger,
+    );
+  }
+
+  /// **خپل پاسورډ بدلول — زوړ پاسورډ پکار دی.**
+  ///
+  /// مدیر د بل چا پاسورډ پرته له زوړه بدلولی شي (ځکه چې هغه يې
+  /// نه پېژني)، خو خپل نه — که يې پرده خلاصه پرېښوده او څوک
+  /// ورته کېناست، د حساب خاوند به يې بدل کړ.
+  Future<void> _changeOwnPassword() async {
+    final draft = await showDialog<({String oldPass, String newPass})>(
+      context: context,
+      builder: (_) => const _OwnPasswordDialog(),
+    );
+    if (draft == null || !mounted) return;
+
+    final ok = await widget.users.changeOwnPassword(
+      userId: widget.session.userId,
+      oldPassword: draft.oldPass,
+      newPassword: draft.newPass,
+    );
+    if (!mounted) return;
+    await _load();
+    if (!mounted) return;
+    _toast(
+      ok ? 'پاسورډ بدل شو.' : 'زوړ پاسورډ سم نه دی.',
+      ok ? AppColors.success : AppColors.danger,
+    );
+  }
+
   Future<void> _resetPassword(UserRow row) async {
     final pass = await showDialog<String>(
       context: context,
@@ -170,21 +231,32 @@ class _UsersPageState extends State<UsersPage> {
                   const SizedBox(width: 8),
                 ],
                 const Spacer(),
-                FilledButton.icon(
-                  onPressed: _create,
-                  icon: const Icon(Icons.person_add_rounded, size: 18),
-                  label: const Text('نوی کاروونکی'),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.modUsers,
+                OutlinedButton.icon(
+                  onPressed: _changeOwnPassword,
+                  icon: const Icon(Icons.key_rounded, size: 17),
+                  label: const Text('خپل پاسورډ'),
+                  style: OutlinedButton.styleFrom(
                     minimumSize: const Size(0, 42),
-                    padding: const EdgeInsets.symmetric(horizontal: 18),
-                    textStyle: const TextStyle(
-                      fontFamily: AppTheme.fontFamily,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 13.5,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
                   ),
                 ),
+                const SizedBox(width: 10),
+                if (_isAdmin)
+                  FilledButton.icon(
+                    onPressed: _create,
+                    icon: const Icon(Icons.person_add_rounded, size: 18),
+                    label: const Text('نوی کاروونکی'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.modUsers,
+                      minimumSize: const Size(0, 42),
+                      padding: const EdgeInsets.symmetric(horizontal: 18),
+                      textStyle: const TextStyle(
+                        fontFamily: AppTheme.fontFamily,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13.5,
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
@@ -301,42 +373,73 @@ class _UsersPageState extends State<UsersPage> {
         ),
         TableColumn(
           title: '',
-          width: 168,
+          width: 200,
           cell: (context, r) => Row(
             mainAxisSize: MainAxisSize.min,
             children: [
+              if (!_isAdmin && !_isSelf(r))
+                Padding(
+                  padding: const EdgeInsetsDirectional.only(end: 8),
+                  child: Tooltip(
+                    message: 'یوازې مدیر د نورو حسابونه سمولی شي',
+                    child: Icon(Icons.lock_rounded, size: 15, color: p.faint),
+                  ),
+                ),
               IconButton(
-                tooltip: 'اجازې',
-                onPressed: () => _editPermissions(r),
-                icon: Icon(Icons.tune_rounded, size: 17, color: p.muted),
+                tooltip: 'نوم او کارن‌نوم',
+                onPressed: _isAdmin ? () => _editProfile(r) : null,
+                icon: Icon(
+                  Icons.badge_rounded,
+                  size: 17,
+                  color: _isAdmin ? p.muted : p.faint,
+                ),
               ),
               IconButton(
-                tooltip: 'پاسورډ بدل کړه',
-                onPressed: () => _resetPassword(r),
-                icon: Icon(Icons.key_rounded, size: 17, color: p.muted),
+                tooltip: 'اجازې',
+                onPressed: _isAdmin ? () => _editPermissions(r) : null,
+                icon: Icon(
+                  Icons.tune_rounded,
+                  size: 17,
+                  color: _isAdmin ? p.muted : p.faint,
+                ),
+              ),
+              IconButton(
+                tooltip: _isSelf(r) ? 'خپل پاسورډ بدل کړه' : 'پاسورډ بدل کړه',
+                onPressed: _isSelf(r)
+                    ? _changeOwnPassword
+                    : (_isAdmin ? () => _resetPassword(r) : null),
+                icon: Icon(
+                  Icons.key_rounded,
+                  size: 17,
+                  color: _isSelf(r) || _isAdmin ? p.muted : p.faint,
+                ),
               ),
               if (r.isLocked)
                 IconButton(
                   tooltip: 'خلاص کړه',
-                  onPressed: () async {
-                    await widget.users.unlock(r.user.id);
-                    await _load();
-                  },
-                  icon: const Icon(
+                  onPressed: _isAdmin
+                      ? () async {
+                          await widget.users.unlock(r.user.id);
+                          await _load();
+                        }
+                      : null,
+                  icon: Icon(
                     Icons.lock_open_rounded,
                     size: 17,
-                    color: AppColors.danger,
+                    color: _isAdmin ? AppColors.danger : p.faint,
                   ),
                 ),
               IconButton(
                 tooltip: r.user.isActive ? 'غیرفعال کړه' : 'فعال کړه',
-                onPressed: () => _toggleActive(r),
+                onPressed: _isAdmin ? () => _toggleActive(r) : null,
                 icon: Icon(
                   r.user.isActive
                       ? Icons.toggle_on_rounded
                       : Icons.toggle_off_rounded,
                   size: 21,
-                  color: r.user.isActive ? AppColors.success : p.faint,
+                  color: !_isAdmin
+                      ? p.faint
+                      : (r.user.isActive ? AppColors.success : p.faint),
                 ),
               ),
             ],
@@ -627,6 +730,197 @@ class _UserDialogState extends State<_UserDialog> {
       'ریسیپشن: شاګرد ثبتوي، حاضري نیسي، اجازه ثبتوي، فیس اخلي. '
           'هېڅ شی نه ړنګوي.',
   };
+}
+
+/// د نوم او کارن‌نوم سمون.
+class _ProfileDialog extends StatefulWidget {
+  final AppUser user;
+  const _ProfileDialog({required this.user});
+
+  @override
+  State<_ProfileDialog> createState() => _ProfileDialogState();
+}
+
+class _ProfileDialogState extends State<_ProfileDialog> {
+  late final _name = TextEditingController(text: widget.user.fullName);
+  late final _username = TextEditingController(text: widget.user.username);
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _username.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final valid =
+        _name.text.trim().isNotEmpty && _username.text.trim().length >= 3;
+
+    return AlertDialog(
+      backgroundColor: p.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+      ),
+      title: const Text(
+        'د کاروونکي پېژندنه',
+        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+      ),
+      content: SizedBox(
+        width: 400,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            TextField(
+              controller: _name,
+              autofocus: true,
+              onChanged: (_) => setState(() {}),
+              decoration: const InputDecoration(labelText: 'بشپړ نوم'),
+            ),
+            const SizedBox(height: 14),
+            TextField(
+              controller: _username,
+              textDirection: TextDirection.ltr,
+              onChanged: (_) => setState(() {}),
+              decoration: const InputDecoration(
+                labelText: 'کارن‌نوم',
+                hintText: 'لږ تر لږه درې توري',
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'د کارن‌نوم بدلول د حساب تاریخچه نه ورکوي — هماغه حساب '
+              'دی، یوازې نوې پېژندنه لري. راتلونکی ځل به په نوي '
+              'کارن‌نوم ننوځي.',
+              style: TextStyle(fontSize: 11.5, height: 1.7, color: p.muted),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(S.of(context).cancel),
+        ),
+        FilledButton(
+          onPressed: !valid
+              ? null
+              : () => Navigator.pop(context, (
+                  fullName: _name.text.trim(),
+                  username: _username.text.trim(),
+                )),
+          child: Text(S.of(context).save),
+        ),
+      ],
+    );
+  }
+}
+
+/// خپل پاسورډ — زوړ او نوی دواړه پکار دي.
+class _OwnPasswordDialog extends StatefulWidget {
+  const _OwnPasswordDialog();
+
+  @override
+  State<_OwnPasswordDialog> createState() => _OwnPasswordDialogState();
+}
+
+class _OwnPasswordDialogState extends State<_OwnPasswordDialog> {
+  final _old = TextEditingController();
+  final _new = TextEditingController();
+  final _repeat = TextEditingController();
+  bool _show = false;
+
+  @override
+  void dispose() {
+    _old.dispose();
+    _new.dispose();
+    _repeat.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final match = _new.text == _repeat.text;
+    final valid = _old.text.isNotEmpty && _new.text.length >= 8 && match;
+
+    return AlertDialog(
+      backgroundColor: p.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+      ),
+      title: const Text(
+        'خپل پاسورډ بدل کړئ',
+        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+      ),
+      content: SizedBox(
+        width: 400,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            TextField(
+              controller: _old,
+              autofocus: true,
+              obscureText: !_show,
+              onChanged: (_) => setState(() {}),
+              decoration: InputDecoration(
+                labelText: 'اوسنی پاسورډ',
+                suffixIcon: IconButton(
+                  onPressed: () => setState(() => _show = !_show),
+                  icon: Icon(
+                    _show
+                        ? Icons.visibility_off_rounded
+                        : Icons.visibility_rounded,
+                    size: 18,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+            TextField(
+              controller: _new,
+              obscureText: !_show,
+              onChanged: (_) => setState(() {}),
+              decoration: const InputDecoration(
+                labelText: 'نوی پاسورډ',
+                hintText: 'لږ تر لږه اته توري',
+              ),
+            ),
+            const SizedBox(height: 14),
+            TextField(
+              controller: _repeat,
+              obscureText: !_show,
+              onChanged: (_) => setState(() {}),
+              decoration: InputDecoration(
+                labelText: 'بیا يې ولیکئ',
+                errorText: _repeat.text.isEmpty || match
+                    ? null
+                    : 'دواړه یو شان نه دي',
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(S.of(context).cancel),
+        ),
+        FilledButton(
+          onPressed: !valid
+              ? null
+              : () => Navigator.pop(context, (
+                  oldPass: _old.text,
+                  newPass: _new.text,
+                )),
+          child: const Text('بدل کړه'),
+        ),
+      ],
+    );
+  }
 }
 
 class _PasswordDialog extends StatefulWidget {

@@ -12,7 +12,10 @@ import '../../core/theme/app_theme.dart';
 import '../../core/utils/numerals.dart';
 import '../../data/db/backup.dart';
 import '../../data/db/database.dart';
+import '../../core/widgets/panel.dart';
+import '../../data/repositories/academic_repository.dart';
 import '../../data/repositories/device_repository.dart';
+import '../../data/repositories/user_repository.dart' show Perm, roleLabel;
 import '../../server/local_server.dart';
 import '../auth/auth_service.dart';
 
@@ -29,6 +32,23 @@ class SettingsPage extends StatefulWidget {
   final ValueChanged<AppConfig> onConfigChanged;
   final String schoolName;
 
+  /// کومه برخه ښکاري: `general` | `school` | `database` | `network`.
+  ///
+  /// **ولې له لارې راځي او نه دننه tab؟** ځکه چې فرعي سایډبار لا
+  /// دمخه څلور برخې ښيي. که پاڼې خپل tabونه هم لرل، کارن به دوه
+  /// ځله ټاکنه کوله — یو ځل کیڼ خوا، بیا پورته — او دواړه به یو
+  /// بل سره نه سمېدل.
+  final String section;
+
+  /// د ښوونځي معلومات سمول — که `null` وي، یوازې لوستل.
+  final AcademicRepository? academic;
+
+  final ThemeMode themeMode;
+  final ValueChanged<ThemeMode>? onThemeChanged;
+
+  /// کله چې د ښوونځي نوم بدل شي — چوکاټ يې پورته کرښه تازه کوي.
+  final VoidCallback? onSchoolChanged;
+
   /// د شبکې د پتو لټون. تلواله `LocalServer.lanEndpoints` ده؛
   /// ازموینه يې بدلوي، ځکه چې ریښتیني I/O د ویجیټ ازموینې دننه
   /// نه پای ته رسېږي.
@@ -43,6 +63,11 @@ class SettingsPage extends StatefulWidget {
     required this.config,
     required this.onConfigChanged,
     required this.schoolName,
+    this.section = 'network',
+    this.academic,
+    this.themeMode = ThemeMode.light,
+    this.onThemeChanged,
+    this.onSchoolChanged,
     this.lanLookup,
   });
 
@@ -51,7 +76,6 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  int _tab = 0;
 
   List<Device> _devices = const [];
   List<PairingCode> _codes = const [];
@@ -60,6 +84,28 @@ class _SettingsPageState extends State<SettingsPage> {
   List<BackupFile> _backups = const [];
   bool _loading = true;
   bool _busy = false;
+
+  School? _school;
+  final _schoolNameCtrl = TextEditingController();
+  final _schoolNameEnCtrl = TextEditingController();
+  final _schoolAddressCtrl = TextEditingController();
+  final _schoolPhoneCtrl = TextEditingController();
+  final _schoolEmailCtrl = TextEditingController();
+  String? _logoPath;
+
+  @override
+  void dispose() {
+    for (final c in [
+      _schoolNameCtrl,
+      _schoolNameEnCtrl,
+      _schoolAddressCtrl,
+      _schoolPhoneCtrl,
+      _schoolEmailCtrl,
+    ]) {
+      c.dispose();
+    }
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -80,8 +126,18 @@ class _SettingsPageState extends State<SettingsPage> {
     final backups = widget.config.backupPath == null
         ? const <BackupFile>[]
         : await DatabaseBackup.list(widget.config.backupPath!);
+    final school = await widget.academic?.school();
 
     if (!mounted) return;
+    if (school != null) {
+      _school = school;
+      _schoolNameCtrl.text = school.name;
+      _schoolNameEnCtrl.text = school.nameEn ?? '';
+      _schoolAddressCtrl.text = school.address ?? '';
+      _schoolPhoneCtrl.text = school.phone ?? '';
+      _schoolEmailCtrl.text = school.email ?? '';
+      _logoPath = school.logoPath;
+    }
     setState(() {
       _devices = devices;
       _codes = codes;
@@ -125,6 +181,49 @@ class _SettingsPageState extends State<SettingsPage> {
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+
+  Future<void> _pickLogo() async {
+    const group = XTypeGroup(
+      label: 'انځورونه',
+      extensions: ['png', 'jpg', 'jpeg'],
+    );
+    final file = await openFile(acceptedTypeGroups: const [group]);
+    if (file == null || !mounted) return;
+    setState(() => _logoPath = file.path);
+  }
+
+  Future<void> _saveSchool() async {
+    final academic = widget.academic;
+    final name = _schoolNameCtrl.text.trim();
+    if (academic == null || name.isEmpty) {
+      _say('نوم نه شي تش پاتې کېدی.', AppColors.warning);
+      return;
+    }
+
+    setState(() => _busy = true);
+    String? nn(TextEditingController c) {
+      final v = c.text.trim();
+      return v.isEmpty ? null : v;
+    }
+
+    await academic.updateSchool(
+      name: name,
+      nameEn: nn(_schoolNameEnCtrl),
+      address: nn(_schoolAddressCtrl),
+      // تلیفون تل لاتیني — که ختیځې شمېرې ولیکل شي، د لټون او
+      // د SMS لپاره به بې‌ګټې و.
+      phone: _schoolPhoneCtrl.text.trim().isEmpty
+          ? null
+          : Numerals.toLatin(_schoolPhoneCtrl.text.trim()),
+      email: nn(_schoolEmailCtrl),
+      logoPath: _logoPath,
+    );
+    if (!mounted) return;
+    setState(() => _busy = false);
+    await _load();
+    widget.onSchoolChanged?.call();
+    if (mounted) _say('د ښوونځي معلومات وساتل شول.', AppColors.success);
   }
 
   /// د بیک‌اپ پوښۍ ټاکل — USB، د شبکې ډرایو، یا هر ځای.
@@ -302,48 +401,108 @@ class _SettingsPageState extends State<SettingsPage> {
 
     return Padding(
       padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          FadeSlideIn(
-            child: Row(
-              children: [
-                for (final t in const [
-                  (0, 'اړیکه او وسایل'),
-                  (1, 'ښوونځی'),
-                  (2, 'ډیټابیس'),
-                ]) ...[
-                  _Tab(
-                    label: t.$2,
-                    selected: _tab == t.$1,
-                    onTap: () => setState(() => _tab = t.$1),
-                  ),
-                  const SizedBox(width: 8),
-                ],
-              ],
-            ),
-          ),
-          const SizedBox(height: 18),
-          Expanded(
-            child: AnimatedSwitcher(
-              duration: AppMotion.fast,
-              switchInCurve: AppMotion.standard,
-              layoutBuilder: (current, previous) => Stack(
-                fit: StackFit.expand,
-                children: [...previous, if (current != null) current],
-              ),
-              child: KeyedSubtree(
-                key: ValueKey(_tab),
-                child: switch (_tab) {
-                  0 => _buildConnect(p),
-                  1 => _buildSchool(p),
-                  _ => _buildDatabase(p),
-                },
-              ),
-            ),
-          ),
-        ],
+      child: AnimatedSwitcher(
+        duration: AppMotion.fast,
+        switchInCurve: AppMotion.standard,
+        layoutBuilder: (current, previous) => Stack(
+          fit: StackFit.expand,
+          children: [...previous, if (current != null) current],
+        ),
+        child: KeyedSubtree(
+          key: ValueKey(widget.section),
+          child: switch (widget.section) {
+            'general' => _buildGeneral(p),
+            'school' => _buildSchool(p),
+            'database' => _buildDatabase(p),
+            _ => _buildConnect(p),
+          },
+        ),
       ),
+    );
+  }
+
+  // ── عمومي ───────────────────────────────────────────────
+
+  Widget _buildGeneral(AppPalette p) {
+    final scope = LocaleScope.of(context);
+    final locale = scope.locale;
+
+    return ListView(
+      children: [
+        _Card(
+          title: 'ژبه',
+          hint:
+              'د پروګرام ټول متن او د شمېرو بڼه پرې بدلېږي. '
+              'ډیټابیس تل لاتیني شمېرې ساتي، نو بدلون پخوانیو '
+              'معلوماتو ته زیان نه رسوي.',
+          child: SegmentedChoice<AppLocale>(
+            value: locale,
+            color: AppColors.modSettings,
+            options: const [
+              (value: AppLocale.ps, label: 'پښتو', icon: null),
+              (value: AppLocale.fa, label: 'دري', icon: null),
+              (value: AppLocale.en, label: 'English', icon: null),
+            ],
+            onChanged: scope.setLocale,
+          ),
+        ),
+        const SizedBox(height: 14),
+        _Card(
+          title: 'بڼه',
+          hint: 'تیاره حالت د شپې کار لپاره — سترګې لږ ستړې کوي.',
+          child: SegmentedChoice<ThemeMode>(
+            value: widget.themeMode,
+            color: AppColors.modSettings,
+            options: const [
+              (
+                value: ThemeMode.light,
+                label: 'روښانه',
+                icon: Icons.light_mode_rounded,
+              ),
+              (
+                value: ThemeMode.dark,
+                label: 'تیاره',
+                icon: Icons.dark_mode_rounded,
+              ),
+              (
+                value: ThemeMode.system,
+                label: 'د سیسټم په څېر',
+                icon: Icons.computer_rounded,
+              ),
+            ],
+            onChanged: widget.onThemeChanged ?? (_) {},
+          ),
+        ),
+        const SizedBox(height: 14),
+        _Card(
+          title: 'کلیز',
+          hint:
+              'نېټې پرې ښودل کېږي. په ډیټابیس کې تل میلادي ساتل '
+              'کېږي — نو د کلیز بدلول پخوانۍ نېټې نه ګډوډوي.',
+          child: SegmentedChoice<String>(
+            value: widget.config.calendar,
+            color: AppColors.modSettings,
+            options: const [
+              (value: 'jalali', label: 'هجري شمسي', icon: null),
+              (value: 'hijri', label: 'هجري قمري', icon: null),
+              (value: 'gregorian', label: 'میلادي', icon: null),
+            ],
+            onChanged: (v) =>
+                widget.onConfigChanged(widget.config.copyWith(calendar: v)),
+          ),
+        ),
+        const SizedBox(height: 14),
+        _Card(
+          title: 'کارن',
+          child: Column(
+            children: [
+              _KeyValue(label: 'نوم', value: widget.session.fullName),
+              _KeyValue(label: 'کارن‌نوم', value: widget.session.username),
+              _KeyValue(label: 'رول', value: roleLabel(widget.session.role)),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -852,35 +1011,213 @@ class _SettingsPageState extends State<SettingsPage> {
   // ── ۲: ښوونځی ───────────────────────────────────────────
 
   Widget _buildSchool(AppPalette p) {
+    final school = _school;
+    final canEdit =
+        widget.academic != null &&
+        widget.session.permissions.can('settings', Perm.edit);
+
     return ListView(
       children: [
         _Card(
           title: 'د ښوونځي پېژندنه',
+          hint: canEdit
+              ? 'دا معلومات په رپوټونو، کارټونو او د تصدیق پاڼو کې ښکاري.'
+              : 'د سمولو اجازه نه لرئ.',
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _KeyValue(label: 'نوم', value: widget.schoolName),
-              _KeyValue(
-                label: 'کارن',
-                value: '${widget.session.fullName} (${widget.session.role})',
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _LogoBox(
+                    path: _logoPath,
+                    onPick: canEdit ? _pickLogo : null,
+                    onClear: canEdit && _logoPath != null
+                        ? () => setState(() => _logoPath = null)
+                        : null,
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: _schoolNameCtrl,
+                                enabled: canEdit,
+                                decoration: const InputDecoration(
+                                  labelText: 'نوم *',
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: TextField(
+                                controller: _schoolNameEnCtrl,
+                                enabled: canEdit,
+                                textDirection: TextDirection.ltr,
+                                decoration: const InputDecoration(
+                                  labelText: 'انګلیسي نوم',
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: _schoolAddressCtrl,
+                          enabled: canEdit,
+                          decoration: const InputDecoration(labelText: 'پته'),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: _schoolPhoneCtrl,
+                                enabled: canEdit,
+                                textDirection: TextDirection.ltr,
+                                decoration: const InputDecoration(
+                                  labelText: 'تلیفون',
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: TextField(
+                                controller: _schoolEmailCtrl,
+                                enabled: canEdit,
+                                textDirection: TextDirection.ltr,
+                                decoration: const InputDecoration(
+                                  labelText: 'برېښنالیک',
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
+              if (canEdit) ...[
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    FilledButton.icon(
+                      onPressed: _busy ? null : _saveSchool,
+                      icon: const Icon(Icons.check_rounded, size: 17),
+                      label: Text(S.of(context).save),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.modSettings,
+                        minimumSize: const Size(0, 42),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+
+        // **ډول نه سمېږي — او ولې يې دلیل هم لیکو.**
+        //
+        // که یوازې یو غیرفعال ډراپ‌ډاون ښودل کېده، کارن به فکر
+        // کاوه چې پروګرام مات دی. دلیل يې پکار دی.
+        _Card(
+          title: 'د ښوونځي ډول',
+          hint:
+              'ډول نه بدلېږي. په هغه پورې د نصاب جوړښت، د مهالویش '
+              'بڼه، د درجو نومونه او د حفظ ماډل تړلي دي — بدلول به '
+              'يې هغه معلومات بې‌ځایه کړل چې لا دمخه ثبت شوي دي. '
+              'که واقعاً بدلون پکار وي، نوی ډیټابیس جوړ کړئ.',
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.modSettings.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      school?.kind == 'madrasa'
+                          ? Icons.mosque_rounded
+                          : Icons.account_balance_rounded,
+                      size: 17,
+                      color: AppColors.modSettings,
+                    ),
+                    const SizedBox(width: 9),
+                    Text(
+                      switch (school?.kind) {
+                        'madrasa' => 'مدرسه',
+                        'both' => 'ښوونځی او مدرسه',
+                        _ => 'ښوونځی',
+                      },
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.modSettings,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Icon(Icons.lock_rounded, size: 16, color: p.faint),
             ],
           ),
         ),
         const SizedBox(height: 14),
         _Card(
-          title: 'ژبه او بڼه',
-          hint: 'ژبه او تیاره/روښانه حالت د پورتنۍ کرښې څخه بدلېږي.',
-          child: _KeyValue(
-            label: 'کلیز',
-            value: switch (widget.config.calendar) {
-              'gregorian' => 'میلادي',
-              'hijri' => 'هجري قمري',
-              _ => 'هجري شمسي',
-            },
+          title: 'د درس وخت',
+          hint: 'د حاضرۍ او مهالویش قواعد له دې څخه راځي.',
+          child: Column(
+            children: [
+              _KeyValue(
+                label: 'پیل',
+                value: S.of(context).locale.num(school?.dayStart ?? '—'),
+              ),
+              _KeyValue(
+                label: 'پای',
+                value: S.of(context).locale.num(school?.dayEnd ?? '—'),
+              ),
+              _KeyValue(
+                label: 'د اونۍ رخصتي',
+                value: _weekendLabel(school?.weekendDays),
+              ),
+            ],
           ),
         ),
       ],
     );
+  }
+
+  static String _weekendLabel(String? days) {
+    if (days == null || days.isEmpty) return '—';
+    const names = {
+      1: 'دوشنبه',
+      2: 'سه‌شنبه',
+      3: 'چهارشنبه',
+      4: 'پنجشنبه',
+      5: 'جمعه',
+      6: 'شنبه',
+      7: 'یکشنبه',
+    };
+    return days
+        .split(',')
+        .map((e) => int.tryParse(e.trim()))
+        .whereType<int>()
+        .map((d) => names[d] ?? '$d')
+        .join('، ');
   }
 
   // ── ۳: ډیټابیس ──────────────────────────────────────────
@@ -1058,6 +1395,77 @@ class _SettingsPageState extends State<SettingsPage> {
 
 // ═══════════════════════════════════════════════════════════
 
+/// د لوګو خانه — انځور، ټاکل، پاکول.
+class _LogoBox extends StatelessWidget {
+  final String? path;
+  final VoidCallback? onPick;
+  final VoidCallback? onClear;
+
+  const _LogoBox({this.path, this.onPick, this.onClear});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    // انځور ښايي له ډیسکه ورک شوی وي — نو `errorBuilder` پکار دی،
+    // که نه، ټوله پاڼه به سره شوې وه.
+    final file = path == null ? null : File(path!);
+    final exists = file != null && file.existsSync();
+
+    return Column(
+      children: [
+        GestureDetector(
+          onTap: onPick,
+          child: MouseRegion(
+            cursor: onPick == null
+                ? SystemMouseCursors.basic
+                : SystemMouseCursors.click,
+            child: Container(
+              width: 104,
+              height: 104,
+              decoration: BoxDecoration(
+                color: p.surfaceAlt,
+                borderRadius: BorderRadius.circular(AppTheme.radius),
+                border: Border.all(color: p.line),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: exists
+                  ? Image.file(
+                      file,
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, _, _) =>
+                          Icon(Icons.broken_image_rounded, color: p.faint),
+                    )
+                  : Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.add_photo_alternate_rounded,
+                          size: 27,
+                          color: p.faint,
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'لوګو',
+                          style: TextStyle(fontSize: 11.5, color: p.faint),
+                        ),
+                      ],
+                    ),
+            ),
+          ),
+        ),
+        if (onClear != null)
+          TextButton(
+            onPressed: onClear,
+            child: const Text(
+              'لرې کړه',
+              style: TextStyle(fontSize: 11.5, color: AppColors.danger),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
 class _Card extends StatelessWidget {
   final String? title;
   final String? hint;
@@ -1193,46 +1601,6 @@ class _GuardianPicker extends StatelessWidget {
             const Spacer(),
             Icon(Icons.expand_more_rounded, size: 17, color: p.muted),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _Tab extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _Tab({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final p = context.palette;
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: AppMotion.fast,
-        curve: AppMotion.standard,
-        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 11),
-        decoration: BoxDecoration(
-          color: selected
-              ? AppColors.modSettings.withValues(alpha: 0.11)
-              : p.surface,
-          borderRadius: BorderRadius.circular(AppTheme.radiusSm),
-          border: Border.all(color: selected ? AppColors.modSettings : p.line),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 12.5,
-            fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-            color: selected ? AppColors.modSettings : p.inkSoft,
-          ),
         ),
       ),
     );

@@ -341,6 +341,11 @@ class _SchoolManagerAppState extends State<SchoolManagerApp> {
       reportRepo: ReportRepository(_db!),
       sessionRepo: AttendanceSessionRepository(_db!),
       staffAttendanceRepo: StaffAttendanceRepository(_db!),
+      onSchoolChanged: () async {
+        final school = await _db!.select(_db!.schools).getSingleOrNull();
+        if (!mounted) return;
+        setState(() => _schoolName = school?.name ?? _schoolName);
+      },
       server: _server,
       db: _db,
       config: _config,

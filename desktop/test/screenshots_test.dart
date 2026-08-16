@@ -438,6 +438,7 @@ void main() {
           ),
           onConfigChanged: (_) {},
           schoolName: 'د نور لیسه',
+          section: 'network',
           // ریښتینې شبکه نه پوښتو — د ازموینې دننه I/O نه ځواب کوي،
           // او عکس باید هره ورځ یو شان وي.
           lanLookup: (port) async => [
@@ -627,6 +628,80 @@ void main() {
         body: ExamSettingsPage(
           exams: ExamRepository(db),
           academic: AcademicRepository(db),
+        ),
+      ),
+    );
+  });
+
+  testWidgets('54 — تنظیمات: ښوونځی', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await _seedSchool(db);
+    await db
+        .into(db.schools)
+        .insert(
+          SchoolsCompanion.insert(
+            name: 'د نور لیسه',
+            nameEn: const Value('Noor High School'),
+            address: const Value('کابل، کارته نو، څلورمه کوڅه'),
+            phone: const Value('0700123456'),
+            email: const Value('info@noor.edu.af'),
+            dayStart: const Value('07:30'),
+            dayEnd: const Value('12:30'),
+            weekendDays: const Value('4,5'),
+          ),
+        );
+
+    await _shoot(
+      tester,
+      name: '54-settings-school',
+      settle: const Duration(milliseconds: 700),
+      child: Scaffold(
+        body: SettingsPage(
+          db: db,
+          devices: DeviceRepository(db),
+          server: LocalServer(ApiDeps.of(db, schoolName: () => 'د نور لیسه')),
+          session: _session,
+          config: const AppConfig(
+            databasePath: r'D:\SchoolData\school.db',
+            setupComplete: true,
+          ),
+          onConfigChanged: (_) {},
+          schoolName: 'د نور لیسه',
+          section: 'school',
+          academic: AcademicRepository(db),
+          lanLookup: (_) async => const [],
+        ),
+      ),
+    );
+  });
+
+  testWidgets('55 — تنظیمات: عمومي', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await _seedSchool(db);
+
+    await _shoot(
+      tester,
+      name: '55-settings-general',
+      settle: const Duration(milliseconds: 600),
+      child: Scaffold(
+        body: SettingsPage(
+          db: db,
+          devices: DeviceRepository(db),
+          server: LocalServer(ApiDeps.of(db, schoolName: () => 'د نور لیسه')),
+          session: _session,
+          config: const AppConfig(
+            databasePath: r'D:\SchoolData\school.db',
+            setupComplete: true,
+          ),
+          onConfigChanged: (_) {},
+          schoolName: 'د نور لیسه',
+          section: 'general',
+          academic: AcademicRepository(db),
+          themeMode: ThemeMode.light,
+          onThemeChanged: (_) {},
+          lanLookup: (_) async => const [],
         ),
       ),
     );
@@ -909,7 +984,7 @@ void main() {
       settle: const Duration(milliseconds: 700),
       child: Scaffold(
         body: ReportsPage(
-          reports: ReportRepository(db),
+          reports: ReportRepository(db, clock: () => DateTime(2026, 5, 12)),
           academic: AcademicRepository(db),
           exams: ExamRepository(db),
           schoolName: 'د نور لیسه',
@@ -931,7 +1006,7 @@ void main() {
       settle: const Duration(milliseconds: 700),
       child: Scaffold(
         body: ReportsPage(
-          reports: ReportRepository(db),
+          reports: ReportRepository(db, clock: () => DateTime(2026, 5, 12)),
           academic: AcademicRepository(db),
           exams: ExamRepository(db),
           schoolName: 'د نور لیسه',
@@ -958,7 +1033,7 @@ void main() {
       settle: const Duration(milliseconds: 700),
       child: Scaffold(
         body: ReportsPage(
-          reports: ReportRepository(db),
+          reports: ReportRepository(db, clock: () => DateTime(2026, 5, 12)),
           academic: AcademicRepository(db),
           exams: ExamRepository(db),
           schoolName: 'د نور لیسه',

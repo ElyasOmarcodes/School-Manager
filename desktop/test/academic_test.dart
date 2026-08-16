@@ -26,6 +26,51 @@ void main() {
     toLevel: to,
   );
 
+  group('د ښوونځي پېژندنه', () {
+    test('نوم، پته، تلیفون او لوګو سمېږي — خو ډول نه', () async {
+      await db
+          .into(db.schools)
+          .insert(
+            SchoolsCompanion.insert(
+              name: 'زړه نوم',
+              kind: const Value('madrasa'),
+            ),
+          );
+
+      await academic.updateSchool(
+        name: 'نوی نوم',
+        nameEn: 'New Name',
+        address: 'کابل، کارته نو',
+        phone: '0700000000',
+        email: 'info@example.com',
+        logoPath: 'C:/logo.png',
+      );
+
+      final school = await academic.school();
+      expect(school!.name, 'نوی نوم');
+      expect(school.nameEn, 'New Name');
+      expect(school.address, 'کابل، کارته نو');
+      expect(school.phone, '0700000000');
+      expect(school.logoPath, 'C:/logo.png');
+      // **ډول پاتې دی** — پرې نصاب، مهالویش او د حفظ ماډل تړلي دي.
+      expect(school.kind, 'madrasa');
+    });
+
+    test('تش ساحې پاکېږي، نه دا چې زړې پاتې شي', () async {
+      await db
+          .into(db.schools)
+          .insert(
+            SchoolsCompanion.insert(
+              name: 'ښوونځی',
+              address: const Value('زړه پته'),
+            ),
+          );
+
+      await academic.updateSchool(name: 'ښوونځی');
+      expect((await academic.school())!.address, isNull);
+    });
+  });
+
   group('د داخلې نمبر مختاړی', () {
     test('ختیځې شمېرې د کال په نښه کې منل کېږي', () {
       // دا هغه تېروتنه ده چې سکرین‌شاټ راوسپړله: تلواله ژبه پښتو ده،
