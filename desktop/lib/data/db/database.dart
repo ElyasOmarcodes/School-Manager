@@ -85,7 +85,7 @@ class AppDatabase extends _$AppDatabase {
   );
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -184,6 +184,15 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(staffMembers, staffMembers.photoPath);
 
         await m.addColumn(exams, exams.weightPercent);
+      }
+
+      // ── ۶ → ۷: د کارت د باطلېدو نېټه ────────────────────
+      // کارت د یوه درسي کال لپاره دی. زاړه ریکارډونه `null`
+      // پاتې کېږي — یعنې «لا نه دی چاپ شوی»، نه «تر ابده روان».
+      if (from < 7) {
+        await m.addColumn(students, students.cardExpiresOn);
+        await m.addColumn(teachers, teachers.cardExpiresOn);
+        await m.addColumn(staffMembers, staffMembers.cardExpiresOn);
       }
       await _createIndexes();
     },

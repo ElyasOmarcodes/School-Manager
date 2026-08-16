@@ -28,7 +28,9 @@ import 'package:school_manager/features/leave/leave_page.dart';
 import 'package:school_manager/data/repositories/device_repository.dart';
 import 'package:school_manager/data/repositories/message_repository.dart';
 import 'package:school_manager/data/repositories/notification_repository.dart';
-import 'package:school_manager/features/id_cards/id_cards_page.dart';
+import 'package:school_manager/features/id_cards/card_designer_page.dart';
+import 'package:school_manager/features/id_cards/cards_page.dart';
+import 'package:school_manager/data/repositories/card_repository.dart';
 import 'package:school_manager/data/repositories/exam_repository.dart';
 import 'package:school_manager/data/repositories/staff_repository.dart';
 import 'package:school_manager/data/repositories/timetable_repository.dart';
@@ -265,10 +267,14 @@ void main() {
       name: '12-id-cards',
       settle: const Duration(milliseconds: 600),
       child: Scaffold(
-        body: IdCardsPage(
-          students: StudentRepository(db),
+        body: CardsPage(
+          cards: CardRepository(db),
           academic: AcademicRepository(db),
+          session: _session,
           schoolName: 'د نور لیسه',
+          audience: 'student',
+          clock: () => DateTime(2026, 5, 12),
+          onDesign: (_) {},
         ),
       ),
     );
@@ -705,6 +711,116 @@ void main() {
           lanLookup: (_) async => const [],
         ),
       ),
+    );
+  });
+
+  testWidgets('58 — د استادانو کارتونه', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await _seedSchool(db);
+    await _seedTeachers(db);
+    await db
+        .into(db.schools)
+        .insert(SchoolsCompanion.insert(name: 'د نور لیسه'));
+
+    // کلي او نېټې ورکوو، چې QR او د پای کرښه دواړه ښکاره شي.
+    final cards = CardRepository(db);
+    final teachers = await db.select(db.teachers).get();
+    for (var i = 0; i < teachers.length; i++) {
+      await (db.update(db.teachers)
+            ..where((t) => t.id.equals(teachers[i].id)))
+          .write(TeachersCompanion(qrSecret: Value('key-$i')));
+    }
+    await cards.issue(
+      audience: 'teacher',
+      ids: [for (final t in teachers.take(4)) t.id],
+      expiresOn: DateTime(2026, 12, 21),
+    );
+
+    await _shoot(
+      tester,
+      name: '58-cards-teachers',
+      settle: const Duration(milliseconds: 900),
+      child: Scaffold(
+        body: CardsPage(
+          cards: cards,
+          academic: AcademicRepository(db),
+          session: _session,
+          schoolName: 'د نور لیسه',
+          audience: 'teacher',
+          clock: () => DateTime(2026, 5, 12),
+          onDesign: (_) {},
+        ),
+      ),
+    );
+  });
+
+  testWidgets('59 — د کارت ډیزاینر', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await _seedSchool(db);
+
+    await _shoot(
+      tester,
+      name: '59-card-designer',
+      settle: const Duration(milliseconds: 800),
+      child: Scaffold(
+        body: CardDesignerPage(
+          cards: CardRepository(db),
+          audience: 'student',
+          schoolName: 'د نور لیسه',
+          onBack: () {},
+        ),
+      ),
+      after: (tester) async {
+        // یوه ساحه وټاکه — چې د ښي پینل ځانګړتیاوې ښکاره شي.
+        await tester.tap(find.text('بشپړ نوم').first);
+        await tester.pumpAndSettle();
+      },
+    );
+  });
+
+  testWidgets('60 — د کارمندانو کارتونه (لیست)', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await _seedSchool(db);
+    await _seedStaff(db);
+    await db
+        .into(db.schools)
+        .insert(SchoolsCompanion.insert(name: 'د نور لیسه'));
+
+    final cards = CardRepository(db);
+    final staff = await db.select(db.staffMembers).get();
+    await cards.issue(
+      audience: 'staff',
+      ids: [for (final x in staff.take(3)) x.id],
+      expiresOn: DateTime(2026, 5, 30),
+    );
+    await cards.issue(
+      audience: 'staff',
+      ids: [for (final x in staff.skip(3).take(2)) x.id],
+      expiresOn: DateTime(2026, 12, 21),
+    );
+
+    await _shoot(
+      tester,
+      name: '60-cards-staff-list',
+      settle: const Duration(milliseconds: 800),
+      child: Scaffold(
+        body: CardsPage(
+          cards: cards,
+          academic: AcademicRepository(db),
+          session: _session,
+          schoolName: 'د نور لیسه',
+          audience: 'staff',
+          clock: () => DateTime(2026, 5, 12),
+          onDesign: (_) {},
+        ),
+      ),
+      after: (tester) async {
+        await tester.tap(find.text('لیست'));
+        await tester.pumpAndSettle();
+      },
     );
   });
 

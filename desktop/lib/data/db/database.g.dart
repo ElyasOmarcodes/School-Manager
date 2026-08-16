@@ -4025,6 +4025,18 @@ class $StudentsTable extends Students with TableInfo<$StudentsTable, Student> {
     requiredDuringInsert: false,
     defaultValue: const Constant(1),
   );
+  static const VerificationMeta _cardExpiresOnMeta = const VerificationMeta(
+    'cardExpiresOn',
+  );
+  @override
+  late final GeneratedColumn<DateTime> cardExpiresOn =
+      GeneratedColumn<DateTime>(
+        'card_expires_on',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _fingerprintIdMeta = const VerificationMeta(
     'fingerprintId',
   );
@@ -4096,6 +4108,7 @@ class $StudentsTable extends Students with TableInfo<$StudentsTable, Student> {
     status,
     qrSecret,
     cardVersion,
+    cardExpiresOn,
     fingerprintId,
     createdAt,
     updatedAt,
@@ -4268,6 +4281,15 @@ class $StudentsTable extends Students with TableInfo<$StudentsTable, Student> {
         ),
       );
     }
+    if (data.containsKey('card_expires_on')) {
+      context.handle(
+        _cardExpiresOnMeta,
+        cardExpiresOn.isAcceptableOrUnknown(
+          data['card_expires_on']!,
+          _cardExpiresOnMeta,
+        ),
+      );
+    }
     if (data.containsKey('fingerprint_id')) {
       context.handle(
         _fingerprintIdMeta,
@@ -4400,6 +4422,10 @@ class $StudentsTable extends Students with TableInfo<$StudentsTable, Student> {
         DriftSqlType.int,
         data['${effectivePrefix}card_version'],
       )!,
+      cardExpiresOn: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}card_expires_on'],
+      ),
       fingerprintId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}fingerprint_id'],
@@ -4466,6 +4492,7 @@ class Student extends DataClass implements Insertable<Student> {
   /// کارت خپله نمبر نه، بلکې د دې کلید لاسلیک وړي.
   final String? qrSecret;
   final int cardVersion;
+  final DateTime? cardExpiresOn;
 
   /// د ګوتې نښې پېژندنه — **اختیاري**. ټول ښوونځي سکینر نه لري،
   /// نو دا هېڅکله د ثبت شرط نه دی.
@@ -4499,6 +4526,7 @@ class Student extends DataClass implements Insertable<Student> {
     required this.status,
     this.qrSecret,
     required this.cardVersion,
+    this.cardExpiresOn,
     this.fingerprintId,
     required this.createdAt,
     required this.updatedAt,
@@ -4558,6 +4586,9 @@ class Student extends DataClass implements Insertable<Student> {
       map['qr_secret'] = Variable<String>(qrSecret);
     }
     map['card_version'] = Variable<int>(cardVersion);
+    if (!nullToAbsent || cardExpiresOn != null) {
+      map['card_expires_on'] = Variable<DateTime>(cardExpiresOn);
+    }
     if (!nullToAbsent || fingerprintId != null) {
       map['fingerprint_id'] = Variable<String>(fingerprintId);
     }
@@ -4622,6 +4653,9 @@ class Student extends DataClass implements Insertable<Student> {
           ? const Value.absent()
           : Value(qrSecret),
       cardVersion: Value(cardVersion),
+      cardExpiresOn: cardExpiresOn == null && nullToAbsent
+          ? const Value.absent()
+          : Value(cardExpiresOn),
       fingerprintId: fingerprintId == null && nullToAbsent
           ? const Value.absent()
           : Value(fingerprintId),
@@ -4662,6 +4696,7 @@ class Student extends DataClass implements Insertable<Student> {
       status: serializer.fromJson<String>(json['status']),
       qrSecret: serializer.fromJson<String?>(json['qrSecret']),
       cardVersion: serializer.fromJson<int>(json['cardVersion']),
+      cardExpiresOn: serializer.fromJson<DateTime?>(json['cardExpiresOn']),
       fingerprintId: serializer.fromJson<String?>(json['fingerprintId']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
@@ -4695,6 +4730,7 @@ class Student extends DataClass implements Insertable<Student> {
       'status': serializer.toJson<String>(status),
       'qrSecret': serializer.toJson<String?>(qrSecret),
       'cardVersion': serializer.toJson<int>(cardVersion),
+      'cardExpiresOn': serializer.toJson<DateTime?>(cardExpiresOn),
       'fingerprintId': serializer.toJson<String?>(fingerprintId),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
@@ -4726,6 +4762,7 @@ class Student extends DataClass implements Insertable<Student> {
     String? status,
     Value<String?> qrSecret = const Value.absent(),
     int? cardVersion,
+    Value<DateTime?> cardExpiresOn = const Value.absent(),
     Value<String?> fingerprintId = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -4756,6 +4793,9 @@ class Student extends DataClass implements Insertable<Student> {
     status: status ?? this.status,
     qrSecret: qrSecret.present ? qrSecret.value : this.qrSecret,
     cardVersion: cardVersion ?? this.cardVersion,
+    cardExpiresOn: cardExpiresOn.present
+        ? cardExpiresOn.value
+        : this.cardExpiresOn,
     fingerprintId: fingerprintId.present
         ? fingerprintId.value
         : this.fingerprintId,
@@ -4806,6 +4846,9 @@ class Student extends DataClass implements Insertable<Student> {
       cardVersion: data.cardVersion.present
           ? data.cardVersion.value
           : this.cardVersion,
+      cardExpiresOn: data.cardExpiresOn.present
+          ? data.cardExpiresOn.value
+          : this.cardExpiresOn,
       fingerprintId: data.fingerprintId.present
           ? data.fingerprintId.value
           : this.fingerprintId,
@@ -4841,6 +4884,7 @@ class Student extends DataClass implements Insertable<Student> {
           ..write('status: $status, ')
           ..write('qrSecret: $qrSecret, ')
           ..write('cardVersion: $cardVersion, ')
+          ..write('cardExpiresOn: $cardExpiresOn, ')
           ..write('fingerprintId: $fingerprintId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
@@ -4874,6 +4918,7 @@ class Student extends DataClass implements Insertable<Student> {
     status,
     qrSecret,
     cardVersion,
+    cardExpiresOn,
     fingerprintId,
     createdAt,
     updatedAt,
@@ -4906,6 +4951,7 @@ class Student extends DataClass implements Insertable<Student> {
           other.status == this.status &&
           other.qrSecret == this.qrSecret &&
           other.cardVersion == this.cardVersion &&
+          other.cardExpiresOn == this.cardExpiresOn &&
           other.fingerprintId == this.fingerprintId &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
@@ -4936,6 +4982,7 @@ class StudentsCompanion extends UpdateCompanion<Student> {
   final Value<String> status;
   final Value<String?> qrSecret;
   final Value<int> cardVersion;
+  final Value<DateTime?> cardExpiresOn;
   final Value<String?> fingerprintId;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
@@ -4964,6 +5011,7 @@ class StudentsCompanion extends UpdateCompanion<Student> {
     this.status = const Value.absent(),
     this.qrSecret = const Value.absent(),
     this.cardVersion = const Value.absent(),
+    this.cardExpiresOn = const Value.absent(),
     this.fingerprintId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -4993,6 +5041,7 @@ class StudentsCompanion extends UpdateCompanion<Student> {
     this.status = const Value.absent(),
     this.qrSecret = const Value.absent(),
     this.cardVersion = const Value.absent(),
+    this.cardExpiresOn = const Value.absent(),
     this.fingerprintId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -5025,6 +5074,7 @@ class StudentsCompanion extends UpdateCompanion<Student> {
     Expression<String>? status,
     Expression<String>? qrSecret,
     Expression<int>? cardVersion,
+    Expression<DateTime>? cardExpiresOn,
     Expression<String>? fingerprintId,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
@@ -5054,6 +5104,7 @@ class StudentsCompanion extends UpdateCompanion<Student> {
       if (status != null) 'status': status,
       if (qrSecret != null) 'qr_secret': qrSecret,
       if (cardVersion != null) 'card_version': cardVersion,
+      if (cardExpiresOn != null) 'card_expires_on': cardExpiresOn,
       if (fingerprintId != null) 'fingerprint_id': fingerprintId,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
@@ -5085,6 +5136,7 @@ class StudentsCompanion extends UpdateCompanion<Student> {
     Value<String>? status,
     Value<String?>? qrSecret,
     Value<int>? cardVersion,
+    Value<DateTime?>? cardExpiresOn,
     Value<String?>? fingerprintId,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
@@ -5114,6 +5166,7 @@ class StudentsCompanion extends UpdateCompanion<Student> {
       status: status ?? this.status,
       qrSecret: qrSecret ?? this.qrSecret,
       cardVersion: cardVersion ?? this.cardVersion,
+      cardExpiresOn: cardExpiresOn ?? this.cardExpiresOn,
       fingerprintId: fingerprintId ?? this.fingerprintId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -5193,6 +5246,9 @@ class StudentsCompanion extends UpdateCompanion<Student> {
     if (cardVersion.present) {
       map['card_version'] = Variable<int>(cardVersion.value);
     }
+    if (cardExpiresOn.present) {
+      map['card_expires_on'] = Variable<DateTime>(cardExpiresOn.value);
+    }
     if (fingerprintId.present) {
       map['fingerprint_id'] = Variable<String>(fingerprintId.value);
     }
@@ -5234,6 +5290,7 @@ class StudentsCompanion extends UpdateCompanion<Student> {
           ..write('status: $status, ')
           ..write('qrSecret: $qrSecret, ')
           ..write('cardVersion: $cardVersion, ')
+          ..write('cardExpiresOn: $cardExpiresOn, ')
           ..write('fingerprintId: $fingerprintId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
@@ -6380,6 +6437,18 @@ class $TeachersTable extends Teachers with TableInfo<$TeachersTable, Teacher> {
     requiredDuringInsert: false,
     defaultValue: const Constant(1),
   );
+  static const VerificationMeta _cardExpiresOnMeta = const VerificationMeta(
+    'cardExpiresOn',
+  );
+  @override
+  late final GeneratedColumn<DateTime> cardExpiresOn =
+      GeneratedColumn<DateTime>(
+        'card_expires_on',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _deletedAtMeta = const VerificationMeta(
     'deletedAt',
   );
@@ -6410,6 +6479,7 @@ class $TeachersTable extends Teachers with TableInfo<$TeachersTable, Teacher> {
     qrSecret,
     fingerprintId,
     cardVersion,
+    cardExpiresOn,
     deletedAt,
   ];
   @override
@@ -6544,6 +6614,15 @@ class $TeachersTable extends Teachers with TableInfo<$TeachersTable, Teacher> {
         ),
       );
     }
+    if (data.containsKey('card_expires_on')) {
+      context.handle(
+        _cardExpiresOnMeta,
+        cardExpiresOn.isAcceptableOrUnknown(
+          data['card_expires_on']!,
+          _cardExpiresOnMeta,
+        ),
+      );
+    }
     if (data.containsKey('deleted_at')) {
       context.handle(
         _deletedAtMeta,
@@ -6631,6 +6710,10 @@ class $TeachersTable extends Teachers with TableInfo<$TeachersTable, Teacher> {
         DriftSqlType.int,
         data['${effectivePrefix}card_version'],
       )!,
+      cardExpiresOn: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}card_expires_on'],
+      ),
       deletedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}deleted_at'],
@@ -6666,6 +6749,15 @@ class Teacher extends DataClass implements Insertable<Teacher> {
   /// د ګوتې نښه — د استادانو د حاضرۍ لپاره، اختیاري.
   final String? fingerprintId;
   final int cardVersion;
+
+  /// **کارت کله باطلېږي.**
+  ///
+  /// یو آی‌ډي کارت د یوه درسي کال لپاره دی. که نېټه پرې نه وه،
+  /// یو پخوانی شاګرد به تر ابده د ښوونځي دروازه پرانیستله — او
+  /// د دروازې ساتونکی د کارت له مخې پرېکړه کوي، نه د ډیټابیس.
+  /// نو نېټه باید **پر کارت** وي، او ډیټابیس يې هم وپېژني چې
+  /// «کوم کارتونه سبا باطلېږي» ولوستل شي.
+  final DateTime? cardExpiresOn;
   final DateTime? deletedAt;
   const Teacher({
     required this.id,
@@ -6685,6 +6777,7 @@ class Teacher extends DataClass implements Insertable<Teacher> {
     this.qrSecret,
     this.fingerprintId,
     required this.cardVersion,
+    this.cardExpiresOn,
     this.deletedAt,
   });
   @override
@@ -6729,6 +6822,9 @@ class Teacher extends DataClass implements Insertable<Teacher> {
       map['fingerprint_id'] = Variable<String>(fingerprintId);
     }
     map['card_version'] = Variable<int>(cardVersion);
+    if (!nullToAbsent || cardExpiresOn != null) {
+      map['card_expires_on'] = Variable<DateTime>(cardExpiresOn);
+    }
     if (!nullToAbsent || deletedAt != null) {
       map['deleted_at'] = Variable<DateTime>(deletedAt);
     }
@@ -6776,6 +6872,9 @@ class Teacher extends DataClass implements Insertable<Teacher> {
           ? const Value.absent()
           : Value(fingerprintId),
       cardVersion: Value(cardVersion),
+      cardExpiresOn: cardExpiresOn == null && nullToAbsent
+          ? const Value.absent()
+          : Value(cardExpiresOn),
       deletedAt: deletedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(deletedAt),
@@ -6805,6 +6904,7 @@ class Teacher extends DataClass implements Insertable<Teacher> {
       qrSecret: serializer.fromJson<String?>(json['qrSecret']),
       fingerprintId: serializer.fromJson<String?>(json['fingerprintId']),
       cardVersion: serializer.fromJson<int>(json['cardVersion']),
+      cardExpiresOn: serializer.fromJson<DateTime?>(json['cardExpiresOn']),
       deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
     );
   }
@@ -6829,6 +6929,7 @@ class Teacher extends DataClass implements Insertable<Teacher> {
       'qrSecret': serializer.toJson<String?>(qrSecret),
       'fingerprintId': serializer.toJson<String?>(fingerprintId),
       'cardVersion': serializer.toJson<int>(cardVersion),
+      'cardExpiresOn': serializer.toJson<DateTime?>(cardExpiresOn),
       'deletedAt': serializer.toJson<DateTime?>(deletedAt),
     };
   }
@@ -6851,6 +6952,7 @@ class Teacher extends DataClass implements Insertable<Teacher> {
     Value<String?> qrSecret = const Value.absent(),
     Value<String?> fingerprintId = const Value.absent(),
     int? cardVersion,
+    Value<DateTime?> cardExpiresOn = const Value.absent(),
     Value<DateTime?> deletedAt = const Value.absent(),
   }) => Teacher(
     id: id ?? this.id,
@@ -6878,6 +6980,9 @@ class Teacher extends DataClass implements Insertable<Teacher> {
         ? fingerprintId.value
         : this.fingerprintId,
     cardVersion: cardVersion ?? this.cardVersion,
+    cardExpiresOn: cardExpiresOn.present
+        ? cardExpiresOn.value
+        : this.cardExpiresOn,
     deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
   );
   Teacher copyWithCompanion(TeachersCompanion data) {
@@ -6913,6 +7018,9 @@ class Teacher extends DataClass implements Insertable<Teacher> {
       cardVersion: data.cardVersion.present
           ? data.cardVersion.value
           : this.cardVersion,
+      cardExpiresOn: data.cardExpiresOn.present
+          ? data.cardExpiresOn.value
+          : this.cardExpiresOn,
       deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
     );
   }
@@ -6937,6 +7045,7 @@ class Teacher extends DataClass implements Insertable<Teacher> {
           ..write('qrSecret: $qrSecret, ')
           ..write('fingerprintId: $fingerprintId, ')
           ..write('cardVersion: $cardVersion, ')
+          ..write('cardExpiresOn: $cardExpiresOn, ')
           ..write('deletedAt: $deletedAt')
           ..write(')'))
         .toString();
@@ -6961,6 +7070,7 @@ class Teacher extends DataClass implements Insertable<Teacher> {
     qrSecret,
     fingerprintId,
     cardVersion,
+    cardExpiresOn,
     deletedAt,
   );
   @override
@@ -6984,6 +7094,7 @@ class Teacher extends DataClass implements Insertable<Teacher> {
           other.qrSecret == this.qrSecret &&
           other.fingerprintId == this.fingerprintId &&
           other.cardVersion == this.cardVersion &&
+          other.cardExpiresOn == this.cardExpiresOn &&
           other.deletedAt == this.deletedAt);
 }
 
@@ -7005,6 +7116,7 @@ class TeachersCompanion extends UpdateCompanion<Teacher> {
   final Value<String?> qrSecret;
   final Value<String?> fingerprintId;
   final Value<int> cardVersion;
+  final Value<DateTime?> cardExpiresOn;
   final Value<DateTime?> deletedAt;
   const TeachersCompanion({
     this.id = const Value.absent(),
@@ -7024,6 +7136,7 @@ class TeachersCompanion extends UpdateCompanion<Teacher> {
     this.qrSecret = const Value.absent(),
     this.fingerprintId = const Value.absent(),
     this.cardVersion = const Value.absent(),
+    this.cardExpiresOn = const Value.absent(),
     this.deletedAt = const Value.absent(),
   });
   TeachersCompanion.insert({
@@ -7044,6 +7157,7 @@ class TeachersCompanion extends UpdateCompanion<Teacher> {
     this.qrSecret = const Value.absent(),
     this.fingerprintId = const Value.absent(),
     this.cardVersion = const Value.absent(),
+    this.cardExpiresOn = const Value.absent(),
     this.deletedAt = const Value.absent(),
   }) : employeeNo = Value(employeeNo),
        fullName = Value(fullName),
@@ -7066,6 +7180,7 @@ class TeachersCompanion extends UpdateCompanion<Teacher> {
     Expression<String>? qrSecret,
     Expression<String>? fingerprintId,
     Expression<int>? cardVersion,
+    Expression<DateTime>? cardExpiresOn,
     Expression<DateTime>? deletedAt,
   }) {
     return RawValuesInsertable({
@@ -7086,6 +7201,7 @@ class TeachersCompanion extends UpdateCompanion<Teacher> {
       if (qrSecret != null) 'qr_secret': qrSecret,
       if (fingerprintId != null) 'fingerprint_id': fingerprintId,
       if (cardVersion != null) 'card_version': cardVersion,
+      if (cardExpiresOn != null) 'card_expires_on': cardExpiresOn,
       if (deletedAt != null) 'deleted_at': deletedAt,
     });
   }
@@ -7108,6 +7224,7 @@ class TeachersCompanion extends UpdateCompanion<Teacher> {
     Value<String?>? qrSecret,
     Value<String?>? fingerprintId,
     Value<int>? cardVersion,
+    Value<DateTime?>? cardExpiresOn,
     Value<DateTime?>? deletedAt,
   }) {
     return TeachersCompanion(
@@ -7128,6 +7245,7 @@ class TeachersCompanion extends UpdateCompanion<Teacher> {
       qrSecret: qrSecret ?? this.qrSecret,
       fingerprintId: fingerprintId ?? this.fingerprintId,
       cardVersion: cardVersion ?? this.cardVersion,
+      cardExpiresOn: cardExpiresOn ?? this.cardExpiresOn,
       deletedAt: deletedAt ?? this.deletedAt,
     );
   }
@@ -7186,6 +7304,9 @@ class TeachersCompanion extends UpdateCompanion<Teacher> {
     if (cardVersion.present) {
       map['card_version'] = Variable<int>(cardVersion.value);
     }
+    if (cardExpiresOn.present) {
+      map['card_expires_on'] = Variable<DateTime>(cardExpiresOn.value);
+    }
     if (deletedAt.present) {
       map['deleted_at'] = Variable<DateTime>(deletedAt.value);
     }
@@ -7212,6 +7333,7 @@ class TeachersCompanion extends UpdateCompanion<Teacher> {
           ..write('qrSecret: $qrSecret, ')
           ..write('fingerprintId: $fingerprintId, ')
           ..write('cardVersion: $cardVersion, ')
+          ..write('cardExpiresOn: $cardExpiresOn, ')
           ..write('deletedAt: $deletedAt')
           ..write(')'))
         .toString();
@@ -7365,6 +7487,18 @@ class $StaffMembersTable extends StaffMembers
     requiredDuringInsert: false,
     defaultValue: const Constant(1),
   );
+  static const VerificationMeta _cardExpiresOnMeta = const VerificationMeta(
+    'cardExpiresOn',
+  );
+  @override
+  late final GeneratedColumn<DateTime> cardExpiresOn =
+      GeneratedColumn<DateTime>(
+        'card_expires_on',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _photoPathMeta = const VerificationMeta(
     'photoPath',
   );
@@ -7402,6 +7536,7 @@ class $StaffMembersTable extends StaffMembers
     qrSecret,
     fingerprintId,
     cardVersion,
+    cardExpiresOn,
     photoPath,
     deletedAt,
   ];
@@ -7509,6 +7644,15 @@ class $StaffMembersTable extends StaffMembers
         ),
       );
     }
+    if (data.containsKey('card_expires_on')) {
+      context.handle(
+        _cardExpiresOnMeta,
+        cardExpiresOn.isAcceptableOrUnknown(
+          data['card_expires_on']!,
+          _cardExpiresOnMeta,
+        ),
+      );
+    }
     if (data.containsKey('photo_path')) {
       context.handle(
         _photoPathMeta,
@@ -7586,6 +7730,10 @@ class $StaffMembersTable extends StaffMembers
         DriftSqlType.int,
         data['${effectivePrefix}card_version'],
       )!,
+      cardExpiresOn: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}card_expires_on'],
+      ),
       photoPath: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}photo_path'],
@@ -7617,6 +7765,7 @@ class StaffMember extends DataClass implements Insertable<StaffMember> {
   final String? qrSecret;
   final String? fingerprintId;
   final int cardVersion;
+  final DateTime? cardExpiresOn;
   final String? photoPath;
   final DateTime? deletedAt;
   const StaffMember({
@@ -7633,6 +7782,7 @@ class StaffMember extends DataClass implements Insertable<StaffMember> {
     this.qrSecret,
     this.fingerprintId,
     required this.cardVersion,
+    this.cardExpiresOn,
     this.photoPath,
     this.deletedAt,
   });
@@ -7664,6 +7814,9 @@ class StaffMember extends DataClass implements Insertable<StaffMember> {
       map['fingerprint_id'] = Variable<String>(fingerprintId);
     }
     map['card_version'] = Variable<int>(cardVersion);
+    if (!nullToAbsent || cardExpiresOn != null) {
+      map['card_expires_on'] = Variable<DateTime>(cardExpiresOn);
+    }
     if (!nullToAbsent || photoPath != null) {
       map['photo_path'] = Variable<String>(photoPath);
     }
@@ -7700,6 +7853,9 @@ class StaffMember extends DataClass implements Insertable<StaffMember> {
           ? const Value.absent()
           : Value(fingerprintId),
       cardVersion: Value(cardVersion),
+      cardExpiresOn: cardExpiresOn == null && nullToAbsent
+          ? const Value.absent()
+          : Value(cardExpiresOn),
       photoPath: photoPath == null && nullToAbsent
           ? const Value.absent()
           : Value(photoPath),
@@ -7728,6 +7884,7 @@ class StaffMember extends DataClass implements Insertable<StaffMember> {
       qrSecret: serializer.fromJson<String?>(json['qrSecret']),
       fingerprintId: serializer.fromJson<String?>(json['fingerprintId']),
       cardVersion: serializer.fromJson<int>(json['cardVersion']),
+      cardExpiresOn: serializer.fromJson<DateTime?>(json['cardExpiresOn']),
       photoPath: serializer.fromJson<String?>(json['photoPath']),
       deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
     );
@@ -7749,6 +7906,7 @@ class StaffMember extends DataClass implements Insertable<StaffMember> {
       'qrSecret': serializer.toJson<String?>(qrSecret),
       'fingerprintId': serializer.toJson<String?>(fingerprintId),
       'cardVersion': serializer.toJson<int>(cardVersion),
+      'cardExpiresOn': serializer.toJson<DateTime?>(cardExpiresOn),
       'photoPath': serializer.toJson<String?>(photoPath),
       'deletedAt': serializer.toJson<DateTime?>(deletedAt),
     };
@@ -7768,6 +7926,7 @@ class StaffMember extends DataClass implements Insertable<StaffMember> {
     Value<String?> qrSecret = const Value.absent(),
     Value<String?> fingerprintId = const Value.absent(),
     int? cardVersion,
+    Value<DateTime?> cardExpiresOn = const Value.absent(),
     Value<String?> photoPath = const Value.absent(),
     Value<DateTime?> deletedAt = const Value.absent(),
   }) => StaffMember(
@@ -7788,6 +7947,9 @@ class StaffMember extends DataClass implements Insertable<StaffMember> {
         ? fingerprintId.value
         : this.fingerprintId,
     cardVersion: cardVersion ?? this.cardVersion,
+    cardExpiresOn: cardExpiresOn.present
+        ? cardExpiresOn.value
+        : this.cardExpiresOn,
     photoPath: photoPath.present ? photoPath.value : this.photoPath,
     deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
   );
@@ -7816,6 +7978,9 @@ class StaffMember extends DataClass implements Insertable<StaffMember> {
       cardVersion: data.cardVersion.present
           ? data.cardVersion.value
           : this.cardVersion,
+      cardExpiresOn: data.cardExpiresOn.present
+          ? data.cardExpiresOn.value
+          : this.cardExpiresOn,
       photoPath: data.photoPath.present ? data.photoPath.value : this.photoPath,
       deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
     );
@@ -7837,6 +8002,7 @@ class StaffMember extends DataClass implements Insertable<StaffMember> {
           ..write('qrSecret: $qrSecret, ')
           ..write('fingerprintId: $fingerprintId, ')
           ..write('cardVersion: $cardVersion, ')
+          ..write('cardExpiresOn: $cardExpiresOn, ')
           ..write('photoPath: $photoPath, ')
           ..write('deletedAt: $deletedAt')
           ..write(')'))
@@ -7858,6 +8024,7 @@ class StaffMember extends DataClass implements Insertable<StaffMember> {
     qrSecret,
     fingerprintId,
     cardVersion,
+    cardExpiresOn,
     photoPath,
     deletedAt,
   );
@@ -7878,6 +8045,7 @@ class StaffMember extends DataClass implements Insertable<StaffMember> {
           other.qrSecret == this.qrSecret &&
           other.fingerprintId == this.fingerprintId &&
           other.cardVersion == this.cardVersion &&
+          other.cardExpiresOn == this.cardExpiresOn &&
           other.photoPath == this.photoPath &&
           other.deletedAt == this.deletedAt);
 }
@@ -7896,6 +8064,7 @@ class StaffMembersCompanion extends UpdateCompanion<StaffMember> {
   final Value<String?> qrSecret;
   final Value<String?> fingerprintId;
   final Value<int> cardVersion;
+  final Value<DateTime?> cardExpiresOn;
   final Value<String?> photoPath;
   final Value<DateTime?> deletedAt;
   const StaffMembersCompanion({
@@ -7912,6 +8081,7 @@ class StaffMembersCompanion extends UpdateCompanion<StaffMember> {
     this.qrSecret = const Value.absent(),
     this.fingerprintId = const Value.absent(),
     this.cardVersion = const Value.absent(),
+    this.cardExpiresOn = const Value.absent(),
     this.photoPath = const Value.absent(),
     this.deletedAt = const Value.absent(),
   });
@@ -7929,6 +8099,7 @@ class StaffMembersCompanion extends UpdateCompanion<StaffMember> {
     this.qrSecret = const Value.absent(),
     this.fingerprintId = const Value.absent(),
     this.cardVersion = const Value.absent(),
+    this.cardExpiresOn = const Value.absent(),
     this.photoPath = const Value.absent(),
     this.deletedAt = const Value.absent(),
   }) : employeeNo = Value(employeeNo),
@@ -7949,6 +8120,7 @@ class StaffMembersCompanion extends UpdateCompanion<StaffMember> {
     Expression<String>? qrSecret,
     Expression<String>? fingerprintId,
     Expression<int>? cardVersion,
+    Expression<DateTime>? cardExpiresOn,
     Expression<String>? photoPath,
     Expression<DateTime>? deletedAt,
   }) {
@@ -7966,6 +8138,7 @@ class StaffMembersCompanion extends UpdateCompanion<StaffMember> {
       if (qrSecret != null) 'qr_secret': qrSecret,
       if (fingerprintId != null) 'fingerprint_id': fingerprintId,
       if (cardVersion != null) 'card_version': cardVersion,
+      if (cardExpiresOn != null) 'card_expires_on': cardExpiresOn,
       if (photoPath != null) 'photo_path': photoPath,
       if (deletedAt != null) 'deleted_at': deletedAt,
     });
@@ -7985,6 +8158,7 @@ class StaffMembersCompanion extends UpdateCompanion<StaffMember> {
     Value<String?>? qrSecret,
     Value<String?>? fingerprintId,
     Value<int>? cardVersion,
+    Value<DateTime?>? cardExpiresOn,
     Value<String?>? photoPath,
     Value<DateTime?>? deletedAt,
   }) {
@@ -8002,6 +8176,7 @@ class StaffMembersCompanion extends UpdateCompanion<StaffMember> {
       qrSecret: qrSecret ?? this.qrSecret,
       fingerprintId: fingerprintId ?? this.fingerprintId,
       cardVersion: cardVersion ?? this.cardVersion,
+      cardExpiresOn: cardExpiresOn ?? this.cardExpiresOn,
       photoPath: photoPath ?? this.photoPath,
       deletedAt: deletedAt ?? this.deletedAt,
     );
@@ -8049,6 +8224,9 @@ class StaffMembersCompanion extends UpdateCompanion<StaffMember> {
     if (cardVersion.present) {
       map['card_version'] = Variable<int>(cardVersion.value);
     }
+    if (cardExpiresOn.present) {
+      map['card_expires_on'] = Variable<DateTime>(cardExpiresOn.value);
+    }
     if (photoPath.present) {
       map['photo_path'] = Variable<String>(photoPath.value);
     }
@@ -8074,6 +8252,7 @@ class StaffMembersCompanion extends UpdateCompanion<StaffMember> {
           ..write('qrSecret: $qrSecret, ')
           ..write('fingerprintId: $fingerprintId, ')
           ..write('cardVersion: $cardVersion, ')
+          ..write('cardExpiresOn: $cardExpiresOn, ')
           ..write('photoPath: $photoPath, ')
           ..write('deletedAt: $deletedAt')
           ..write(')'))
@@ -17076,7 +17255,12 @@ class AttendanceSession extends DataClass
   final String name;
 
   /// څوک يې هدف دی: `all` | `day` (نهاري) | `boarding` (لیلیه)
-  /// | `section` | `grade`
+  /// | `section` | `grade` | `teacher` | `staff` | `personnel`
+  ///
+  /// **د استادانو ناسته ولې همدې جدول کې ده؟** ځکه چې قاعده يې
+  /// یو شان ده — یو نوم، یو وخت، یوه کړکۍ. یوازې د حاضرۍ کرښې
+  /// بېل جدول ته ځي (`staff_attendances`)، ځکه چې د استاد حاضري
+  /// نه ټولګی لري نه اجازت‌نامه.
   final String target;
 
   /// که `target` بخش یا ټولګی وي — کوم یو.
@@ -26022,6 +26206,7 @@ typedef $$StudentsTableCreateCompanionBuilder =
       Value<String> status,
       Value<String?> qrSecret,
       Value<int> cardVersion,
+      Value<DateTime?> cardExpiresOn,
       Value<String?> fingerprintId,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
@@ -26052,6 +26237,7 @@ typedef $$StudentsTableUpdateCompanionBuilder =
       Value<String> status,
       Value<String?> qrSecret,
       Value<int> cardVersion,
+      Value<DateTime?> cardExpiresOn,
       Value<String?> fingerprintId,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
@@ -26317,6 +26503,11 @@ class $$StudentsTableFilterComposer
 
   ColumnFilters<int> get cardVersion => $composableBuilder(
     column: $table.cardVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get cardExpiresOn => $composableBuilder(
+    column: $table.cardExpiresOn,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -26640,6 +26831,11 @@ class $$StudentsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<DateTime> get cardExpiresOn => $composableBuilder(
+    column: $table.cardExpiresOn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get fingerprintId => $composableBuilder(
     column: $table.fingerprintId,
     builder: (column) => ColumnOrderings(column),
@@ -26754,6 +26950,11 @@ class $$StudentsTableAnnotationComposer
 
   GeneratedColumn<int> get cardVersion => $composableBuilder(
     column: $table.cardVersion,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get cardExpiresOn => $composableBuilder(
+    column: $table.cardExpiresOn,
     builder: (column) => column,
   );
 
@@ -27006,6 +27207,7 @@ class $$StudentsTableTableManager
                 Value<String> status = const Value.absent(),
                 Value<String?> qrSecret = const Value.absent(),
                 Value<int> cardVersion = const Value.absent(),
+                Value<DateTime?> cardExpiresOn = const Value.absent(),
                 Value<String?> fingerprintId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
@@ -27034,6 +27236,7 @@ class $$StudentsTableTableManager
                 status: status,
                 qrSecret: qrSecret,
                 cardVersion: cardVersion,
+                cardExpiresOn: cardExpiresOn,
                 fingerprintId: fingerprintId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
@@ -27064,6 +27267,7 @@ class $$StudentsTableTableManager
                 Value<String> status = const Value.absent(),
                 Value<String?> qrSecret = const Value.absent(),
                 Value<int> cardVersion = const Value.absent(),
+                Value<DateTime?> cardExpiresOn = const Value.absent(),
                 Value<String?> fingerprintId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
@@ -27092,6 +27296,7 @@ class $$StudentsTableTableManager
                 status: status,
                 qrSecret: qrSecret,
                 cardVersion: cardVersion,
+                cardExpiresOn: cardExpiresOn,
                 fingerprintId: fingerprintId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
@@ -28520,6 +28725,7 @@ typedef $$TeachersTableCreateCompanionBuilder =
       Value<String?> qrSecret,
       Value<String?> fingerprintId,
       Value<int> cardVersion,
+      Value<DateTime?> cardExpiresOn,
       Value<DateTime?> deletedAt,
     });
 typedef $$TeachersTableUpdateCompanionBuilder =
@@ -28541,6 +28747,7 @@ typedef $$TeachersTableUpdateCompanionBuilder =
       Value<String?> qrSecret,
       Value<String?> fingerprintId,
       Value<int> cardVersion,
+      Value<DateTime?> cardExpiresOn,
       Value<DateTime?> deletedAt,
     });
 
@@ -28663,6 +28870,11 @@ class $$TeachersTableFilterComposer
 
   ColumnFilters<int> get cardVersion => $composableBuilder(
     column: $table.cardVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get cardExpiresOn => $composableBuilder(
+    column: $table.cardExpiresOn,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -28791,6 +29003,11 @@ class $$TeachersTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<DateTime> get cardExpiresOn => $composableBuilder(
+    column: $table.cardExpiresOn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
     column: $table.deletedAt,
     builder: (column) => ColumnOrderings(column),
@@ -28871,6 +29088,11 @@ class $$TeachersTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<DateTime> get cardExpiresOn => $composableBuilder(
+    column: $table.cardExpiresOn,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<DateTime> get deletedAt =>
       $composableBuilder(column: $table.deletedAt, builder: (column) => column);
 
@@ -28945,6 +29167,7 @@ class $$TeachersTableTableManager
                 Value<String?> qrSecret = const Value.absent(),
                 Value<String?> fingerprintId = const Value.absent(),
                 Value<int> cardVersion = const Value.absent(),
+                Value<DateTime?> cardExpiresOn = const Value.absent(),
                 Value<DateTime?> deletedAt = const Value.absent(),
               }) => TeachersCompanion(
                 id: id,
@@ -28964,6 +29187,7 @@ class $$TeachersTableTableManager
                 qrSecret: qrSecret,
                 fingerprintId: fingerprintId,
                 cardVersion: cardVersion,
+                cardExpiresOn: cardExpiresOn,
                 deletedAt: deletedAt,
               ),
           createCompanionCallback:
@@ -28985,6 +29209,7 @@ class $$TeachersTableTableManager
                 Value<String?> qrSecret = const Value.absent(),
                 Value<String?> fingerprintId = const Value.absent(),
                 Value<int> cardVersion = const Value.absent(),
+                Value<DateTime?> cardExpiresOn = const Value.absent(),
                 Value<DateTime?> deletedAt = const Value.absent(),
               }) => TeachersCompanion.insert(
                 id: id,
@@ -29004,6 +29229,7 @@ class $$TeachersTableTableManager
                 qrSecret: qrSecret,
                 fingerprintId: fingerprintId,
                 cardVersion: cardVersion,
+                cardExpiresOn: cardExpiresOn,
                 deletedAt: deletedAt,
               ),
           withReferenceMapper: (p0) => p0
@@ -29078,6 +29304,7 @@ typedef $$StaffMembersTableCreateCompanionBuilder =
       Value<String?> qrSecret,
       Value<String?> fingerprintId,
       Value<int> cardVersion,
+      Value<DateTime?> cardExpiresOn,
       Value<String?> photoPath,
       Value<DateTime?> deletedAt,
     });
@@ -29096,6 +29323,7 @@ typedef $$StaffMembersTableUpdateCompanionBuilder =
       Value<String?> qrSecret,
       Value<String?> fingerprintId,
       Value<int> cardVersion,
+      Value<DateTime?> cardExpiresOn,
       Value<String?> photoPath,
       Value<DateTime?> deletedAt,
     });
@@ -29171,6 +29399,11 @@ class $$StaffMembersTableFilterComposer
 
   ColumnFilters<int> get cardVersion => $composableBuilder(
     column: $table.cardVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get cardExpiresOn => $composableBuilder(
+    column: $table.cardExpiresOn,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -29259,6 +29492,11 @@ class $$StaffMembersTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<DateTime> get cardExpiresOn => $composableBuilder(
+    column: $table.cardExpiresOn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get photoPath => $composableBuilder(
     column: $table.photoPath,
     builder: (column) => ColumnOrderings(column),
@@ -29328,6 +29566,11 @@ class $$StaffMembersTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<DateTime> get cardExpiresOn => $composableBuilder(
+    column: $table.cardExpiresOn,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get photoPath =>
       $composableBuilder(column: $table.photoPath, builder: (column) => column);
 
@@ -29379,6 +29622,7 @@ class $$StaffMembersTableTableManager
                 Value<String?> qrSecret = const Value.absent(),
                 Value<String?> fingerprintId = const Value.absent(),
                 Value<int> cardVersion = const Value.absent(),
+                Value<DateTime?> cardExpiresOn = const Value.absent(),
                 Value<String?> photoPath = const Value.absent(),
                 Value<DateTime?> deletedAt = const Value.absent(),
               }) => StaffMembersCompanion(
@@ -29395,6 +29639,7 @@ class $$StaffMembersTableTableManager
                 qrSecret: qrSecret,
                 fingerprintId: fingerprintId,
                 cardVersion: cardVersion,
+                cardExpiresOn: cardExpiresOn,
                 photoPath: photoPath,
                 deletedAt: deletedAt,
               ),
@@ -29413,6 +29658,7 @@ class $$StaffMembersTableTableManager
                 Value<String?> qrSecret = const Value.absent(),
                 Value<String?> fingerprintId = const Value.absent(),
                 Value<int> cardVersion = const Value.absent(),
+                Value<DateTime?> cardExpiresOn = const Value.absent(),
                 Value<String?> photoPath = const Value.absent(),
                 Value<DateTime?> deletedAt = const Value.absent(),
               }) => StaffMembersCompanion.insert(
@@ -29429,6 +29675,7 @@ class $$StaffMembersTableTableManager
                 qrSecret: qrSecret,
                 fingerprintId: fingerprintId,
                 cardVersion: cardVersion,
+                cardExpiresOn: cardExpiresOn,
                 photoPath: photoPath,
                 deletedAt: deletedAt,
               ),

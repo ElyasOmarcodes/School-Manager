@@ -206,6 +206,7 @@ class Students extends Table {
   /// کارت خپله نمبر نه، بلکې د دې کلید لاسلیک وړي.
   TextColumn get qrSecret => text().nullable()();
   IntColumn get cardVersion => integer().withDefault(const Constant(1))();
+  DateTimeColumn get cardExpiresOn => dateTime().nullable()();
 
   /// د ګوتې نښې پېژندنه — **اختیاري**. ټول ښوونځي سکینر نه لري،
   /// نو دا هېڅکله د ثبت شرط نه دی.
@@ -281,6 +282,15 @@ class Teachers extends Table {
   TextColumn get fingerprintId => text().nullable()();
   IntColumn get cardVersion => integer().withDefault(const Constant(1))();
 
+  /// **کارت کله باطلېږي.**
+  ///
+  /// یو آی‌ډي کارت د یوه درسي کال لپاره دی. که نېټه پرې نه وه،
+  /// یو پخوانی شاګرد به تر ابده د ښوونځي دروازه پرانیستله — او
+  /// د دروازې ساتونکی د کارت له مخې پرېکړه کوي، نه د ډیټابیس.
+  /// نو نېټه باید **پر کارت** وي، او ډیټابیس يې هم وپېژني چې
+  /// «کوم کارتونه سبا باطلېږي» ولوستل شي.
+  DateTimeColumn get cardExpiresOn => dateTime().nullable()();
+
   DateTimeColumn get deletedAt => dateTime().nullable()();
 
   @override
@@ -305,6 +315,7 @@ class StaffMembers extends Table {
   TextColumn get qrSecret => text().nullable()();
   TextColumn get fingerprintId => text().nullable()();
   IntColumn get cardVersion => integer().withDefault(const Constant(1))();
+  DateTimeColumn get cardExpiresOn => dateTime().nullable()();
   TextColumn get photoPath => text().nullable()();
 
   DateTimeColumn get deletedAt => dateTime().nullable()();

@@ -20,6 +20,7 @@ import '../../data/repositories/message_repository.dart';
 import '../../data/repositories/notification_repository.dart';
 import '../../data/repositories/payroll_repository.dart';
 import '../../data/repositories/report_repository.dart';
+import '../../data/repositories/card_repository.dart';
 import '../../data/repositories/staff_attendance_repository.dart';
 import '../../data/repositories/staff_repository.dart';
 import '../../data/repositories/student_repository.dart';
@@ -48,7 +49,8 @@ import '../exams/question_papers_page.dart';
 import '../exams/results_page.dart';
 import '../exams/top_students_page.dart';
 import '../fees/fees_page.dart';
-import '../id_cards/id_cards_page.dart';
+import '../id_cards/card_designer_page.dart';
+import '../id_cards/cards_page.dart';
 import '../messages/messages_page.dart';
 import '../payroll/payroll_page.dart';
 import '../reports/reports_page.dart';
@@ -159,6 +161,14 @@ class _AppShellState extends State<AppShell> {
   /// کومه د حاضرۍ ناسته پرانیستل شوې — `null` یعنې لیست ښکاري.
   AttendanceSession? _openSession;
 
+  /// د کارت کوم ډیزاین پرانیستل شوی — `null` یعنې لیست ښکاري.
+  ///
+  /// **د دوو حالتونو توپیر:** `_designing == false` یعنې لیست؛
+  /// `true` او `_designTemplate == null` یعنې نوی ډیزاین. یو
+  /// nullable ډګر دا دوه سره نه شي بېلولی.
+  bool _designing = false;
+  CardTemplate? _designTemplate;
+
   /// کوم استاد پرانیستل شوی — `null` یعنې لیست ښکاري.
   int? _openTeacherId;
 
@@ -228,6 +238,8 @@ class _AppShellState extends State<AppShell> {
       _route = route;
       _openStudentId = null;
       _openTeacherId = null;
+      _designing = false;
+      _designTemplate = null;
       _openSession = null;
       _openExam = null;
       _examView = 'marks';
@@ -475,11 +487,46 @@ class _AppShellState extends State<AppShell> {
       );
     }
 
-    if (_route == '/id-cards' && students != null && academic != null) {
-      return IdCardsPage(
-        students: students,
+    if (_route.startsWith('/id-cards') &&
+        widget.db != null &&
+        academic != null) {
+      final cards = CardRepository(widget.db!);
+      final audience = switch (_route) {
+        '/id-cards/teachers' => 'teacher',
+        '/id-cards/staff' => 'staff',
+        _ => 'student',
+      };
+
+      if (_designing) {
+        return CardDesignerPage(
+          key: ValueKey('design-$audience-${_designTemplate?.id}'),
+          cards: cards,
+          audience: audience,
+          schoolName: widget.schoolName,
+          template: _designTemplate,
+          canEdit: widget.session.permissions.can('id_cards', Perm.edit),
+          onBack: () => setState(() {
+            _designing = false;
+            _designTemplate = null;
+          }),
+          onSaved: () => setState(() {
+            _designing = false;
+            _designTemplate = null;
+          }),
+        );
+      }
+
+      return CardsPage(
+        key: ValueKey(_route),
+        cards: cards,
         academic: academic,
+        session: widget.session,
         schoolName: widget.schoolName,
+        audience: audience,
+        onDesign: (t) => setState(() {
+          _designing = true;
+          _designTemplate = t;
+        }),
       );
     }
     // ── حاضري ───────────────────────────────────────────
