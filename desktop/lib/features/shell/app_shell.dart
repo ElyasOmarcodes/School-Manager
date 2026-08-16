@@ -58,6 +58,7 @@ import '../students/students_page.dart';
 import '../teachers/teacher_profile_page.dart';
 import '../teachers/teachers_page.dart';
 import '../timetable/timetable_page.dart';
+import '../timetable/timetable_settings_page.dart';
 import '../users/users_page.dart';
 import 'nav_items.dart';
 import 'sidebar.dart';
@@ -579,10 +580,17 @@ class _AppShellState extends State<AppShell> {
         schoolName: widget.schoolName,
       );
     }
-    if (_route == '/timetable' &&
+    if (_route.startsWith('/timetable') &&
         widget.timetableRepo != null &&
         academic != null &&
         teachers != null) {
+      if (_route == '/timetable/settings') {
+        return TimetableSettingsPage(
+          timetable: widget.timetableRepo!,
+          academic: academic,
+          canEdit: widget.session.permissions.can('timetable', Perm.edit),
+        );
+      }
       return TimetablePage(
         timetable: widget.timetableRepo!,
         academic: academic,

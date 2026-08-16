@@ -49,6 +49,7 @@ import 'package:school_manager/features/users/users_page.dart';
 import 'package:school_manager/features/messages/messages_page.dart';
 import 'package:school_manager/features/staff/staff_page.dart';
 import 'package:school_manager/features/timetable/timetable_page.dart';
+import 'package:school_manager/features/timetable/timetable_settings_page.dart';
 import 'package:school_manager/features/settings/settings_page.dart';
 import 'package:school_manager/server/api_router.dart';
 import 'package:school_manager/server/local_server.dart';
@@ -702,6 +703,71 @@ void main() {
           themeMode: ThemeMode.light,
           onThemeChanged: (_) {},
           lanLookup: (_) async => const [],
+        ),
+      ),
+    );
+  });
+
+  testWidgets('56 — د مهالویش تنظیمات', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await _seedSchool(db);
+    await db
+        .into(db.schools)
+        .insert(
+          SchoolsCompanion.insert(
+            name: 'د نور لیسه',
+            dayStart: const Value('07:00'),
+            periodsPerDay: const Value(6),
+            periodMinutes: const Value(45),
+            breakAfterPeriods: const Value(4),
+            breakMinutes: const Value(15),
+            breaksPerDay: const Value(1),
+          ),
+        );
+    await TimetableRepository(db).seedDefaultSlots();
+
+    await _shoot(
+      tester,
+      name: '56-timetable-settings',
+      settle: const Duration(milliseconds: 700),
+      child: Scaffold(
+        body: TimetableSettingsPage(
+          timetable: TimetableRepository(db),
+          academic: AcademicRepository(db),
+        ),
+      ),
+    );
+  });
+
+  testWidgets('57 — ځیرک مهالویش', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await _seedSchool(db);
+    await _seedTeachers(db);
+
+    final tt = TimetableRepository(db);
+    final academic = AcademicRepository(db);
+    await academic.seedDefaultSubjects();
+    await tt.seedDefaultSlots();
+
+    // د ټولو بخشونو ځیرک ترتیب — چې جدول ډک ښکاره شي.
+    final sections = await academic.sections();
+    final plan = await tt.arrange(
+      daily: false,
+      sectionId: sections.first.sectionId,
+    );
+    await tt.applyPlan(plan);
+
+    await _shoot(
+      tester,
+      name: '57-timetable-smart',
+      settle: const Duration(milliseconds: 800),
+      child: Scaffold(
+        body: TimetablePage(
+          timetable: tt,
+          academic: academic,
+          teachers: TeacherRepository(db),
         ),
       ),
     );

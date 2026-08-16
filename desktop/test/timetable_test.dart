@@ -352,6 +352,362 @@ void main() {
     });
   });
 
+  // ═════════════════════════════════════════════════════════
+  group('ځیرک ترتیب', () {
+    test('سخت مضمونونه سهار، اسانه ماښام', () async {
+      final plan = await tt.arrange(daily: false, sectionId: section10a);
+      expect(plan.cells, isNotEmpty);
+      expect(plan.placed, plan.capacity);
+
+      final subjects = {for (final x in await academic.subjects()) x.id: x};
+      final lessons = slots.where((x) => !x.isBreak).toList();
+      final index = {
+        for (var i = 0; i < lessons.length; i++) lessons[i].id: i,
+      };
+
+      // د هرې سختۍ اوسط ځای — سخت باید تر منځني، منځنی تر اسانه
+      // مخکې وي.
+      final sum = <String, int>{};
+      final n = <String, int>{};
+      for (final c in plan.cells) {
+        final d = subjects[c.subjectId]!.difficulty;
+        sum[d] = (sum[d] ?? 0) + index[c.slotId]!;
+        n[d] = (n[d] ?? 0) + 1;
+      }
+      double avg(String d) => n[d] == null ? -1 : sum[d]! / n[d]!;
+
+      expect(n['hard'], isNotNull, reason: 'نصاب سخت مضمون لري');
+      expect(n['easy'], isNotNull, reason: 'نصاب اسانه مضمون لري');
+      expect(avg('hard'), lessThan(avg('easy')));
+    });
+
+    test('یو مضمون په یوه ورځ کې دوه ځله نه راځي', () async {
+      final plan = await tt.arrange(daily: false, sectionId: section10a);
+      final perDay = <int, List<int>>{};
+      for (final c in plan.cells) {
+        perDay.putIfAbsent(c.dayOfWeek, () => []).add(c.subjectId);
+      }
+      for (final e in perDay.entries) {
+        expect(
+          e.value.toSet().length,
+          e.value.length,
+          reason: 'ورځ ${e.key} تکرار لري',
+        );
+      }
+    });
+
+    test('بدیلونه سره توپیر لري، خو هر یو خپل ځان ته ثابت دی', () async {
+      final a = await tt.arrange(daily: false, sectionId: section10a);
+      final b = await tt.arrange(
+        daily: false,
+        sectionId: section10a,
+        variant: 1,
+      );
+      final aAgain = await tt.arrange(daily: false, sectionId: section10a);
+
+      String sig(ArrangementPlan p) => (p.cells
+              .map((c) => '${c.dayOfWeek}/${c.slotId}/${c.subjectId}')
+              .toList()
+            ..sort())
+          .join('|');
+
+      // **هماغه بدیل تل هماغه ترتیب** — که نه، د › بیا ‹ وهل به
+      // یو نوی ترتیب راوړی و، نه پخوانی.
+      expect(sig(aAgain), sig(a));
+      expect(sig(b), isNot(sig(a)));
+    });
+
+    test('د یوې درجې کتابونه بلې ته نه ځي', () async {
+      // درجه-ځانګړي مضمونونه جوړوو — هر یو یوې درجې پورې تړلی.
+      final grades = await academic.grades();
+      final g10 = grades.firstWhere((g) => g.level == 10);
+      final g11 = grades.firstWhere((g) => g.level == 11);
+
+      final only10 = await db
+          .into(db.subjects)
+          .insert(
+            SubjectsCompanion.insert(
+              name: 'قدوري (صلوة)',
+              gradeId: Value(g10.id),
+              difficulty: const Value('hard'),
+            ),
+          );
+      final only11 = await db
+          .into(db.subjects)
+          .insert(
+            SubjectsCompanion.insert(
+              name: 'هدایه',
+              gradeId: Value(g11.id),
+              difficulty: const Value('hard'),
+            ),
+          );
+
+      // ټول بخشونه یو ځای ترتیبوو — دا هغه حالت دی چې تېروتنه به
+      // پکې ښکاره شوې وای.
+      final plan = await tt.arrange(daily: true);
+      final sections = await academic.sections();
+      final gradeOf = {
+        for (final x in sections) x.sectionId: x.gradeId,
+      };
+
+      for (final c in plan.cells) {
+        if (c.subjectId == only10) {
+          expect(gradeOf[c.sectionId], g10.id, reason: 'قدوري بله درجه ته تللی');
+        }
+        if (c.subjectId == only11) {
+          expect(gradeOf[c.sectionId], g11.id, reason: 'هدایه بله درجه ته تللې');
+        }
+      }
+      // او لږ تر لږه یو ځل خپلې درجې ته ورکړل شوی وي.
+      expect(plan.cells.any((c) => c.subjectId == only10), isTrue);
+    });
+
+    test('ترتیب ذخیره کېږي او زاړه خانې پاکېږي', () async {
+      // یو زوړ درس چې نوی ترتیب يې نه لري.
+      await tt.setEntry(
+        sectionId: section10a,
+        dayOfWeek: 6,
+        slotId: lesson(0).id,
+        subjectId: mathId,
+        teacherId: teacherA,
+      );
+
+      final plan = await tt.arrange(daily: false, sectionId: section10a);
+      await tt.applyPlan(plan);
+
+      final grid = await tt.grid(sectionId: section10a);
+      expect(grid.filled, plan.placed);
+      // هېڅ خانه دوه ځله نه ده لیکل شوې.
+      final all = await db.select(db.timetableEntries).get();
+      final keys = all.map((e) => '${e.sectionId}/${e.dayOfWeek}/${e.slotId}');
+      expect(keys.toSet().length, all.length);
+    });
+
+    test('د استاد ټکر څومره چې کېدی شي مخنیوی کېږي', () async {
+      // دواړه بخشونه ترتیبوو — یو استاد نه شي دواړه ځایه.
+      final plan = await tt.arrange(daily: false);
+      final seen = <String>{};
+      var actual = 0;
+      for (final c in plan.cells) {
+        if (c.teacherId == null) continue;
+        final k = '${c.dayOfWeek}/${c.slotId}/${c.teacherId}';
+        if (!seen.add(k)) actual++;
+      }
+      // راپور شوې شمېره باید له ریښتینې سره سمون ولري.
+      expect(actual, plan.teacherClashes);
+    });
+  });
+
+  // ═════════════════════════════════════════════════════════
+  group('کش کول (drag & drop)', () {
+    test('تشې خانې ته لېږدول', () async {
+      await tt.setEntry(
+        sectionId: section10a,
+        dayOfWeek: 6,
+        slotId: lesson(0).id,
+        subjectId: mathId,
+      );
+
+      final r = await tt.moveEntry(
+        sectionId: section10a,
+        fromDay: 6,
+        fromSlotId: lesson(0).id,
+        toDay: 6,
+        toSlotId: lesson(3).id,
+      );
+      expect(r, MoveResult.ok);
+
+      final grid = await tt.grid(sectionId: section10a);
+      expect(grid.at(6, lesson(0).id), isNull);
+      expect(grid.at(6, lesson(3).id)!.entry.subjectId, mathId);
+    });
+
+    test('ډکې خانې ته لېږدول دواړه سره بدلوي', () async {
+      await tt.setEntry(
+        sectionId: section10a,
+        dayOfWeek: 6,
+        slotId: lesson(0).id,
+        subjectId: mathId,
+      );
+      await tt.setEntry(
+        sectionId: section10a,
+        dayOfWeek: 7,
+        slotId: lesson(2).id,
+        subjectId: pashtoId,
+      );
+
+      expect(
+        await tt.moveEntry(
+          sectionId: section10a,
+          fromDay: 6,
+          fromSlotId: lesson(0).id,
+          toDay: 7,
+          toSlotId: lesson(2).id,
+        ),
+        MoveResult.swapped,
+      );
+
+      final grid = await tt.grid(sectionId: section10a);
+      expect(grid.at(7, lesson(2).id)!.entry.subjectId, mathId);
+      expect(grid.at(6, lesson(0).id)!.entry.subjectId, pashtoId);
+    });
+
+    test('بل بخش ته کش کول رد کېږي', () async {
+      await tt.setEntry(
+        sectionId: section10a,
+        dayOfWeek: 6,
+        slotId: lesson(0).id,
+        subjectId: mathId,
+      );
+
+      expect(
+        await tt.moveEntry(
+          sectionId: section10a,
+          fromDay: 6,
+          fromSlotId: lesson(0).id,
+          toDay: 6,
+          toSlotId: lesson(1).id,
+          toSectionId: section10b,
+        ),
+        MoveResult.crossSection,
+      );
+      // هېڅ يې ونه خوځېد.
+      final grid = await tt.grid(sectionId: section10a);
+      expect(grid.at(6, lesson(0).id)!.entry.subjectId, mathId);
+    });
+
+    test('تشه سرچینه هېڅ نه کوي', () async {
+      expect(
+        await tt.moveEntry(
+          sectionId: section10a,
+          fromDay: 6,
+          fromSlotId: lesson(0).id,
+          toDay: 6,
+          toSlotId: lesson(1).id,
+        ),
+        MoveResult.emptySource,
+      );
+    });
+  });
+
+  // ═════════════════════════════════════════════════════════
+  group('انډو او ریډو', () {
+    test('انځور بېرته راوړل ټول جدول بیا جوړوي', () async {
+      await tt.setEntry(
+        sectionId: section10a,
+        dayOfWeek: 6,
+        slotId: lesson(0).id,
+        subjectId: mathId,
+        teacherId: teacherA,
+      );
+      final before = await tt.snapshot();
+      expect(before, hasLength(1));
+
+      final plan = await tt.arrange(daily: false, sectionId: section10a);
+      await tt.applyPlan(plan);
+      expect(await tt.snapshot(), hasLength(plan.placed));
+
+      await tt.restore(before);
+      final after = await tt.snapshot();
+      expect(after, hasLength(1));
+      expect(after.single.subjectId, mathId);
+      expect(after.single.teacherId, teacherA);
+    });
+  });
+
+  // ═════════════════════════════════════════════════════════
+  group('د ساعتونو له سره جوړول', () {
+    test('د پای وخت حساب — له تفریح سره', () {
+      expect(
+        TimetableRepository.computeDayEnd(
+          dayStart: '07:00',
+          periodsPerDay: 6,
+          periodMinutes: 45,
+          breakAfterPeriods: 4,
+          breakMinutes: 15,
+          breaksPerDay: 1,
+        ),
+        // ۶×۴۵ = ۲۷۰ + ۱۵ تفریح = ۲۸۵ دقیقې → ۱۱:۴۵
+        '11:45',
+      );
+    });
+
+    test('د ورځې په پای کې تفریح نه ورکول کېږي', () {
+      // که د تفریح ځای د وروستي ساعت وروسته راشي، معنا نه لري.
+      expect(
+        TimetableRepository.computeDayEnd(
+          dayStart: '07:00',
+          periodsPerDay: 4,
+          periodMinutes: 45,
+          breakAfterPeriods: 4,
+          breakMinutes: 15,
+          breaksPerDay: 1,
+        ),
+        '10:00',
+      );
+    });
+
+    test('نوي ساعتونه جوړېږي او زاړه درسونه خپل ځای ساتي', () async {
+      await tt.setEntry(
+        sectionId: section10a,
+        dayOfWeek: 6,
+        slotId: lesson(0).id,
+        subjectId: mathId,
+        teacherId: teacherA,
+      );
+      await tt.setEntry(
+        sectionId: section10a,
+        dayOfWeek: 6,
+        slotId: lesson(2).id,
+        subjectId: pashtoId,
+      );
+
+      final dropped = await tt.rebuildSlots(
+        dayStart: '07:00',
+        periodsPerDay: 6,
+        periodMinutes: 45,
+        breakAfterPeriods: 4,
+        breakMinutes: 15,
+        breaksPerDay: 1,
+      );
+      expect(dropped, 0);
+
+      final fresh = await tt.slots();
+      final teaching = fresh.where((s) => !s.isBreak).toList();
+      expect(teaching, hasLength(6));
+      expect(fresh.where((s) => s.isBreak), hasLength(1));
+      expect(teaching.first.startTime, '07:00');
+      expect(teaching.first.endTime, '07:45');
+      expect(teaching.last.endTime, '11:45');
+
+      // درسونه هماغه ځایونه ساتي — لومړی او دریم.
+      final grid = await tt.grid(sectionId: section10a);
+      expect(grid.at(6, teaching[0].id)!.entry.subjectId, mathId);
+      expect(grid.at(6, teaching[2].id)!.entry.subjectId, pashtoId);
+      expect(grid.at(6, teaching[0].id)!.entry.teacherId, teacherA);
+    });
+
+    test('لنډېدل هغه درسونه ړنګوي چې ځای نه لري — او شمېري يې', () async {
+      await tt.setEntry(
+        sectionId: section10a,
+        dayOfWeek: 6,
+        slotId: lesson(7).id,
+        subjectId: mathId,
+      );
+
+      final dropped = await tt.rebuildSlots(
+        dayStart: '07:30',
+        periodsPerDay: 4,
+        periodMinutes: 40,
+        breakAfterPeriods: 2,
+        breakMinutes: 10,
+        breaksPerDay: 1,
+      );
+      expect(dropped, 1);
+      expect(await db.select(db.timetableEntries).get(), isEmpty);
+    });
+  });
+
   group('د ورځو نومونه', () {
     test('د Dart weekday سره سم دي', () {
       expect(weekdayNamePs(DateTime(2026, 5, 16).weekday), 'شنبه');

@@ -142,10 +142,118 @@ class SetEntryTeacherBusy extends SetEntryResult {
 }
 
 /// خونه پر هماغه وخت نیول شوې.
+/// د یوې خانې د لېږدولو پایله.
+enum MoveResult {
+  ok,
+  swapped,
+
+  /// له یوه بخشه بل ته — رد شوه.
+  crossSection,
+
+  /// سرچینه تشه وه.
+  emptySource;
+
+  bool get isOk => this == MoveResult.ok || this == MoveResult.swapped;
+}
+
 class SetEntryRoomBusy extends SetEntryResult {
   final String room;
   final String otherSection;
   const SetEntryRoomBusy({required this.room, required this.otherSection});
+}
+
+
+// ═══════════════════════════════════════════════════════════
+//  ځیرک ترتیب
+// ═══════════════════════════════════════════════════════════
+
+/// یوه وړاندیز شوې خانه — لا نه ده ذخیره شوې.
+class PlannedCell {
+  final int sectionId;
+  final int dayOfWeek;
+  final int slotId;
+  final int subjectId;
+  final int? teacherId;
+
+  const PlannedCell({
+    required this.sectionId,
+    required this.dayOfWeek,
+    required this.slotId,
+    required this.subjectId,
+    this.teacherId,
+  });
+
+  String get key => '$sectionId/$dayOfWeek/$slotId';
+}
+
+/// د یوه ځیرک ترتیب بشپړه وړاندیز.
+class ArrangementPlan {
+  final List<PlannedCell> cells;
+
+  /// کوم بدیل دی — د ‹ › تڼیو لپاره.
+  final int variant;
+
+  /// څومره خانې ډکې شوې او څومره غوښتل کېدې.
+  final int placed;
+  final int capacity;
+
+  /// څو ځله یو استاد پر یوه وخت دوه ځایه پاتې شو.
+  ///
+  /// **صفر تل ممکن نه دی.** که یو ښوونځی درې استادان ولري او پنځه
+  /// بخشونه، څوک باید ټکر وکړي. نو شمېره ښودل کېږي، نه پټېږي —
+  /// مدیر پرېکړه کوي چې کوم بدیل غوره دی.
+  final int teacherClashes;
+
+  const ArrangementPlan({
+    required this.cells,
+    required this.variant,
+    required this.placed,
+    required this.capacity,
+    required this.teacherClashes,
+  });
+
+  bool get isEmpty => cells.isEmpty;
+}
+
+/// د یوه مضمون د سختۍ درجه → د ورځې غوره ځای (۰ = لومړی ساعت).
+///
+/// **دا ولې؟** سهار ذهن تازه دی. یوه سخته موضوع چې د ورځې په
+/// پای کې ورکړل شي، دوه ځله تکرار ته اړتیا لري — نو د مهالویش
+/// یو ښه ترتیب د تدریس وخت سپموي.
+double difficultyTarget(String difficulty) => switch (difficulty) {
+  'hard' => 0.0,
+  'easy' => 1.0,
+  _ => 0.5,
+};
+
+int difficultyRank(String difficulty) => switch (difficulty) {
+  'hard' => 0,
+  'easy' => 2,
+  _ => 1,
+};
+
+/// **یو ساده، ټاکلی تصادفي جنراتور.**
+///
+/// `Random()` دلته نه کارېږي، ځکه چې د یوه بدیل شمېره باید تل
+/// هماغه ترتیب راوړي — که کارن › بیا ‹ ووهي، باید هماغه پخوانی
+/// ترتیب بېرته وویني، نه یو نوی.
+class _Lcg {
+  int _s;
+  _Lcg(int seed) : _s = (seed * 2654435761) & 0x7fffffff;
+
+  int next(int max) {
+    _s = (_s * 1103515245 + 12345) & 0x7fffffff;
+    return max <= 0 ? 0 : _s % max;
+  }
+
+  void shuffle(List<Object?> list) {
+    for (var i = list.length - 1; i > 0; i--) {
+      final j = next(i + 1);
+      final t = list[i];
+      list[i] = list[j];
+      list[j] = t;
+    }
+  }
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -413,6 +521,601 @@ WHERE t.day_of_week = ?
         );
 
     return SetEntryOk(id);
+  }
+
+  // ── ځیرک ترتیب ──────────────────────────────────────────
+
+  /// **یو ځیرک ترتیب جوړوي — خو نه يې ذخیره کوي.**
+  ///
+  /// درې قاعدې پلې کوي:
+  ///   ۱. **سخت مضمونونه سهار.** د ورځې لومړي ساعتونه سختو ته،
+  ///      منځني منځ ته، اسانه وروستیو ته.
+  ///   ۲. **یو مضمون په یوه ورځ کې دوه ځله نه.** که ځای نه وي،
+  ///      بل مضمون راځي — نه دا چې یو ټولګی په یوه ورځ کې درې
+  ///      ساعته ریاضي ولري.
+  ///   ۳. **د استاد ټکر څومره چې کېدی شي مخنیوی کېږي.** که یو
+  ///      استاد پر هغه وخت بل بخش کې بوخت وي، لومړی بل مضمون
+  ///      هڅه کېږي؛ که هېڅ ونه شي، خانه بې‌استاده ډکېږي — نه دا
+  ///      چې تشه پاتې شي.
+  ///
+  /// **او یوه قاعده چې هېڅکله نه ماتېږي:** یوه درجه یوازې خپل
+  /// مضمونونه اخلي. د «درجه ثانیه» قدوري هېڅکله «درجه رابعه» ته
+  /// نه ځي، ځکه چې د نوماندانو لیست پخپله د درجې له مخې راټول
+  /// شوی دی — نه دا چې وروسته فلټر شي.
+  Future<ArrangementPlan> arrange({
+    required bool daily,
+    int? sectionId,
+    int variant = 0,
+    List<int>? days,
+  }) async {
+    final allSlots = await slots();
+    final teaching = allSlots.where((s) => !s.isBreak).toList();
+    if (teaching.isEmpty) {
+      return ArrangementPlan(
+        cells: const [],
+        variant: variant,
+        placed: 0,
+        capacity: 0,
+        teacherClashes: 0,
+      );
+    }
+
+    // کوم بخشونه ترتیبېږي؟ د مدرسې حالت کې ټول، د مکتب کې یو.
+    final targets = <({int sectionId, int gradeId})>[];
+    final sectionRows = await db
+        .customSelect(
+          'SELECT id, grade_id FROM sections'
+          '${sectionId == null ? '' : ' WHERE id = ?'}'
+          ' ORDER BY grade_id, name',
+          variables: [if (sectionId != null) Variable<int>(sectionId)],
+          readsFrom: {db.sections},
+        )
+        .get();
+    for (final r in sectionRows) {
+      targets.add((
+        sectionId: r.read<int>('id'),
+        gradeId: r.read<int>('grade_id'),
+      ));
+    }
+    if (targets.isEmpty) {
+      return ArrangementPlan(
+        cells: const [],
+        variant: variant,
+        placed: 0,
+        capacity: 0,
+        teacherClashes: 0,
+      );
+    }
+
+    final dayList = daily ? const [everyDay] : (days ?? defaultTeachingDays);
+
+    // **د استادانو بوختیا** — هغه خانې چې د ترتیب له خارجه دي.
+    // د مکتب په حالت کې نور بخشونه هم شته چې ترتیب يې نه بدلېږي؛
+    // د هغوی استادان لا هم بوخت دي.
+    final busy = <String, int>{};
+    final outside = await db
+        .customSelect(
+          'SELECT section_id, day_of_week, slot_id, teacher_id '
+          'FROM timetable_entries WHERE teacher_id IS NOT NULL',
+          readsFrom: {db.timetableEntries},
+        )
+        .get();
+    final rearranged = {for (final t in targets) t.sectionId};
+    for (final r in outside) {
+      if (rearranged.contains(r.read<int>('section_id'))) continue;
+      busy['${r.read<int>('day_of_week')}/${r.read<int>('slot_id')}/'
+              '${r.read<int>('teacher_id')}'] =
+          r.read<int>('section_id');
+    }
+
+    // د هر مضمون تلوالی استاد — هغه چې لا دمخه ورکوي، بیا هغه چې
+    // تخصص يې سمون خوري.
+    final preferred = await _preferredTeachers();
+
+    final cells = <PlannedCell>[];
+    var clashes = 0;
+    final rng = _Lcg(variant + 1);
+
+    for (final target in targets) {
+      final subjects = await _gradeSubjects(target.gradeId);
+      if (subjects.isEmpty) continue;
+
+      // د غوښتنې لیست: هر مضمون څو ځله. د سختۍ له مخې ترتیب، او
+      // د بدیل له مخې د یو-شان-سختۍ ډلې دننه ګډوډ.
+      final demand = _demand(
+        subjects: subjects,
+        capacity: dayList.length * teaching.length,
+        rng: rng,
+      );
+
+      // خانې: لومړی د ورځې لومړي ساعتونه، بیا دویم… نو سخت
+      // مضمونونه پر ټولو ورځو سهار خپرېږي، نه دا چې یوه ورځ ډکه
+      // شي او بله تشه پاتې.
+      final orderedDays = [...dayList];
+      if (orderedDays.length > 1) rng.shuffle(orderedDays);
+
+      final slotsOfDay = <({int day, TimeSlot slot, int index})>[];
+      for (var i = 0; i < teaching.length; i++) {
+        for (final d in orderedDays) {
+          slotsOfDay.add((day: d, slot: teaching[i], index: i));
+        }
+      }
+
+      final usedPerDay = <int, Set<int>>{};
+
+      for (final cell in slotsOfDay) {
+        if (demand.isEmpty) break;
+
+        // د لیست له سره د لومړي هغه مضمون لټون چې پر دې ورځ لا نه
+        // وي ورکړل شوی او استاد يې آزاد وي. **له سره** — ځکه چې
+        // لیست د سختۍ په ترتیب دی، نو لومړی نوماند تل غوره دی.
+        var pick = -1;
+        var fallback = -1;
+        for (var i = 0; i < demand.length; i++) {
+          final sub = demand[i];
+          if (usedPerDay[cell.day]?.contains(sub.id) ?? false) continue;
+          fallback = fallback == -1 ? i : fallback;
+          final teacher = preferred[sub.id];
+          if (teacher == null ||
+              !busy.containsKey('${cell.day}/${cell.slot.id}/$teacher')) {
+            pick = i;
+            break;
+          }
+        }
+        // هېڅ بې‌ټکره نه شته — نو هغه واخله چې لږ تر لږه پر دې
+        // ورځ تکرار نه دی. که هغه هم نه وي، دا خانه تشه پرېږده.
+        if (pick == -1) pick = fallback;
+        if (pick == -1) continue;
+
+        final sub = demand.removeAt(pick);
+        final teacher = preferred[sub.id];
+        final busyKey = '${cell.day}/${cell.slot.id}/$teacher';
+        final clashed = teacher != null && busy.containsKey(busyKey);
+        if (clashed) clashes++;
+        if (teacher != null) busy[busyKey] = target.sectionId;
+
+        usedPerDay.putIfAbsent(cell.day, () => {}).add(sub.id);
+        cells.add(
+          PlannedCell(
+            sectionId: target.sectionId,
+            dayOfWeek: cell.day,
+            slotId: cell.slot.id,
+            subjectId: sub.id,
+            teacherId: teacher,
+          ),
+        );
+      }
+    }
+
+    return ArrangementPlan(
+      cells: cells,
+      variant: variant,
+      placed: cells.length,
+      capacity: targets.length * dayList.length * teaching.length,
+      teacherClashes: clashes,
+    );
+  }
+
+  /// د یوې درجې مضمونونه — او یوازې د هغې.
+  ///
+  /// `grade_id IS NULL` مضمونونه ټولو ته ګډ دي (ریاضي، پښتو).
+  /// هغه چې درجه لري، یوازې هماغې درجې ته — همدا هغه کرښه ده چې
+  /// د یوه ټولګي کتابونه بل ته تلو ته نه پرېږدي.
+  Future<List<Subject>> _gradeSubjects(int gradeId) => (db.select(db.subjects)
+        ..where((s) => s.gradeId.isNull() | s.gradeId.equals(gradeId))
+        ..orderBy([
+          (s) => OrderingTerm.asc(s.sortOrder),
+          (s) => OrderingTerm.asc(s.name),
+        ]))
+      .get();
+
+  /// د هر مضمون تلوالی استاد.
+  ///
+  /// لومړی هغه چې لا دمخه يې په مهالویش کې ورکوي — د یوه ترتیب
+  /// بدلون باید د استادانو ټاکنه له سره ونه اړوي. بیا هغه چې
+  /// تخصص يې د مضمون له نامه سره سمون خوري.
+  Future<Map<int, int>> _preferredTeachers() async {
+    final out = <int, int>{};
+
+    final existing = await db
+        .customSelect(
+          'SELECT subject_id, teacher_id, COUNT(*) AS c '
+          'FROM timetable_entries WHERE teacher_id IS NOT NULL '
+          'GROUP BY subject_id, teacher_id ORDER BY c DESC',
+          readsFrom: {db.timetableEntries},
+        )
+        .get();
+    for (final r in existing) {
+      out.putIfAbsent(r.read<int>('subject_id'), () => r.read<int>('teacher_id'));
+    }
+
+    final bySpec = await db
+        .customSelect(
+          '''
+SELECT sub.id AS subject_id, MIN(t.id) AS teacher_id
+FROM subjects sub
+JOIN teachers t ON t.specialization = sub.name
+WHERE t.deleted_at IS NULL AND t.status = 'active'
+GROUP BY sub.id
+''',
+          readsFrom: {db.subjects, db.teachers},
+        )
+        .get();
+    for (final r in bySpec) {
+      out.putIfAbsent(r.read<int>('subject_id'), () => r.read<int>('teacher_id'));
+    }
+
+    return out;
+  }
+
+  /// څو ساعته هر مضمون واخلي — د سختۍ له مخې ترتیب شوی لیست.
+  static List<Subject> _demand({
+    required List<Subject> subjects,
+    required int capacity,
+    required _Lcg rng,
+  }) {
+    // د یو-شان-سختۍ ډلې دننه ګډوډول — دا هغه څه دي چې بدیلونه
+    // یو له بله بېلوي.
+    final groups = <int, List<Subject>>{};
+    for (final s in subjects) {
+      groups.putIfAbsent(difficultyRank(s.difficulty), () => []).add(s);
+    }
+    for (final g in groups.values) {
+      rng.shuffle(g);
+    }
+
+    // **مساوي وېش، خو سخت مضمونونه پاتې ساعتونه اخلي.** که ۷
+    // مضمونونه او ۳۰ ساعتونه وي، هر یو ۴ اخلي او دوه پاتې کېږي —
+    // هغه دوه سختو ته ځي، ځکه چې سخت مضمون تکرار ته زیاته اړتیا
+    // لري.
+    final ordered = [
+      ...?groups[0],
+      ...?groups[1],
+      ...?groups[2],
+    ];
+    if (ordered.isEmpty) return [];
+
+    final base = capacity ~/ ordered.length;
+    var extra = capacity - base * ordered.length;
+
+    final demand = <Subject>[];
+    final counts = <Subject, int>{};
+    for (final s in ordered) {
+      var n = base;
+      if (extra > 0) {
+        n++;
+        extra--;
+      }
+      counts[s] = n;
+    }
+
+    // د سختۍ په ترتیب کې راټولول — لومړی د هر سخت مضمون یو، بیا
+    // دویم… چې د لومړي ساعت خانې د سختو ترمنځ ووېشل شي.
+    var round = 0;
+    while (demand.length < capacity) {
+      var added = false;
+      for (final s in ordered) {
+        if ((counts[s] ?? 0) > round) {
+          demand.add(s);
+          added = true;
+          if (demand.length >= capacity) break;
+        }
+      }
+      if (!added) break;
+      round++;
+    }
+    return demand;
+  }
+
+  /// یو ترتیب ذخیره کوي — **لومړی زاړه خانې پاکوي**.
+  ///
+  /// که پاکول نه کېدل، یو نوی ترتیب به د زاړه پر سر لیکل شوی و او
+  /// هغه خانې چې نوي ترتیب کې تشې دي، به لا هم زاړه درسونه لرلې.
+  Future<void> applyPlan(ArrangementPlan plan) async {
+    if (plan.isEmpty) return;
+    await db.transaction(() async {
+      final sections = {for (final c in plan.cells) c.sectionId};
+      final days = {for (final c in plan.cells) c.dayOfWeek};
+      for (final sec in sections) {
+        for (final d in days) {
+          await (db.delete(db.timetableEntries)
+                ..where((t) => t.sectionId.equals(sec))
+                ..where((t) => t.dayOfWeek.equals(d)))
+              .go();
+        }
+      }
+      for (final c in plan.cells) {
+        await db
+            .into(db.timetableEntries)
+            .insert(
+              TimetableEntriesCompanion.insert(
+                sectionId: c.sectionId,
+                dayOfWeek: c.dayOfWeek,
+                slotId: c.slotId,
+                subjectId: c.subjectId,
+                teacherId: Value(c.teacherId),
+              ),
+            );
+      }
+    });
+  }
+
+  /// **یوه خانه بلې ته لېږدول — د موږک په کش کولو.**
+  ///
+  /// که هدف ډک وي، دواړه سره بدلېږي (سواپ)، نه دا چې یوه ورکه شي.
+  ///
+  /// **بخش نه بدلېږي.** د یوه ټولګي درس بل ټولګي ته کشول رد کېږي —
+  /// ځکه چې د درجه ثانیه قدوري په درجه رابعه کې معنا نه لري، او
+  /// یوه ناغلطه کش کولو به یوه ټوله درجه خرابه کړې وه.
+  Future<MoveResult> moveEntry({
+    required int sectionId,
+    required int fromDay,
+    required int fromSlotId,
+    required int toDay,
+    required int toSlotId,
+    int? toSectionId,
+  }) async {
+    if (toSectionId != null && toSectionId != sectionId) {
+      return MoveResult.crossSection;
+    }
+    if (fromDay == toDay && fromSlotId == toSlotId) return MoveResult.ok;
+
+    Future<TimetableEntry?> at(int day, int slot) => (db.select(
+      db.timetableEntries,
+    )..where(
+          (t) =>
+              t.sectionId.equals(sectionId) &
+              t.dayOfWeek.equals(day) &
+              t.slotId.equals(slot),
+        ))
+        .getSingleOrNull();
+
+    final src = await at(fromDay, fromSlotId);
+    if (src == null) return MoveResult.emptySource;
+    final dst = await at(toDay, toSlotId);
+
+    await db.transaction(() async {
+      // دواړه لومړی ړنګېږي — که نه، د یوځلي کلي ټکر به دویم
+      // لیکل بند کړل.
+      await (db.delete(db.timetableEntries)
+            ..where((t) => t.id.equals(src.id)))
+          .go();
+      if (dst != null) {
+        await (db.delete(db.timetableEntries)
+              ..where((t) => t.id.equals(dst.id)))
+            .go();
+      }
+
+      await db
+          .into(db.timetableEntries)
+          .insert(
+            TimetableEntriesCompanion.insert(
+              sectionId: sectionId,
+              dayOfWeek: toDay,
+              slotId: toSlotId,
+              subjectId: src.subjectId,
+              teacherId: Value(src.teacherId),
+              room: Value(src.room),
+            ),
+          );
+      if (dst != null) {
+        await db
+            .into(db.timetableEntries)
+            .insert(
+              TimetableEntriesCompanion.insert(
+                sectionId: sectionId,
+                dayOfWeek: fromDay,
+                slotId: fromSlotId,
+                subjectId: dst.subjectId,
+                teacherId: Value(dst.teacherId),
+                room: Value(dst.room),
+              ),
+            );
+      }
+    });
+
+    return dst == null ? MoveResult.ok : MoveResult.swapped;
+  }
+
+  /// **د ټولو خانو یوه انځور** — د انډو/ریډو لپاره.
+  ///
+  /// **ولې ټول جدول، نه یوازې بدلون؟** ځکه چې «ځیرک ترتیب» په یوه
+  /// کلیک کې څلوېښت خانې بدلوي. د هر بدلون جلا ساتل به پیچلي کوډ
+  /// ته اړتیا لرله او یوه هېره شوې قضیه به انډو خرابه کړې وه. یو
+  /// بشپړ انځور کوچنی دی (څو سوه کرښې) او هېڅکله نه غلطېږي.
+  Future<List<PlannedCell>> snapshot({int? sectionId, bool? daily}) async {
+    final rows = await db
+        .customSelect(
+          'SELECT section_id, day_of_week, slot_id, subject_id, teacher_id '
+          'FROM timetable_entries'
+          '${sectionId == null ? '' : ' WHERE section_id = ?'}',
+          variables: [if (sectionId != null) Variable<int>(sectionId)],
+          readsFrom: {db.timetableEntries},
+        )
+        .get();
+    return [
+      for (final r in rows)
+        if (daily == null ||
+            (daily ? r.read<int>('day_of_week') == everyDay
+                   : r.read<int>('day_of_week') != everyDay))
+          PlannedCell(
+            sectionId: r.read<int>('section_id'),
+            dayOfWeek: r.read<int>('day_of_week'),
+            slotId: r.read<int>('slot_id'),
+            subjectId: r.read<int>('subject_id'),
+            teacherId: r.data['teacher_id'] as int?,
+          ),
+    ];
+  }
+
+  /// یو پخوانی انځور بېرته راولي.
+  Future<void> restore(
+    List<PlannedCell> cells, {
+    int? sectionId,
+    bool? daily,
+  }) async {
+    await db.transaction(() async {
+      final del = db.delete(db.timetableEntries);
+      if (sectionId != null) del.where((t) => t.sectionId.equals(sectionId));
+      if (daily != null) {
+        del.where(
+          (t) => daily
+              ? t.dayOfWeek.equals(everyDay)
+              : t.dayOfWeek.equals(everyDay).not(),
+        );
+      }
+      await del.go();
+
+      for (final c in cells) {
+        await db
+            .into(db.timetableEntries)
+            .insert(
+              TimetableEntriesCompanion.insert(
+                sectionId: c.sectionId,
+                dayOfWeek: c.dayOfWeek,
+                slotId: c.slotId,
+                subjectId: c.subjectId,
+                teacherId: Value(c.teacherId),
+              ),
+            );
+      }
+    });
+  }
+
+  // ── د ساعتونو جوړښت ─────────────────────────────────────
+
+  /// **د درسي ساعتونو له سره جوړول** — د ښوونځي د تنظیماتو له مخې.
+  ///
+  /// **زاړه درسونه څنګه ژغورل کېږي؟** نوي ساعتونه نوي `id`ونه
+  /// لري، نو زاړه خانې به بې‌ځایه شوې وې. نو د زاړه او نوي ترتیب
+  /// تر منځ د **ځای له مخې** نقشه جوړېږي: زوړ لومړی درسي ساعت →
+  /// نوی لومړی، دویم → دویم. که نوی جوړښت لنډ وي، هغه درسونه چې
+  /// ځای نه لري، ړنګېږي — او شمېره يې راګرځي، چې کارن پوه شي.
+  Future<int> rebuildSlots({
+    required String dayStart,
+    required int periodsPerDay,
+    required int periodMinutes,
+    required int breakAfterPeriods,
+    required int breakMinutes,
+    required int breaksPerDay,
+  }) async {
+    final oldTeaching = (await slots()).where((s) => !s.isBreak).toList();
+
+    final parts = dayStart.split(':');
+    var minutes =
+        (int.tryParse(parts.first) ?? 7) * 60 +
+        (parts.length > 1 ? (int.tryParse(parts[1]) ?? 0) : 0);
+
+    String fmt(int m) =>
+        '${(m ~/ 60).toString().padLeft(2, '0')}:'
+        '${(m % 60).toString().padLeft(2, '0')}';
+
+    return db.transaction(() async {
+      // د زاړه ترتیب انځور — د ځای له مخې، نه د id له مخې.
+      final oldIndex = {
+        for (var i = 0; i < oldTeaching.length; i++) oldTeaching[i].id: i,
+      };
+      final entries = await db.select(db.timetableEntries).get();
+
+      await db.delete(db.timetableEntries).go();
+      await db.delete(db.timeSlots).go();
+
+      final newTeaching = <int>[];
+      var order = 0;
+      var breaksUsed = 0;
+
+      for (var i = 1; i <= periodsPerDay; i++) {
+        newTeaching.add(
+          await db
+              .into(db.timeSlots)
+              .insert(
+                TimeSlotsCompanion.insert(
+                  name: '$i ساعت',
+                  startTime: fmt(minutes),
+                  endTime: fmt(minutes + periodMinutes),
+                  sortOrder: Value(order++),
+                ),
+              ),
+        );
+        minutes += periodMinutes;
+
+        // تفریح د هرو `breakAfterPeriods` ساعتونو وروسته، خو له
+        // ټاکل شوې شمېرې زیاته نه — او د ورځې تر پایه هېڅکله نه.
+        final due =
+            breakAfterPeriods > 0 &&
+            i % breakAfterPeriods == 0 &&
+            i != periodsPerDay &&
+            breaksUsed < breaksPerDay;
+        if (due) {
+          breaksUsed++;
+          await db
+              .into(db.timeSlots)
+              .insert(
+                TimeSlotsCompanion.insert(
+                  name: 'تفریح',
+                  startTime: fmt(minutes),
+                  endTime: fmt(minutes + breakMinutes),
+                  isBreak: const Value(true),
+                  sortOrder: Value(order++),
+                ),
+              );
+          minutes += breakMinutes;
+        }
+      }
+
+      var dropped = 0;
+      for (final e in entries) {
+        final idx = oldIndex[e.slotId];
+        if (idx == null || idx >= newTeaching.length) {
+          dropped++;
+          continue;
+        }
+        await db
+            .into(db.timetableEntries)
+            .insert(
+              TimetableEntriesCompanion.insert(
+                sectionId: e.sectionId,
+                dayOfWeek: e.dayOfWeek,
+                slotId: newTeaching[idx],
+                subjectId: e.subjectId,
+                teacherId: Value(e.teacherId),
+                room: Value(e.room),
+              ),
+            );
+      }
+      return dropped;
+    });
+  }
+
+  /// د ورځې د پای وخت — د تنظیماتو له مخې حساب شوی.
+  static String computeDayEnd({
+    required String dayStart,
+    required int periodsPerDay,
+    required int periodMinutes,
+    required int breakAfterPeriods,
+    required int breakMinutes,
+    required int breaksPerDay,
+  }) {
+    final parts = dayStart.split(':');
+    var m =
+        (int.tryParse(parts.first) ?? 7) * 60 +
+        (parts.length > 1 ? (int.tryParse(parts[1]) ?? 0) : 0);
+
+    var breaksUsed = 0;
+    for (var i = 1; i <= periodsPerDay; i++) {
+      m += periodMinutes;
+      if (breakAfterPeriods > 0 &&
+          i % breakAfterPeriods == 0 &&
+          i != periodsPerDay &&
+          breaksUsed < breaksPerDay) {
+        breaksUsed++;
+        m += breakMinutes;
+      }
+    }
+    // له نیمې شپې تېرېدل — یو ښوونځی چې د ماښام کورس ولري.
+    m %= 24 * 60;
+    return '${(m ~/ 60).toString().padLeft(2, '0')}:'
+        '${(m % 60).toString().padLeft(2, '0')}';
   }
 
   Future<void> clearEntry({

@@ -641,27 +641,33 @@ ORDER BY g.level, sec.name
     // `seedMadrasaStructure` په ترڅ کې ثبتېږي، نو دلته څه نه کوو.
     if (await isMadrasa()) return;
 
+    // **د سختۍ درجه د تلوالې برخه ده، نه یو وروسته فکر.**
+    //
+    // ځیرک مهالویش سخت مضمونونه سهار ږدي. که ټول «منځني» پیل
+    // شوي وای، هغه ځانګړتیا به تر هغې بې‌ګټې وه چې مدیر يې د
+    // شپاړسو مضمونونو درجه په لاس ټاکلې وای — او هېڅوک يې نه
+    // کوي. نو د یوه معقول پیل سره راځي، او سمېدونکې ده.
     const list = [
-      ('قرآن کریم', 'QRN', true),
-      ('اسلامیات', 'ISL', true),
-      ('عربي', 'ARB', true),
-      ('حدیث', 'HDS', true),
-      ('فقه', 'FQH', true),
-      ('پښتو', 'PSH', false),
-      ('دري', 'DRI', false),
-      ('انګلیسي', 'ENG', false),
-      ('ریاضي', 'MTH', false),
-      ('فزیک', 'PHY', false),
-      ('کیمیا', 'CHM', false),
-      ('بیولوژي', 'BIO', false),
-      ('تاریخ', 'HIS', false),
-      ('جغرافیه', 'GEO', false),
-      ('کمپیوټر', 'CMP', false),
-      ('ورزش', 'SPT', false),
+      ('قرآن کریم', 'QRN', true, 'medium'),
+      ('اسلامیات', 'ISL', true, 'medium'),
+      ('عربي', 'ARB', true, 'hard'),
+      ('حدیث', 'HDS', true, 'medium'),
+      ('فقه', 'FQH', true, 'hard'),
+      ('پښتو', 'PSH', false, 'medium'),
+      ('دري', 'DRI', false, 'medium'),
+      ('انګلیسي', 'ENG', false, 'hard'),
+      ('ریاضي', 'MTH', false, 'hard'),
+      ('فزیک', 'PHY', false, 'hard'),
+      ('کیمیا', 'CHM', false, 'hard'),
+      ('بیولوژي', 'BIO', false, 'medium'),
+      ('تاریخ', 'HIS', false, 'easy'),
+      ('جغرافیه', 'GEO', false, 'easy'),
+      ('کمپیوټر', 'CMP', false, 'easy'),
+      ('ورزش', 'SPT', false, 'easy'),
     ];
 
     var order = 0;
-    for (final (name, code, religious) in list) {
+    for (final (name, code, religious, difficulty) in list) {
       await db
           .into(db.subjects)
           .insert(
@@ -669,6 +675,7 @@ ORDER BY g.level, sec.name
               name: name,
               code: Value(code),
               isReligious: Value(religious),
+              difficulty: Value(difficulty),
               sortOrder: Value(order++),
             ),
           );

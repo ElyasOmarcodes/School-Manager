@@ -49,6 +49,26 @@ class _TimetablePageState extends State<TimetablePage> {
 
   bool get _isDaily => _mode == 'daily';
 
+  /// کوم ځیرک بدیل ښکاري — د ‹ › تڼیو لپاره.
+  ///
+  /// `null` یعنې جدول په لاس جوړ شوی، نه په ځیرک ترتیب. ‹ › یوازې
+  /// وروسته له لومړي ځیرک ترتیبه معنا لري.
+  int? _variant;
+  int _clashes = 0;
+  bool _arranging = false;
+
+  /// **د انډو/ریډو ډېران — بشپړ انځورونه، نه جلا بدلونونه.**
+  ///
+  /// یو ځیرک ترتیب په یوه کلیک کې څلوېښت خانې بدلوي. که هر بدلون
+  /// جلا ساتل کېده، انډو به څلوېښت ځله وهلو ته اړ و — او هغه هغه
+  /// څه نه دي چې کارن يې غواړي.
+  final List<List<PlannedCell>> _undo = [];
+  final List<List<PlannedCell>> _redo = [];
+
+  /// څومره انځورونه ساتو. له دې زیات یوازې حافظه خوري — هېڅوک
+  /// شل ځله بېرته نه ځي.
+  static const int _historyLimit = 20;
+
   @override
   void initState() {
     super.initState();
@@ -223,6 +243,131 @@ class _TimetablePageState extends State<TimetablePage> {
     }
   }
 
+  // ── انډو / ریډو ───────────────────────────────────────
+
+  /// د بدلون دمخه اوسنی حال ساتي.
+  Future<void> _remember() async {
+    final snap = await widget.timetable.snapshot(daily: _isDaily);
+    _undo.add(snap);
+    if (_undo.length > _historyLimit) _undo.removeAt(0);
+    // یو نوی بدلون د «مخکې تګ» تاریخچه بې‌معنا کوي.
+    _redo.clear();
+  }
+
+  Future<void> _undoLast() async {
+    if (_undo.isEmpty) return;
+    final current = await widget.timetable.snapshot(daily: _isDaily);
+    final target = _undo.removeLast();
+    _redo.add(current);
+    await widget.timetable.restore(target, daily: _isDaily);
+    if (!mounted) return;
+    setState(() => _variant = null);
+    await _load();
+  }
+
+  Future<void> _redoLast() async {
+    if (_redo.isEmpty) return;
+    final current = await widget.timetable.snapshot(daily: _isDaily);
+    final target = _redo.removeLast();
+    _undo.add(current);
+    await widget.timetable.restore(target, daily: _isDaily);
+    if (!mounted) return;
+    setState(() => _variant = null);
+    await _load();
+  }
+
+  // ── ځیرک ترتیب ────────────────────────────────────────
+
+  /// یو ځیرک ترتیب جوړوي او پلې کوي.
+  ///
+  /// **ولې سمدستي پلې کېږي، نه یوه مخکتنه؟** ځکه چې یوه مخکتنه
+  /// د جدول دویمه بڼه ده — کارن به يې له ریښتیني سره پرتله کوله.
+  /// دلته ریښتینی جدول بدلېږي او انډو تل لاس‌رسي دی، نو د لیدلو
+  /// او د بېرته تګ ترمنځ یوه تڼۍ فاصله ده.
+  Future<void> _smartArrange(int variant) async {
+    if (_arranging) return;
+    setState(() => _arranging = true);
+    await _remember();
+
+    final plan = await widget.timetable.arrange(
+      daily: _isDaily,
+      sectionId: _isDaily ? null : _section?.sectionId,
+      variant: variant,
+    );
+    await widget.timetable.applyPlan(plan);
+
+    if (!mounted) return;
+    setState(() {
+      _variant = variant;
+      _clashes = plan.teacherClashes;
+      _arranging = false;
+    });
+    await _load();
+    if (!mounted) return;
+
+    final locale = S.of(context).locale;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        width: 560,
+        backgroundColor: plan.teacherClashes > 0
+            ? AppColors.warning
+            : AppColors.success,
+        content: Text(
+          plan.teacherClashes > 0
+              ? 'ترتیب ${locale.num(variant + 1)} — '
+                    '${locale.num(plan.placed)} خانې ډکې شوې، خو '
+                    '${locale.num(plan.teacherClashes)} د استاد ټکرونه '
+                    'پاتې دي. ‹ › ووهئ چې بل بدیل وګورئ.'
+              : 'ترتیب ${locale.num(variant + 1)} — '
+                    '${locale.num(plan.placed)} خانې ډکې شوې، هېڅ ټکر '
+                    'نشته.',
+        ),
+      ),
+    );
+  }
+
+  // ── کش کول ────────────────────────────────────────────
+
+  /// یوه خانه بلې ته لېږدوي.
+  Future<void> _moveCell({
+    required int sectionId,
+    required int fromDay,
+    required int fromSlotId,
+    required int toDay,
+    required int toSlotId,
+    int? toSectionId,
+  }) async {
+    await _remember();
+    final r = await widget.timetable.moveEntry(
+      sectionId: sectionId,
+      fromDay: fromDay,
+      fromSlotId: fromSlotId,
+      toDay: toDay,
+      toSlotId: toSlotId,
+      toSectionId: toSectionId,
+    );
+    if (!mounted) return;
+
+    if (r == MoveResult.crossSection) {
+      // انځور بېرته اخلو — هېڅ بدلون نه دی شوی، نو په تاریخچه کې
+      // يې ځای نه دی.
+      _undo.removeLast();
+      _warn(
+        'یو درس له یوه ټولګي بل ته نه لېږدېږي — د هرې درجې خپل '
+        'کتابونه دي.',
+      );
+      return;
+    }
+    if (r == MoveResult.emptySource) {
+      _undo.removeLast();
+      return;
+    }
+
+    setState(() => _variant = null);
+    await _load();
+  }
+
   void _warn(String text) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -291,6 +436,23 @@ class _TimetablePageState extends State<TimetablePage> {
                   onChanged: _setMode,
                 ),
                 const Spacer(),
+                _SmartBar(
+                  variant: _variant,
+                  busy: _arranging,
+                  canUndo: _undo.isNotEmpty,
+                  canRedo: _redo.isNotEmpty,
+                  clashes: _clashes,
+                  onArrange: () => _smartArrange(_variant ?? 0),
+                  onPrev: _variant == null || _variant == 0
+                      ? null
+                      : () => _smartArrange(_variant! - 1),
+                  onNext: _variant == null
+                      ? null
+                      : () => _smartArrange(_variant! + 1),
+                  onUndo: _undo.isEmpty ? null : _undoLast,
+                  onRedo: _redo.isEmpty ? null : _redoLast,
+                ),
+                const SizedBox(width: 12),
                 if (_conflicts.isNotEmpty)
                   Container(
                     padding: const EdgeInsets.symmetric(
@@ -395,7 +557,17 @@ class _TimetablePageState extends State<TimetablePage> {
                 slot: slot,
                 days: grid.days,
                 grid: grid,
+                sectionId: _section?.sectionId,
                 onTap: slot.isBreak ? null : _editCell,
+                onDrop: slot.isBreak
+                    ? null
+                    : (from, day) => _moveCell(
+                        sectionId: from.sectionId,
+                        fromDay: from.dayOfWeek,
+                        fromSlotId: from.slotId,
+                        toDay: day,
+                        toSlotId: slot.id,
+                      ),
               ),
           ],
         ),
@@ -537,6 +709,27 @@ class _TimetablePageState extends State<TimetablePage> {
                                       row.sectionId,
                                       slot,
                                     ),
+                                    // **کش کول یوازې د یوه کتار
+                                    // دننه.** د درجه ثانیه قدوري
+                                    // په درجه رابعه کې معنا نه
+                                    // لري — `sectionId` پخپله
+                                    // دا رد پلې کوي.
+                                    drag: daily.at(row.sectionId, slot.id) ==
+                                            null
+                                        ? null
+                                        : CellDrag(
+                                            sectionId: row.sectionId,
+                                            dayOfWeek: everyDay,
+                                            slotId: slot.id,
+                                          ),
+                                    onDrop: (from) => _moveCell(
+                                      sectionId: from.sectionId,
+                                      fromDay: everyDay,
+                                      fromSlotId: from.slotId,
+                                      toDay: everyDay,
+                                      toSlotId: slot.id,
+                                      toSectionId: row.sectionId,
+                                    ),
                                   ),
                           ),
                       ],
@@ -557,13 +750,17 @@ class _SlotRow extends StatelessWidget {
   final TimeSlot slot;
   final List<int> days;
   final TimetableGrid grid;
+  final int? sectionId;
   final void Function(int day, TimeSlot slot)? onTap;
+  final void Function(CellDrag from, int day)? onDrop;
 
   const _SlotRow({
     required this.slot,
     required this.days,
     required this.grid,
+    this.sectionId,
     this.onTap,
+    this.onDrop,
   });
 
   @override
@@ -633,6 +830,14 @@ class _SlotRow extends StatelessWidget {
                 child: _Cell(
                   cell: grid.at(day, slot.id),
                   onTap: onTap == null ? null : () => onTap!(day, slot),
+                  drag: sectionId == null || grid.at(day, slot.id) == null
+                      ? null
+                      : CellDrag(
+                          sectionId: sectionId!,
+                          dayOfWeek: day,
+                          slotId: slot.id,
+                        ),
+                  onDrop: onDrop == null ? null : (f) => onDrop!(f, day),
                 ),
               ),
           ],
@@ -642,11 +847,30 @@ class _SlotRow extends StatelessWidget {
   }
 }
 
+/// د یوې خانې پېژندنه چې د کش کولو پر مهال وړل کېږي.
+class CellDrag {
+  final int sectionId;
+  final int dayOfWeek;
+  final int slotId;
+
+  const CellDrag({
+    required this.sectionId,
+    required this.dayOfWeek,
+    required this.slotId,
+  });
+}
+
 class _Cell extends StatefulWidget {
   final TimetableCell? cell;
   final VoidCallback? onTap;
 
-  const _Cell({this.cell, this.onTap});
+  /// که `null` وي، دا خانه نه کش کېږي (تشه ده یا جدول بند دی).
+  final CellDrag? drag;
+
+  /// کله چې بله خانه دلته پرېښودل شي.
+  final void Function(CellDrag from)? onDrop;
+
+  const _Cell({this.cell, this.onTap, this.drag, this.onDrop});
 
   @override
   State<_Cell> createState() => _CellState();
@@ -654,6 +878,7 @@ class _Cell extends StatefulWidget {
 
 class _CellState extends State<_Cell> {
   bool _hover = false;
+  bool _over = false;
 
   /// **د مضمون رنګ د نامه له مخې.** یو ثابت نقشه به هر ښوونځي ته
   /// نه برابرېده — ځینې «فزیک» لري، ځینې «حدیث». نو د نامه له
@@ -674,15 +899,44 @@ class _CellState extends State<_Cell> {
 
   @override
   Widget build(BuildContext context) {
+    final body = _body(context);
+    if (widget.onDrop == null) return body;
+
+    // **`DragTarget` بهر دی او `Draggable` دننه.** برعکس يې کار نه
+    // کاوه: یوه خانه چې پخپله کش کېږي، باید د بلې د پرېښودو ځای
+    // هم وي — او د Flutter کش کول د ونې له پاسه راځي.
+    return DragTarget<CellDrag>(
+      onWillAcceptWithDetails: (d) {
+        // **له یوه بخشه بل ته نه** — دا هغه قاعده ده چې د یوې
+        // درجې کتابونه بلې ته تلو ته نه پرېږدي. رد يې دلته ښکاري
+        // (خانه نه روښانېږي)، نو کارن مخکې له پرېښودو پوهېږي.
+        final ok = widget.drag == null
+            ? true
+            : d.data.sectionId == widget.drag!.sectionId;
+        if (ok) setState(() => _over = true);
+        return ok;
+      },
+      onLeave: (_) => setState(() => _over = false),
+      onAcceptWithDetails: (d) {
+        setState(() => _over = false);
+        widget.onDrop!(d.data);
+      },
+      builder: (context, _, _) => body,
+    );
+  }
+
+  Widget _body(BuildContext context) {
     final p = context.palette;
     final cell = widget.cell;
 
-    return MouseRegion(
+    final inner = MouseRegion(
       onEnter: (_) => setState(() => _hover = true),
       onExit: (_) => setState(() => _hover = false),
-      cursor: widget.onTap == null
-          ? MouseCursor.defer
-          : SystemMouseCursors.click,
+      cursor: widget.drag != null
+          ? SystemMouseCursors.grab
+          : (widget.onTap == null
+                ? MouseCursor.defer
+                : SystemMouseCursors.click),
       child: GestureDetector(
         onTap: widget.onTap,
         child: AnimatedContainer(
@@ -693,13 +947,24 @@ class _CellState extends State<_Cell> {
           height: 72,
           padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
           decoration: BoxDecoration(
-            color: cell == null
+            color: _over
+                // د پرېښودو ځای روښانېږي — کارن مخکې له پرېښودو
+                // پوهېږي چې کومه خانه به ونیول شي.
+                ? AppColors.modTimetable.withValues(alpha: 0.22)
+                : cell == null
                 ? (_hover ? p.surfaceAlt : Colors.transparent)
                 : _colorFor(
                     cell.subjectName,
                   ).withValues(alpha: _hover ? 0.18 : 0.11),
-            border: Border(right: BorderSide(color: p.line)),
+            border: Border(
+              right: BorderSide(color: p.line),
+            ),
           ),
+          foregroundDecoration: _over
+              ? BoxDecoration(
+                  border: Border.all(color: AppColors.modTimetable, width: 2),
+                )
+              : null,
           child: cell == null
               ? Center(
                   child: AnimatedOpacity(
@@ -749,6 +1014,201 @@ class _CellState extends State<_Cell> {
                 ),
         ),
       ),
+    );
+
+    final drag = widget.drag;
+    if (drag == null) return inner;
+
+    return Draggable<CellDrag>(
+      data: drag,
+      dragAnchorStrategy: pointerDragAnchorStrategy,
+      feedback: _Ghost(cell: cell!, color: _colorFor(cell.subjectName)),
+      childWhenDragging: Opacity(opacity: 0.3, child: inner),
+      child: inner,
+    );
+  }
+}
+
+/// هغه کارت چې د کش کولو پر مهال د موږک تر لاندې راځي.
+class _Ghost extends StatelessWidget {
+  final TimetableCell cell;
+  final Color color;
+
+  const _Ghost({required this.cell, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+          boxShadow: [
+            BoxShadow(
+              color: color.withValues(alpha: 0.4),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Text(
+          cell.subjectName,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w800,
+            color: Colors.white,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// **د ځیرک ترتیب کرښه** — جوړول، بدیلونه، انډو/ریډو.
+class _SmartBar extends StatelessWidget {
+  final int? variant;
+  final bool busy;
+  final bool canUndo;
+  final bool canRedo;
+  final int clashes;
+  final VoidCallback onArrange;
+  final VoidCallback? onPrev;
+  final VoidCallback? onNext;
+  final VoidCallback? onUndo;
+  final VoidCallback? onRedo;
+
+  const _SmartBar({
+    required this.variant,
+    required this.busy,
+    required this.canUndo,
+    required this.canRedo,
+    required this.clashes,
+    required this.onArrange,
+    this.onPrev,
+    this.onNext,
+    this.onUndo,
+    this.onRedo,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final locale = S.of(context).locale;
+    final p = context.palette;
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconButton(
+          tooltip: 'بېرته (انډو)',
+          onPressed: busy ? null : onUndo,
+          icon: Icon(
+            Icons.undo_rounded,
+            size: 19,
+            color: canUndo ? p.inkSoft : p.faint,
+          ),
+        ),
+        IconButton(
+          tooltip: 'بیا (ریډو)',
+          onPressed: busy ? null : onRedo,
+          icon: Icon(
+            Icons.redo_rounded,
+            size: 19,
+            color: canRedo ? p.inkSoft : p.faint,
+          ),
+        ),
+        const SizedBox(width: 6),
+
+        // **بدیلونه یوازې وروسته له لومړي ترتیبه ښکاري.** مخکې
+        // له هغه ‹ › هېڅ معنا نه لري — کوم بدیل؟
+        if (variant != null)
+          Container(
+            margin: const EdgeInsetsDirectional.only(end: 8),
+            decoration: BoxDecoration(
+              color: p.surfaceAlt,
+              borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+              border: Border.all(color: p.line),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  tooltip: 'پخوانی بدیل',
+                  onPressed: busy ? null : onPrev,
+                  visualDensity: VisualDensity.compact,
+                  icon: Icon(
+                    Icons.chevron_right_rounded,
+                    size: 20,
+                    color: onPrev == null ? p.faint : p.inkSoft,
+                  ),
+                ),
+                Tooltip(
+                  message: clashes > 0
+                      ? '${locale.num(clashes)} د استاد ټکرونه'
+                      : 'هېڅ ټکر نشته',
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 7,
+                        height: 7,
+                        decoration: BoxDecoration(
+                          color: clashes > 0
+                              ? AppColors.warning
+                              : AppColors.success,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'بدیل ${locale.num(variant! + 1)}',
+                        style: AppTheme.tabular(
+                          TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: p.inkSoft,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'راتلونکی بدیل',
+                  onPressed: busy ? null : onNext,
+                  visualDensity: VisualDensity.compact,
+                  icon: Icon(
+                    Icons.chevron_left_rounded,
+                    size: 20,
+                    color: onNext == null ? p.faint : p.inkSoft,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+        FilledButton.icon(
+          onPressed: busy ? null : onArrange,
+          icon: busy
+              ? const SizedBox(
+                  width: 15,
+                  height: 15,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+              : const Icon(Icons.auto_fix_high_rounded, size: 17),
+          label: Text(variant == null ? 'ځیرک ترتیب' : 'بیا وټاکه'),
+          style: FilledButton.styleFrom(
+            backgroundColor: AppColors.modTimetable,
+            minimumSize: const Size(0, 42),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+          ),
+        ),
+      ],
     );
   }
 }
