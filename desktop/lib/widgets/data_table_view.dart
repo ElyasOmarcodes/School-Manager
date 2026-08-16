@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
 import '../core/l10n/strings.dart';
@@ -323,33 +325,73 @@ class AvatarCell extends StatelessWidget {
   final Color color;
   final double size;
 
+  /// د کس انځور — که وي، د تورې پر ځای ښکاري.
+  ///
+  /// **ولې انځور په لیست کې پکار دی؟** ځکه چې یو مدیر چې د «احمد»
+  /// پنځه شاګردان ولري، د نوم له مخې يې نه شي بېلولی. مخ يې بېلوي —
+  /// او هغه هماغه څه دي چې مدیر يې په سر کې لري، نه نمبر.
+  final String? photoPath;
+
   const AvatarCell({
     super.key,
     required this.name,
     this.color = AppColors.primary,
     this.size = 32,
+    this.photoPath,
   });
+
+  /// **انځور ښکاري که توری؟**
+  ///
+  /// یوه جلا پرېکړه، نه د `build` دننه یوه کرښه — ځکه چې همدا هغه
+  /// قاعده ده چې ازمویل کېږي. د یوه ریښتیني `Image.file` رسمول د
+  /// ازموینې دننه نه بشپړېږي (هلته جعلي ساعت‌کړۍ ځغلي چې د فایل
+  /// I/O بشپړېدنې نه پروسس کوي)، نو پرېکړه پخپله ازمویو، نه رسمول.
+  static bool showsPhoto(String? path) {
+    if (path == null || path.isEmpty) return false;
+    // له ډیسکه ورک انځور تورې ته ورګرځي — د شاګردانو انځورونه ښايي
+    // په یوه USB کې وو چې اوس نه شته، او یو سور «ماتې انځور» به يې
+    // ټول لیست خراب کړی و.
+    try {
+      return File(path).existsSync();
+    } on Object {
+      return false;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final path = photoPath;
+    final hasPhoto = showsPhoto(path);
+
     return Container(
       width: size,
       height: size,
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.13),
         borderRadius: BorderRadius.circular(size / 3.2),
       ),
       alignment: Alignment.center,
-      child: Text(
-        name.trim().isEmpty ? '?' : name.trim().characters.first,
-        style: TextStyle(
-          fontSize: size * 0.42,
-          fontWeight: FontWeight.w700,
-          color: color,
-        ),
-      ),
+      child: hasPhoto
+          ? Image.file(
+              File(path!),
+              width: size,
+              height: size,
+              fit: BoxFit.cover,
+              errorBuilder: (_, _, _) => _initial(),
+            )
+          : _initial(),
     );
   }
+
+  Widget _initial() => Text(
+    name.trim().isEmpty ? '?' : name.trim().characters.first,
+    style: TextStyle(
+      fontSize: size * 0.42,
+      fontWeight: FontWeight.w700,
+      color: color,
+    ),
+  );
 }
 
 /// د پاڼو کنټرول — «۱–۵۰ له ۸۴۲ څخه».

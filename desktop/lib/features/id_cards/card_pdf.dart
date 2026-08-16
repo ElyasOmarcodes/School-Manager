@@ -67,8 +67,7 @@ class CardPdf {
             spacing: gap,
             runSpacing: gap,
             children: [
-              for (final c in slice)
-                _card(c, layout, locale, cardW, cardH),
+              for (final c in slice) _card(c, layout, locale, cardW, cardH),
             ],
           ),
         ),
@@ -85,33 +84,88 @@ class CardPdf {
     double w,
     double h,
   ) {
-    return pw.Container(
-      width: w,
-      height: h,
-      decoration: pw.BoxDecoration(
-        color: PdfColor.fromInt(layout.background),
-        borderRadius: pw.BorderRadius.circular(layout.cornerRadius * h),
-        // **د پرې کولو کرښه** — پرته له دې، څوک نه پوهېږي چېرې
-        // قیچي وکړي، او یو کج پرې شوی کارت بېرته نه جوړېږي.
-        border: pw.Border.all(color: PdfColors.grey400, width: 0.4),
-      ),
-      child: pw.Stack(
-        children: [
-          if (layout.bandHeight > 0)
-            pw.Positioned(
-              top: 0,
-              right: 0,
-              child: pw.Container(
-                width: w,
-                height: layout.bandHeight * h,
-                color: PdfColor.fromInt(layout.bandColor),
+    return pw.ClipRRect(
+      horizontalRadius: layout.cornerRadius * h,
+      verticalRadius: layout.cornerRadius * h,
+      child: pw.Container(
+        width: w,
+        height: h,
+        decoration: pw.BoxDecoration(
+          color: PdfColor.fromInt(layout.background),
+          borderRadius: pw.BorderRadius.circular(layout.cornerRadius * h),
+          // **د پرې کولو کرښه** — پرته له دې، څوک نه پوهېږي چېرې
+          // قیچي وکړي، او یو کج پرې شوی کارت بېرته نه جوړېږي.
+          border: pw.Border.all(color: PdfColors.grey400, width: 0.4),
+        ),
+        child: pw.Stack(
+          children: [
+            // **شالید — انځور، بیا پرده.** ترتیب يې مهم دی: پرده باید
+            // د انځور پر سر وي، که نه یو روښانه انځور به متن پټ کړ.
+            if (_read(layout.backgroundImage) case final bytes?)
+              pw.Positioned(
+                top: 0,
+                right: 0,
+                child: pw.Opacity(
+                  opacity: layout.backgroundOpacity.clamp(0.0, 1.0),
+                  child: pw.SizedBox(
+                    width: w,
+                    height: h,
+                    child: pw.Image(
+                      pw.MemoryImage(bytes),
+                      fit: switch (layout.backgroundFit) {
+                        'contain' => pw.BoxFit.contain,
+                        'fill' => pw.BoxFit.fill,
+                        _ => pw.BoxFit.cover,
+                      },
+                    ),
+                  ),
+                ),
               ),
-            ),
-          for (final f in layout.fields)
-            if (f.visible) _field(f, v, locale, w, h),
-        ],
+            if (layout.overlayOpacity > 0)
+              pw.Positioned(
+                top: 0,
+                right: 0,
+                child: pw.Opacity(
+                  opacity: layout.overlayOpacity.clamp(0.0, 1.0),
+                  child: pw.Container(
+                    width: w,
+                    height: h,
+                    color: PdfColor.fromInt(layout.overlayColor),
+                  ),
+                ),
+              ),
+            if (layout.bandHeight > 0 && layout.bandSide != BandSide.none)
+              _band(layout, w, h),
+            for (final f in layout.fields)
+              if (f.visible) _field(f, v, locale, w, h),
+          ],
+        ),
       ),
     );
+  }
+
+  /// د رنګه کرښې — پرده او چاپ باید یو شان يې کېږدي.
+  static pw.Widget _band(CardLayout layout, double w, double h) {
+    final box = pw.Container(
+      width: layout.bandSide == BandSide.side ? layout.bandHeight * w : w,
+      height: layout.bandSide == BandSide.side ? h : layout.bandHeight * h,
+      decoration: pw.BoxDecoration(
+        gradient: pw.LinearGradient(
+          colors: [
+            PdfColor.fromInt(layout.bandColor),
+            PdfColor.fromInt(layout.bandColor2 ?? layout.bandColor),
+          ],
+          begin: pw.Alignment.centerRight,
+          end: pw.Alignment.centerLeft,
+        ),
+      ),
+    );
+
+    return switch (layout.bandSide) {
+      BandSide.bottom => pw.Positioned(bottom: 0, right: 0, child: box),
+      BandSide.side => pw.Positioned(top: 0, right: 0, child: box),
+      _ => pw.Positioned(top: 0, right: 0, child: box),
+    };
   }
 
   static pw.Widget _field(
@@ -130,24 +184,29 @@ class CardPdf {
         child = pw.Container(color: PdfColor.fromInt(f.color));
 
       case CardFieldKind.qr:
-        child = v.qrPayload.isEmpty
-            ? pw.Container(
-                decoration: pw.BoxDecoration(
-                  border: pw.Border.all(color: PdfColors.grey400, width: 0.5),
-                ),
-              )
-            : pw.BarcodeWidget(
-                barcode: pw.Barcode.qrCode(),
-                data: v.qrPayload,
-                color: PdfColor.fromInt(f.color),
-                drawText: false,
-              );
+        // **مربع** — د پردې په څېر. که نه، سپین شالید به تر QR بهر
+        // غځېدلی و او چاپ به له مخکتنې توپیر لاره.
+        final side = [boxW, boxH ?? boxW].reduce((a, b) => a < b ? a : b);
+        child = pw.Center(
+          child: pw.Container(
+            width: side,
+            height: side,
+            padding: pw.EdgeInsets.all(side * 0.05),
+            color: PdfColors.white,
+            child: v.qrPayload.isEmpty
+                ? pw.SizedBox.shrink()
+                : pw.BarcodeWidget(
+                    barcode: pw.Barcode.qrCode(),
+                    data: v.qrPayload,
+                    color: PdfColor.fromInt(f.color),
+                    drawText: false,
+                  ),
+          ),
+        );
 
       case CardFieldKind.photo:
       case CardFieldKind.logo:
-        final path = f.kind == CardFieldKind.photo
-            ? v.photoPath
-            : v.logoPath;
+        final path = f.kind == CardFieldKind.photo ? v.photoPath : v.logoPath;
         final bytes = _read(path);
         child = bytes == null
             ? pw.Container(color: PdfColors.grey200)

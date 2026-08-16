@@ -14,6 +14,7 @@ import '../../data/db/database.dart';
 import '../../data/repositories/academic_repository.dart';
 import '../../data/repositories/card_repository.dart';
 import '../../data/repositories/user_repository.dart' show Perm;
+import '../../widgets/data_table_view.dart' show AvatarCell;
 import '../auth/auth_service.dart';
 import 'card_canvas.dart';
 import 'card_layout.dart';
@@ -147,7 +148,7 @@ class _CardsPageState extends State<CardsPage> {
 
   /// هغه ډیزاین چې اوس کارېږي — که هېڅ ونه ټاکل شي، تلواله.
   CardLayout get _layout => _active == null
-      ? builtInTemplates(widget.audience).first.layout
+      ? builtInCardTemplates(widget.audience).first.layout
       : CardLayout.decode(_active!.layoutJson);
 
   double get _aspect => _active == null
@@ -347,7 +348,7 @@ class _CardsPageState extends State<CardsPage> {
                   style: TextStyle(fontSize: 12.5, color: p.muted),
                 ),
                 Text(
-                  _active?.name ?? builtInTemplates(widget.audience).first.name,
+                  _active?.name ?? builtInCardTemplates(widget.audience).first.name,
                   style: TextStyle(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w700,
@@ -516,6 +517,16 @@ class _CardsPageState extends State<CardsPage> {
                     }),
                     visualDensity: VisualDensity.compact,
                   ),
+                  AvatarCell(
+                    name: h.fullName,
+                    photoPath: h.photoPath,
+                    color: switch (widget.audience) {
+                      'teacher' => AppColors.modTeachers,
+                      'staff' => AppColors.modStaff,
+                      _ => AppColors.modStudents,
+                    },
+                  ),
+                  const SizedBox(width: 11),
                   Expanded(
                     flex: 3,
                     child: Text(

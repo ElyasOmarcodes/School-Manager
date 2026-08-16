@@ -1,3 +1,4 @@
+import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/l10n/strings.dart';
@@ -62,7 +63,7 @@ class _CardDesignerPageState extends State<CardDesignerPage> {
   void initState() {
     super.initState();
     final t = widget.template;
-    final fallback = builtInTemplates(widget.audience).first;
+    final fallback = builtInCardTemplates(widget.audience).first;
     _layout = t == null ? fallback.layout : CardLayout.decode(t.layoutJson);
     _name = TextEditingController(text: t?.name ?? fallback.name);
     _widthMm = t?.widthMm ?? cr80WidthMm;
@@ -118,12 +119,39 @@ class _CardDesignerPageState extends State<CardDesignerPage> {
     setState(() => _selected = null);
   }
 
+  /// **کینډۍ خپله اندازه هم راوړي.**
+  ///
+  /// یو عمودي ډیزاین په افقي کارت کې کوږ ښکاري — نو اندازه د
+  /// ډیزاین برخه ده، نه یوه جلا ټاکنه چې کارن يې وروسته پخپله
+  /// برابروي.
   void _applyTemplate(BuiltInTemplate t) {
     _mutate(t.layout);
     setState(() {
       _selected = null;
       _name.text = t.name;
+      _widthMm = t.widthMm;
+      _heightMm = t.heightMm;
     });
+  }
+
+  /// د شالید انځور ټاکل.
+  Future<void> _pickBackground() async {
+    const group = XTypeGroup(
+      label: 'انځورونه',
+      extensions: ['png', 'jpg', 'jpeg', 'webp'],
+    );
+    final file = await openFile(acceptedTypeGroups: const [group]);
+    if (file == null || !mounted) return;
+    _mutate(
+      _layout.copyWith(
+        backgroundImage: file.path,
+        // یو نوی انځور تل یوه سپکه پرده اخلي — پرته له هغې، متن
+        // پر یوه روښانه انځور نالوستونکی وي.
+        overlayOpacity: _layout.overlayOpacity == 0
+            ? 0.25
+            : _layout.overlayOpacity,
+      ),
+    );
   }
 
   Future<void> _save({bool activate = false}) async {
@@ -258,10 +286,37 @@ class _CardDesignerPageState extends State<CardDesignerPage> {
                         _updateField(
                           i,
                           f.copyWith(
-                            x: (f.x + dx).clamp(0.0, 0.95),
-                            y: (f.y + dy).clamp(0.0, 0.95),
+                            x: (f.x + dx).clamp(0.0, 0.98),
+                            y: (f.y + dy).clamp(0.0, 0.98),
                           ),
                         );
+                      },
+                      onResize: (i, dx, dy) {
+                        final f = _layout.fields[i];
+                        if (f.kind.isBox) {
+                          _updateField(
+                            i,
+                            f.copyWith(
+                              // **کیڼ لوري ته کش کول پلنوالی زیاتوي**
+                              // — کارت RTL دی، نو ساحه له ښي خوا
+                              // غځېږي.
+                              w: (fieldRatioW(f) + dx).clamp(0.03, 1.0),
+                              h: (fieldRatioH(f) + dy).clamp(0.03, 1.0),
+                            ),
+                          );
+                        } else {
+                          // متن پلنوالی او د فونټ اندازه دواړه لري.
+                          _updateField(
+                            i,
+                            f.copyWith(
+                              w: f.w <= 0
+                                  ? ((1 - f.x - 0.04) + dx).clamp(0.05, 1.0)
+                                  : (f.w + dx).clamp(0.05, 1.0),
+                              fontScale: (f.fontScale + dy * 0.35)
+                                  .clamp(0.02, 0.3),
+                            ),
+                          );
+                        }
                       },
                     ),
                   ),
@@ -280,6 +335,7 @@ class _CardDesignerPageState extends State<CardDesignerPage> {
                   canEdit: widget.canEdit,
                   onLayout: _mutate,
                   onField: _updateField,
+                  onPickBackground: _pickBackground,
                   onSize: (w, h) => setState(() {
                     _widthMm = w;
                     _heightMm = h;
@@ -416,7 +472,7 @@ class _LeftPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    final templates = builtInTemplates(audience);
+    final templates = builtInCardTemplates(audience);
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(14, 16, 14, 24),
@@ -424,25 +480,10 @@ class _LeftPanel extends StatelessWidget {
         const _Head(text: 'کینډۍ'),
         for (final t in templates)
           Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: OutlinedButton.icon(
-              onPressed: canEdit ? () => onTemplate(t) : null,
-              icon: Container(
-                width: 15,
-                height: 15,
-                decoration: BoxDecoration(
-                  color: Color(t.layout.bandColor),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
-              label: Align(
-                alignment: AlignmentDirectional.centerStart,
-                child: Text(t.name),
-              ),
-              style: OutlinedButton.styleFrom(
-                minimumSize: const Size(double.infinity, 40),
-                alignment: AlignmentDirectional.centerStart,
-              ),
+            padding: const EdgeInsets.only(bottom: 7),
+            child: _TemplateCard(
+              template: t,
+              onTap: canEdit ? () => onTemplate(t) : null,
             ),
           ),
 
@@ -504,6 +545,136 @@ class _LeftPanel extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// د یوې کینډۍ کوچنۍ مخکتنه — نه یوازې نوم.
+///
+/// **ولې مخکتنه؟** ځکه چې «څنډه» او «ګرادیانت» نومونه هېڅ نه وايي.
+/// یو کوچنی انځور د جوړښت توپیر په یوه نظر ښیي.
+class _TemplateCard extends StatelessWidget {
+  final BuiltInTemplate template;
+  final VoidCallback? onTap;
+
+  const _TemplateCard({required this.template, this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final l = template.layout;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: MouseRegion(
+        cursor: onTap == null
+            ? MouseCursor.defer
+            : SystemMouseCursors.click,
+        child: Container(
+          padding: const EdgeInsets.all(9),
+          decoration: BoxDecoration(
+            color: p.surface,
+            borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+            border: Border.all(color: p.line),
+          ),
+          child: Row(
+            children: [
+              // د جوړښت وړه نقشه — رنګ، کرښه او د انځور ځای.
+              Container(
+                width: 46,
+                height: 29,
+                clipBehavior: Clip.antiAlias,
+                decoration: BoxDecoration(
+                  color: Color(l.background),
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(color: p.line),
+                ),
+                child: Stack(
+                  children: [
+                    if (l.bandHeight > 0 && l.bandSide != BandSide.none)
+                      switch (l.bandSide) {
+                        BandSide.bottom => Positioned(
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          height: 29 * l.bandHeight,
+                          child: ColoredBox(color: Color(l.bandColor)),
+                        ),
+                        BandSide.side => Positioned(
+                          top: 0,
+                          bottom: 0,
+                          right: 0,
+                          width: 46 * l.bandHeight,
+                          child: ColoredBox(color: Color(l.bandColor)),
+                        ),
+                        _ => Positioned(
+                          left: 0,
+                          right: 0,
+                          top: 0,
+                          height: 29 * l.bandHeight,
+                          child: ColoredBox(color: Color(l.bandColor)),
+                        ),
+                      },
+                    for (final f in l.fields)
+                      if (f.kind == CardFieldKind.photo ||
+                          f.kind == CardFieldKind.qr)
+                        Positioned(
+                          right: f.x * 46,
+                          top: f.y * 29,
+                          width: f.w * 46,
+                          height: f.h * 29,
+                          child: ColoredBox(
+                            color: f.kind == CardFieldKind.qr
+                                ? const Color(0x55000000)
+                                : const Color(0x33000000),
+                          ),
+                        ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          template.name,
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w700,
+                            color: p.ink,
+                          ),
+                        ),
+                        if (template.isPortrait) ...[
+                          const SizedBox(width: 6),
+                          Icon(
+                            Icons.stay_current_portrait_rounded,
+                            size: 13,
+                            color: p.faint,
+                          ),
+                        ],
+                      ],
+                    ),
+                    if (template.hint.isNotEmpty)
+                      Text(
+                        template.hint,
+                        maxLines: 2,
+                        style: TextStyle(
+                          fontSize: 10.5,
+                          height: 1.4,
+                          color: p.muted,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -621,6 +792,7 @@ class _Board extends StatelessWidget {
   final bool canEdit;
   final ValueChanged<int> onSelect;
   final void Function(int index, double dx, double dy) onMove;
+  final void Function(int index, double dx, double dy) onResize;
 
   const _Board({
     required this.layout,
@@ -631,6 +803,7 @@ class _Board extends StatelessWidget {
     required this.canEdit,
     required this.onSelect,
     required this.onMove,
+    required this.onResize,
   });
 
   @override
@@ -668,6 +841,7 @@ class _Board extends StatelessWidget {
                   onSelect(i);
                   onMove(i, -dx / w, dy / h);
                 },
+                onResize: (dx, dy) => onResize(i, -dx / w, dy / h),
               ),
         ],
       ),
@@ -683,6 +857,7 @@ class _Handle extends StatelessWidget {
   final bool enabled;
   final VoidCallback onTap;
   final void Function(double dx, double dy) onDrag;
+  final void Function(double dx, double dy) onResize;
 
   const _Handle({
     required this.field,
@@ -692,6 +867,7 @@ class _Handle extends StatelessWidget {
     required this.enabled,
     required this.onTap,
     required this.onDrag,
+    required this.onResize,
   });
 
   @override
@@ -702,26 +878,68 @@ class _Handle extends StatelessWidget {
         : field.fontScale * cardHeight * 1.4;
 
     return Positioned(
-      right: field.x * cardWidth,
-      top: field.y * cardHeight,
-      width: w,
-      height: h,
-      child: MouseRegion(
-        cursor: enabled ? SystemMouseCursors.move : MouseCursor.defer,
-        child: GestureDetector(
-          behavior: HitTestBehavior.translucent,
-          onTap: onTap,
-          onPanUpdate: enabled
-              ? (d) => onDrag(d.delta.dx, d.delta.dy)
-              : null,
-          child: selected
-              ? DecoratedBox(
-                  decoration: BoxDecoration(
-                    border: Border.all(color: AppColors.modIdCards, width: 2),
+      // **د اندازې لاسته څو پکسله بهر ځي**، نو د کوچنیو ساحو پر
+      // سر هم نیول کېږي — که دننه وه، د یوې نرۍ ساحې لاسته به د
+      // ځای بدلولو له ساحې سره ټکر کاوه.
+      right: field.x * cardWidth - 7,
+      top: field.y * cardHeight - 7,
+      width: w + 14,
+      height: h + 14,
+      child: Stack(
+        children: [
+          Positioned(
+            right: 7,
+            top: 7,
+            width: w,
+            height: h,
+            child: MouseRegion(
+              cursor: enabled ? SystemMouseCursors.move : MouseCursor.defer,
+              child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onTap: onTap,
+                onPanUpdate: enabled
+                    ? (d) => onDrag(d.delta.dx, d.delta.dy)
+                    : null,
+                child: selected
+                    ? DecoratedBox(
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: AppColors.modIdCards,
+                            width: 2,
+                          ),
+                        ),
+                      )
+                    : const SizedBox.expand(),
+              ),
+            ),
+          ),
+
+          // **د اندازې لاسته — د ټاکل شوې ساحې کیڼ-ښکته څنډه.**
+          //
+          // RTL کې ساحه له ښي خوا غځېږي، نو کیڼ-ښکته هغه څنډه ده
+          // چې د پلنوالي او لوړوالي دواړو زیاتولو ته طبیعي ده.
+          if (selected && enabled)
+            Positioned(
+              left: 0,
+              bottom: 0,
+              child: MouseRegion(
+                cursor: SystemMouseCursors.resizeDownLeft,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onPanUpdate: (d) => onResize(d.delta.dx, d.delta.dy),
+                  child: Container(
+                    width: 14,
+                    height: 14,
+                    decoration: BoxDecoration(
+                      color: AppColors.modIdCards,
+                      borderRadius: BorderRadius.circular(3),
+                      border: Border.all(color: Colors.white, width: 1.6),
+                    ),
                   ),
-                )
-              : const SizedBox.expand(),
-        ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -737,6 +955,7 @@ class _RightPanel extends StatelessWidget {
   final ValueChanged<CardLayout> onLayout;
   final void Function(int index, CardField f) onField;
   final void Function(double w, double h) onSize;
+  final VoidCallback onPickBackground;
 
   const _RightPanel({
     required this.layout,
@@ -747,6 +966,7 @@ class _RightPanel extends StatelessWidget {
     required this.onLayout,
     required this.onField,
     required this.onSize,
+    required this.onPickBackground,
   });
 
   @override
@@ -852,12 +1072,102 @@ class _RightPanel extends StatelessWidget {
         ],
 
         const SizedBox(height: 20),
-        const _Head(text: 'شالید'),
+        const _Head(text: 'د شالید انځور'),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: canEdit ? onPickBackground : null,
+                icon: const Icon(Icons.image_rounded, size: 16),
+                label: Text(
+                  layout.backgroundImage == null ? 'انځور وټاکه' : 'بدل کړه',
+                ),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(0, 38),
+                ),
+              ),
+            ),
+            if (layout.backgroundImage != null) ...[
+              const SizedBox(width: 8),
+              IconButton(
+                tooltip: 'لرې کړه',
+                onPressed: canEdit
+                    ? () => onLayout(
+                        layout.copyWith(
+                          clearBackgroundImage: true,
+                          overlayOpacity: 0,
+                        ),
+                      )
+                    : null,
+                icon: const Icon(
+                  Icons.delete_outline_rounded,
+                  size: 18,
+                  color: AppColors.danger,
+                ),
+              ),
+            ],
+          ],
+        ),
+        if (layout.backgroundImage != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            layout.backgroundImage!.split(RegExp(r'[/\\]')).last,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(fontSize: 11, color: p.faint),
+          ),
+          const SizedBox(height: 8),
+          SegmentedChoice<String>(
+            value: layout.backgroundFit,
+            options: const [
+              (value: 'cover', label: 'ډکول', icon: null),
+              (value: 'contain', label: 'ځایول', icon: null),
+              (value: 'fill', label: 'غځول', icon: null),
+            ],
+            onChanged: (v) => onLayout(layout.copyWith(backgroundFit: v)),
+          ),
+          _Slider(
+            label: 'د انځور روڼوالی',
+            value: layout.backgroundOpacity,
+            max: 1.0,
+            enabled: canEdit,
+            onChanged: (v) => onLayout(layout.copyWith(backgroundOpacity: v)),
+          ),
+          _Slider(
+            label: 'د پردې تیاره‌والی',
+            value: layout.overlayOpacity,
+            max: 0.9,
+            enabled: canEdit,
+            onChanged: (v) => onLayout(layout.copyWith(overlayOpacity: v)),
+          ),
+          _ColorRow(
+            label: 'د پردې رنګ',
+            value: layout.overlayColor,
+            enabled: canEdit,
+            onChanged: (c) => onLayout(layout.copyWith(overlayColor: c)),
+          ),
+        ],
+
+        const SizedBox(height: 20),
+        const _Head(text: 'شالید او کرښه'),
         _ColorRow(
           label: 'د کارت رنګ',
           value: layout.background,
           enabled: canEdit,
           onChanged: (c) => onLayout(layout.copyWith(background: c)),
+        ),
+        Text(
+          'د کرښې ځای',
+          style: TextStyle(fontSize: 11.5, color: p.muted),
+        ),
+        const SizedBox(height: 6),
+        SegmentedChoice<BandSide>(
+          value: layout.bandSide,
+          options: [
+            for (final b in BandSide.values)
+              (value: b, label: b.label, icon: null),
+          ],
+          onChanged: (v) => onLayout(layout.copyWith(bandSide: v)),
         ),
         _ColorRow(
           label: 'د کرښې رنګ',
@@ -865,10 +1175,18 @@ class _RightPanel extends StatelessWidget {
           enabled: canEdit,
           onChanged: (c) => onLayout(layout.copyWith(bandColor: c)),
         ),
+        _ColorRow(
+          label: 'دویم رنګ (ګرادیانت)',
+          value: layout.bandColor2 ?? layout.bandColor,
+          enabled: canEdit,
+          onChanged: (c) => onLayout(layout.copyWith(bandColor2: c)),
+        ),
         _Slider(
-          label: 'د کرښې لوړوالی',
+          label: layout.bandSide == BandSide.side
+              ? 'د کرښې پلنوالی'
+              : 'د کرښې لوړوالی',
           value: layout.bandHeight,
-          max: 0.5,
+          max: 1.0,
           enabled: canEdit,
           onChanged: (v) => onLayout(layout.copyWith(bandHeight: v)),
         ),
@@ -932,23 +1250,32 @@ class _RightPanel extends StatelessWidget {
           if (f.kind.isBox) ...[
             _Slider(
               label: 'پلنوالی',
-              value: f.w,
+              value: fieldRatioW(f),
               max: 1.0,
               enabled: canEdit,
               onChanged: (v) => onField(i, f.copyWith(w: v)),
             ),
             _Slider(
               label: 'لوړوالی',
-              value: f.h,
+              value: fieldRatioH(f),
               max: 1.0,
               enabled: canEdit,
               onChanged: (v) => onField(i, f.copyWith(h: v)),
             ),
           ] else ...[
             _Slider(
+              // متن هم پلنوالی لري — که ونه ټاکل شي، تر کیڼې څنډې
+              // پورې غځېږي او د QR پر سر راځي.
+              label: 'د متن پلنوالی',
+              value: f.w > 0 ? f.w : (1 - f.x - 0.04),
+              max: 1.0,
+              enabled: canEdit,
+              onChanged: (v) => onField(i, f.copyWith(w: v)),
+            ),
+            _Slider(
               label: 'د متن اندازه',
               value: f.fontScale,
-              max: 0.25,
+              max: 0.3,
               enabled: canEdit,
               onChanged: (v) => onField(i, f.copyWith(fontScale: v)),
             ),

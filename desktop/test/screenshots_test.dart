@@ -3,6 +3,7 @@ library;
 
 import 'dart:io';
 
+
 import 'package:drift/drift.dart' show Value, Variable;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -29,6 +30,8 @@ import 'package:school_manager/data/repositories/device_repository.dart';
 import 'package:school_manager/data/repositories/message_repository.dart';
 import 'package:school_manager/data/repositories/notification_repository.dart';
 import 'package:school_manager/features/id_cards/card_designer_page.dart';
+import 'package:school_manager/features/id_cards/card_canvas.dart';
+import 'package:school_manager/features/id_cards/card_layout.dart';
 import 'package:school_manager/features/id_cards/cards_page.dart';
 import 'package:school_manager/data/repositories/card_repository.dart';
 import 'package:school_manager/data/repositories/exam_repository.dart';
@@ -709,6 +712,67 @@ void main() {
           themeMode: ThemeMode.light,
           onThemeChanged: (_) {},
           lanLookup: (_) async => const [],
+        ),
+      ),
+    );
+  });
+
+  testWidgets('61 — د کارت کینډۍ (شپږ بېل جوړښتونه)', (tester) async {
+    const values = CardValues(
+      schoolName: 'د نور لیسه',
+      fullName: 'احمد ولي کریمي',
+      fatherName: 'عبدالرحمن',
+      idNo: '1405-0042',
+      className: 'لسم — الف',
+      jobTitle: 'د ریاضي استاد',
+      yearLabel: '1405',
+      qrPayload: 'SM1.1405-0042.1.sample',
+    );
+
+    await _shoot(
+      tester,
+      name: '61-card-templates',
+      settle: const Duration(milliseconds: 700),
+      child: Scaffold(
+        body: Padding(
+          padding: const EdgeInsets.all(22),
+          child: Center(
+            child: Wrap(
+              spacing: 18,
+              runSpacing: 18,
+              alignment: WrapAlignment.center,
+              crossAxisAlignment: WrapCrossAlignment.end,
+              children: [
+                for (final t in builtInCardTemplates('student'))
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CardCanvas(
+                        layout: t.layout,
+                        values: values,
+                        locale: AppLocale.ps,
+                        // عمودي کینډۍ نرۍ ده — نو د لوړوالي له مخې
+                        // برابرېږي چې ټول یو کتار کې سره ولاړ وي.
+                        width: t.isPortrait ? 176 : 279,
+                        aspect: t.widthMm / t.heightMm,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        t.name,
+                        style: const TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      Text(
+                        t.hint,
+                        style: const TextStyle(fontSize: 11),
+                      ),
+                    ],
+                  ),
+              ],
+            ),
+          ),
         ),
       ),
     );

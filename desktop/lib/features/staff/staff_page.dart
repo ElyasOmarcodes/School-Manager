@@ -237,6 +237,7 @@ class _StaffPageState extends State<StaffPage> {
             children: [
               AvatarCell(
                 name: r.staff.fullName,
+                photoPath: r.staff.photoPath,
                 color: AppColors.modStaff,
               ),
               const SizedBox(width: 11),

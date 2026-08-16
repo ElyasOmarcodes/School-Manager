@@ -121,31 +121,93 @@ class CardCanvas extends StatelessWidget {
       ),
       child: Stack(
         children: [
-          if (layout.bandHeight > 0)
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              height: layout.bandHeight * height,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Color(layout.bandColor),
-                      Color(layout.bandColor).withValues(alpha: 0.82),
-                    ],
-                    begin: Alignment.centerRight,
-                    end: Alignment.centerLeft,
-                  ),
-                ),
-              ),
-            ),
+          ..._background(width, height),
+          ..._band(width, height),
           for (var i = 0; i < layout.fields.length; i++)
             if (layout.fields[i].visible)
               _positioned(context, layout.fields[i], i, width, height),
         ],
       ),
     );
+  }
+
+  /// د شالید انځور او د هغه پرده.
+  List<Widget> _background(double w, double h) {
+    final path = layout.backgroundImage;
+    final file = path == null || path.isEmpty ? null : File(path);
+    final hasImage = file != null && file.existsSync();
+
+    return [
+      if (hasImage)
+        Positioned.fill(
+          child: Opacity(
+            opacity: layout.backgroundOpacity.clamp(0.0, 1.0),
+            child: Image.file(
+              file,
+              fit: switch (layout.backgroundFit) {
+                'contain' => BoxFit.contain,
+                'fill' => BoxFit.fill,
+                _ => BoxFit.cover,
+              },
+              // ورک انځور یو تش کارت پرېږدي، نه یوه سره پاڼه.
+              errorBuilder: (_, _, _) => const SizedBox.shrink(),
+            ),
+          ),
+        ),
+      if (layout.overlayOpacity > 0)
+        Positioned.fill(
+          child: ColoredBox(
+            color: Color(
+              layout.overlayColor,
+            ).withValues(alpha: layout.overlayOpacity.clamp(0.0, 1.0)),
+          ),
+        ),
+    ];
+  }
+
+  /// د رنګه کرښې — پاس، ښکته، یا د ښي څنډې.
+  List<Widget> _band(double w, double h) {
+    if (layout.bandHeight <= 0 || layout.bandSide == BandSide.none) {
+      return const [];
+    }
+    final gradient = LinearGradient(
+      colors: [
+        Color(layout.bandColor),
+        Color(layout.bandColor2 ?? layout.bandColor).withValues(
+          alpha: layout.bandColor2 == null ? 0.82 : 1.0,
+        ),
+      ],
+      begin: Alignment.centerRight,
+      end: Alignment.centerLeft,
+    );
+    final box = DecoratedBox(decoration: BoxDecoration(gradient: gradient));
+
+    return [
+      switch (layout.bandSide) {
+        BandSide.bottom => Positioned(
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: layout.bandHeight * h,
+          child: box,
+        ),
+        // **څنډه د کارت له ښي خوا** — RTL کې هغه لومړی لیدل کېږي.
+        BandSide.side => Positioned(
+          top: 0,
+          bottom: 0,
+          right: 0,
+          width: layout.bandHeight * w,
+          child: box,
+        ),
+        _ => Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          height: layout.bandHeight * h,
+          child: box,
+        ),
+      },
+    ];
   }
 
   Widget _positioned(
@@ -198,18 +260,33 @@ class CardCanvas extends StatelessWidget {
             ),
           );
         }
-        return QrImageView(
-          data: values.qrPayload,
-          version: QrVersions.auto,
-          padding: EdgeInsets.zero,
-          backgroundColor: Colors.white,
-          eyeStyle: QrEyeStyle(
-            eyeShape: QrEyeShape.square,
-            color: Color(f.color),
-          ),
-          dataModuleStyle: QrDataModuleStyle(
-            dataModuleShape: QrDataModuleShape.square,
-            color: Color(f.color),
+        // **QR تل مربع دی.** که د خانې بڼه مربع نه وي، سپینه شالید
+        // به تر QR بهر غځېدلې وه — یو سپین څلورضلعی چې ډیزاین
+        // خرابوي او هېڅ کار نه کوي.
+        return Center(
+          child: AspectRatio(
+            aspectRatio: 1,
+            child: Container(
+              padding: EdgeInsets.all(0.02 * h),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(0.015 * h),
+              ),
+              child: QrImageView(
+                data: values.qrPayload,
+                version: QrVersions.auto,
+                padding: EdgeInsets.zero,
+                backgroundColor: Colors.white,
+                eyeStyle: QrEyeStyle(
+                  eyeShape: QrEyeShape.square,
+                  color: Color(f.color),
+                ),
+                dataModuleStyle: QrDataModuleStyle(
+                  dataModuleShape: QrDataModuleShape.square,
+                  color: Color(f.color),
+                ),
+              ),
+            ),
           ),
         );
 

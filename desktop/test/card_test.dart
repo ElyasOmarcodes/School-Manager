@@ -1,4 +1,8 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:drift/drift.dart' show Value;
+import 'package:school_manager/widgets/data_table_view.dart' show AvatarCell;
 import 'package:flutter/material.dart';
 import 'package:school_manager/core/theme/app_theme.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -155,10 +159,87 @@ void main() {
       expect(unknown.fields.single.kind, CardFieldKind.text);
     });
 
+    test('**د شالید انځور او پرده ساتل کېږي**', () {
+      const layout = CardLayout(
+        backgroundImage: r'D:\photos\bg.png',
+        backgroundFit: 'contain',
+        backgroundOpacity: 0.6,
+        overlayColor: 0xFF001122,
+        overlayOpacity: 0.35,
+        bandSide: BandSide.bottom,
+        bandColor2: 0xFF445566,
+      );
+
+      final back = CardLayout.decode(layout.encode());
+      expect(back.backgroundImage, r'D:\photos\bg.png');
+      expect(back.backgroundFit, 'contain');
+      expect(back.backgroundOpacity, 0.6);
+      expect(back.overlayColor, 0xFF001122);
+      expect(back.overlayOpacity, 0.35);
+      expect(back.bandSide, BandSide.bottom);
+      expect(back.bandColor2, 0xFF445566);
+    });
+
+    test('انځور لرې کول ریښتیا يې لرې کوي', () {
+      const layout = CardLayout(backgroundImage: 'x.png');
+      final cleared = layout.copyWith(clearBackgroundImage: true);
+      expect(cleared.backgroundImage, isNull);
+      // `copyWith` پرته له `clear` يې نه لمسوي.
+      expect(layout.copyWith(backgroundOpacity: 0.5).backgroundImage, 'x.png');
+    });
+
+    test('ناپېژندلې د کرښې خوا پاسنۍ ګڼل کېږي', () {
+      final l = CardLayout.decode('{"bandSide":"diagonal"}');
+      expect(l.bandSide, BandSide.top);
+    });
+
+    test('**پلنوالی: ټاکل شوی، تش، او بکس**', () {
+      const boxSet = CardField(kind: CardFieldKind.qr, x: 0.1, y: 0.1, w: 0.3);
+      expect(fieldWidth(boxSet, 100), 30);
+
+      // بکس چې پلنوالی ونه لري — یوه معقوله تلواله، نه صفر.
+      const boxUnset = CardField(kind: CardFieldKind.qr, x: 0.1, y: 0.1);
+      expect(fieldWidth(boxUnset, 100), 20);
+
+      // متن چې پلنوالی ونه لري — تر کیڼې څنډې پورې.
+      const textUnset = CardField(
+        kind: CardFieldKind.fullName,
+        x: 0.2,
+        y: 0.1,
+      );
+      expect(fieldWidth(textUnset, 100), closeTo(76, 0.001));
+
+      // متن چې پلنوالی ولري — هماغه، نو د QR پر سر نه راځي.
+      const textSet = CardField(
+        kind: CardFieldKind.fullName,
+        x: 0.2,
+        y: 0.1,
+        w: 0.4,
+      );
+      expect(fieldWidth(textSet, 100), 40);
+    });
+
+    test('د اندازې د بدلولو پیل له اوسني پلنوالي دی', () {
+      // که پیل صفر و، لومړی کش به ساحه سمدستي وړه کړې وه.
+      const unset = CardField(kind: CardFieldKind.photo, x: 0, y: 0);
+      expect(fieldRatioW(unset), greaterThan(0));
+      expect(fieldRatioH(unset), greaterThan(0));
+
+      const set = CardField(
+        kind: CardFieldKind.photo,
+        x: 0,
+        y: 0,
+        w: 0.33,
+        h: 0.44,
+      );
+      expect(fieldRatioW(set), 0.33);
+      expect(fieldRatioH(set), 0.44);
+    });
+
     test('هره ډله خپلې کینډۍ لري، او سره توپیر لري', () {
-      final s = builtInTemplates('student');
-      final t = builtInTemplates('teacher');
-      final f = builtInTemplates('staff');
+      final s = builtInCardTemplates('student');
+      final t = builtInCardTemplates('teacher');
+      final f = builtInCardTemplates('staff');
 
       expect(s, isNotEmpty);
       expect(t, isNotEmpty);
@@ -178,6 +259,64 @@ void main() {
           reason: '${tpl.key} د پای نېټه نه لري',
         );
       }
+    });
+
+    test('**کینډۍ په جوړښت سره بېلې دي، نه یوازې په رنګ**', () {
+      final all = builtInCardTemplates('student');
+      expect(all.length, greaterThanOrEqualTo(5));
+
+      // هره کینډۍ یو بېل «نښان» لري: د کرښې خوا + پنډوالی + د
+      // انځور ځای + د QR اندازه. که دوه یو شان وو، یوه يې د بلې
+      // رنګ‌بدله کاپي وه.
+      String shape(BuiltInTemplate t) {
+        final l = t.layout;
+        final photo = l.fields.firstWhere(
+          (f) => f.kind == CardFieldKind.photo,
+          orElse: () => const CardField(kind: CardFieldKind.text, x: -1, y: -1),
+        );
+        final qr = l.fields.firstWhere(
+          (f) => f.kind == CardFieldKind.qr,
+          orElse: () => const CardField(kind: CardFieldKind.text, x: -1, y: -1),
+        );
+        return '${l.bandSide.name}/${l.bandHeight.toStringAsFixed(2)}'
+            '/${photo.x.toStringAsFixed(2)},${photo.w.toStringAsFixed(2)}'
+            '/${qr.x.toStringAsFixed(2)},${qr.w.toStringAsFixed(2)}'
+            '/${t.widthMm.toStringAsFixed(0)}x${t.heightMm.toStringAsFixed(0)}';
+      }
+
+      final shapes = all.map(shape).toList();
+      expect(
+        shapes.toSet().length,
+        shapes.length,
+        reason: 'دوه کینډۍ یو جوړښت لري: $shapes',
+      );
+
+      // **لږ تر لږه یوه عمودي** — د غاړې لاسبند لپاره.
+      expect(all.any((t) => t.isPortrait), isTrue);
+      // **لږ تر لږه یوه پرته له پورتنۍ کرښې.**
+      expect(all.any((t) => t.layout.bandSide != BandSide.top), isTrue);
+      // **لږ تر لږه یوه چې انځور يې نیم کارت نیسي.**
+      expect(
+        all.any(
+          (t) => t.layout.fields.any(
+            (f) => f.kind == CardFieldKind.photo && f.w >= 0.4,
+          ),
+        ),
+        isTrue,
+      );
+    });
+
+    test('عمودي کینډۍ ریښتیا عمودي ده', () {
+      final portrait = builtInCardTemplates(
+        'teacher',
+      ).firstWhere((t) => t.isPortrait);
+      expect(portrait.heightMm, greaterThan(portrait.widthMm));
+      // او د چاپ تضمین يې نه ماتوي.
+      final s = printSize(
+        widthMm: portrait.widthMm,
+        heightMm: portrait.heightMm,
+      );
+      expect(s.width, greaterThanOrEqualTo(portrait.widthMm - 0.001));
     });
   });
 
@@ -441,6 +580,89 @@ void main() {
         withDate.textFor(CardFieldKind.expiry, locale),
         contains('۲۰۲۶-۱۲-۲۱'),
       );
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  group('په لیستونو کې انځور', () {
+    /// یو ریښتینی ۱×۱ PNG — چې `existsSync` او ډیکوډ دواړه کار وکړي.
+    ///
+    /// **ولې یو خام بایټ لیست او نه د `image` کتابتون؟** ځکه چې د
+    /// هغه کتابتون راوړل د دې ازموینې د جوړولو وخت په دقیقو کې
+    /// زیاتوي — د یوه اته‌پکسله انځور لپاره.
+    const pngBase64 =
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGM4'
+        'UWEDAAOIAX3sK7CeAAAAAElFTkSuQmCC';
+
+    // **هرڅه هم‌مهاله (sync) دي — او دا قصداً دی.**
+    //
+    // د `testWidgets` دننه یو ریښتینی `await` پر فایل I/O هېڅکله نه
+    // بشپړېږي: هلته یوه جعلي ساعت‌کړۍ ځغلي چې د I/O بشپړېدنې نه
+    // پروسس کوي. ازموینه به ځړېدلې وه — نه ماته، چې بدتره ده.
+    String makePhoto(Directory dir, String name) {
+      final file = File('${dir.path}/$name.png')
+        ..writeAsBytesSync(base64Decode(pngBase64));
+      return file.path;
+    }
+
+    test('شته انځور ښکاري، ورک يې نه', () {
+      final dir = Directory.systemTemp.createTempSync('sm-avatar');
+      addTearDown(() => dir.deleteSync(recursive: true));
+
+      expect(AvatarCell.showsPhoto(makePhoto(dir, 'a')), isTrue);
+      expect(AvatarCell.showsPhoto('${dir.path}/gone.png'), isFalse);
+      expect(AvatarCell.showsPhoto(null), isFalse);
+      expect(AvatarCell.showsPhoto(''), isFalse);
+    });
+
+    testWidgets('**پرته له انځوره، لومړی توری ښکاري**', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Center(
+            child: AvatarCell(name: 'احمد', photoPath: '/nowhere/gone.png'),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byType(Image), findsNothing);
+      expect(find.text('ا'), findsOneWidget);
+    });
+
+    test('**درې واړه لیستونه انځور راوړي**', () async {
+      final dir = Directory.systemTemp.createTempSync('sm-list');
+      addTearDown(() => dir.deleteSync(recursive: true));
+
+      final sId = await admit('1405-0001', 'زلمی');
+      await (db.update(db.students)..where((x) => x.id.equals(sId))).write(
+        StudentsCompanion(photoPath: Value(makePhoto(dir, 's'))),
+      );
+
+      final tId = await addTeacher('استاد احمد', 'T-0001');
+      await (db.update(db.teachers)..where((x) => x.id.equals(tId))).write(
+        TeachersCompanion(photoPath: Value(makePhoto(dir, 't'))),
+      );
+
+      final fId = await db
+          .into(db.staffMembers)
+          .insert(
+            StaffMembersCompanion.insert(
+              employeeNo: 'S-0001',
+              fullName: 'عبدالغفار',
+              jobTitle: 'محاسب',
+              gender: 'male',
+              photoPath: Value(makePhoto(dir, 'f')),
+            ),
+          );
+      expect(fId, isPositive);
+
+      // د کارتونو ذخیره يې درې واړو ته راوړي — دا هغه لار ده چې
+      // لیستونه او کارتونه دواړه پرې انځور اخلي.
+      for (final audience in const ['student', 'teacher', 'staff']) {
+        final rows = await cards.holders(audience: audience, now: now);
+        expect(rows.single.photoPath, isNotNull, reason: audience);
+        expect(File(rows.single.photoPath!).existsSync(), isTrue);
+      }
     });
   });
 

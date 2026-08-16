@@ -186,6 +186,7 @@ class _StudentsPageState extends State<StudentsPage> {
                     children: [
                       AvatarCell(
                         name: r.fullName,
+                        photoPath: r.student.photoPath,
                         color: r.student.gender == 'female'
                             ? AppColors.modTeachers
                             : AppColors.modStudents,

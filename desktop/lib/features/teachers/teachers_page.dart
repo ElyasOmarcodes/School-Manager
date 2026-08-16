@@ -380,6 +380,7 @@ class _TeachersPageState extends State<TeachersPage> {
                     children: [
                       AvatarCell(
                         name: r.teacher.fullName,
+                        photoPath: r.teacher.photoPath,
                         color: AppColors.modTeachers,
                       ),
                       const SizedBox(width: 11),
