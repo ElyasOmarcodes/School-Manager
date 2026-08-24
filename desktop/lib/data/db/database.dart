@@ -85,7 +85,7 @@ class AppDatabase extends _$AppDatabase {
   );
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -193,6 +193,13 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(students, students.cardExpiresOn);
         await m.addColumn(teachers, teachers.cardExpiresOn);
         await m.addColumn(staffMembers, staffMembers.cardExpiresOn);
+      }
+
+      // ── ۷ → ۸: د هر ساعت خپله اوږدوالی ──────────────────
+      // تش پاتې کېږي، یعنې «ټول یو شان» — نو زاړه ښوونځي هېڅ
+      // بدلون نه ویني.
+      if (from < 8) {
+        await m.addColumn(schools, schools.periodMinutesCsv);
       }
       await _createIndexes();
     },

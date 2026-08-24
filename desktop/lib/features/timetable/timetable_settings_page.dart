@@ -49,6 +49,12 @@ class _TimetableSettingsPageState extends State<TimetableSettingsPage> {
   int _breakMinutes = 15;
   int _breaksPerDay = 1;
 
+  /// **ټول یو شان که هر یو خپل؟**
+  bool _uniform = true;
+
+  /// د هر ساعت خپله اوږدوالی — یوازې کله چې `_uniform == false`.
+  List<int> _perPeriod = const [];
+
   List<TimeSlot> _slots = const [];
 
   /// هغه څه چې په ډیټابیس کې دي — د «ونه ساتل شو» د پېژندلو لپاره.
@@ -56,7 +62,17 @@ class _TimetableSettingsPageState extends State<TimetableSettingsPage> {
 
   String get _signature =>
       '$_dayStart/$_periods/$_minutes/$_breakAfter/$_breakMinutes/'
-      '$_breaksPerDay';
+      '$_breaksPerDay/$_uniform/${_perPeriod.join(",")}';
+
+  /// هغه لیست چې ذخیرې او مخکتنې ته ځي — که «ټول یو شان» وي، تش.
+  List<int>? get _lengths => _uniform ? null : _padded;
+
+  /// د ساعتونو شمېر ته برابر شوی لیست — که کارن ساعتونه زیات کړي،
+  /// نوي هغه د ګډې اندازې په څېر پیلېږي، نه صفر.
+  List<int> get _padded => [
+    for (var i = 0; i < _periods; i++)
+      i < _perPeriod.length && _perPeriod[i] > 0 ? _perPeriod[i] : _minutes,
+  ];
 
   bool get _dirty => _savedSignature != _signature;
 
@@ -67,6 +83,7 @@ class _TimetableSettingsPageState extends State<TimetableSettingsPage> {
     breakAfterPeriods: _breakAfter,
     breakMinutes: _breakMinutes,
     breaksPerDay: _breaksPerDay,
+    perPeriodMinutes: _lengths,
   );
 
   @override
@@ -89,6 +106,15 @@ class _TimetableSettingsPageState extends State<TimetableSettingsPage> {
         _breakAfter = school.breakAfterPeriods;
         _breakMinutes = school.breakMinutes;
         _breaksPerDay = school.breaksPerDay;
+        final csv = school.periodMinutesCsv;
+        final parsed = csv == null || csv.trim().isEmpty
+            ? const <int>[]
+            : csv
+                  .split(',')
+                  .map((e) => int.tryParse(e.trim()) ?? 0)
+                  .toList();
+        _uniform = parsed.isEmpty;
+        _perPeriod = parsed;
       }
       _savedSignature = _signature;
       _loading = false;
@@ -108,6 +134,7 @@ class _TimetableSettingsPageState extends State<TimetableSettingsPage> {
       breakAfterPeriods: _breakAfter,
       breakMinutes: _breakMinutes,
       breaksPerDay: _breaksPerDay,
+      perPeriodMinutes: _lengths,
     );
 
     final school = _school;
@@ -123,6 +150,7 @@ class _TimetableSettingsPageState extends State<TimetableSettingsPage> {
           breakAfterPeriods: Value(_breakAfter),
           breakMinutes: Value(_breakMinutes),
           breaksPerDay: Value(_breaksPerDay),
+          periodMinutesCsv: Value(_uniform ? null : _padded.join(',')),
         ),
       );
     }
@@ -245,16 +273,52 @@ class _TimetableSettingsPageState extends State<TimetableSettingsPage> {
                       ),
                     ),
                     _Field(
-                      label: 'د یوه ساعت دقیقې',
-                      child: _Stepper(
-                        value: _minutes,
-                        min: 20,
-                        max: 90,
-                        step: 5,
-                        enabled: widget.canEdit,
-                        onChanged: (v) => setState(() => _minutes = v),
+                      label: 'د ساعتونو اوږدوالی',
+                      hint: _uniform
+                          ? 'ټول ساعتونه یو شان دي'
+                          : 'هر ساعت خپله اندازه لري',
+                      child: SegmentedChoice<bool>(
+                        value: _uniform,
+                        color: AppColors.modTimetable,
+                        options: const [
+                          (value: true, label: 'ټول یو شان', icon: null),
+                          (value: false, label: 'هر یو خپل', icon: null),
+                        ],
+                        onChanged: widget.canEdit
+                            ? (v) => setState(() {
+                                // له «خپل» ته تګ اوسنۍ ګډه اندازه
+                                // د پیل ټکي په توګه اخلي — نه صفر،
+                                // چې کارن يې له سره ولیکي.
+                                if (!v && _perPeriod.length != _periods) {
+                                  _perPeriod = _padded;
+                                }
+                                _uniform = v;
+                              })
+                            : (_) {},
                       ),
                     ),
+                    if (_uniform)
+                      _Field(
+                        label: 'د یوه ساعت دقیقې',
+                        child: _Stepper(
+                          value: _minutes,
+                          min: 20,
+                          max: 90,
+                          step: 5,
+                          enabled: widget.canEdit,
+                          onChanged: (v) => setState(() => _minutes = v),
+                        ),
+                      )
+                    else
+                      _PerPeriodEditor(
+                        lengths: _padded,
+                        enabled: widget.canEdit,
+                        onChanged: (i, v) => setState(() {
+                          final next = _padded;
+                          next[i] = v;
+                          _perPeriod = next;
+                        }),
+                      ),
                   ],
                 ),
               ),
@@ -327,6 +391,7 @@ class _TimetableSettingsPageState extends State<TimetableSettingsPage> {
                   breakAfter: _breakAfter,
                   breakMinutes: _breakMinutes,
                   breaksPerDay: _breaksPerDay,
+                  perPeriod: _lengths,
                 ),
               ),
             ),
@@ -506,6 +571,103 @@ class _Stepper extends StatelessWidget {
   }
 }
 
+/// **د هر ساعت خپله اندازه** — یو کتار پر هر درسي ساعت.
+///
+/// دا هغه وخت ښکاري چې کارن «هر یو خپل» غوره کړي. هر کتار یوه
+/// شمېره لري چې یوازې همغه ساعت اوړوي؛ نور ساعتونه پر خپل حال
+/// پاتې کېږي. دا ځکه اړینه ده چې ډېرې مدرسې لومړی ساعت اوږد
+/// (مثلاً ۶۰ دقیقې د سبق لپاره) او پاتې لنډ (۴۵ دقیقې) لري.
+class _PerPeriodEditor extends StatelessWidget {
+  final List<int> lengths;
+  final bool enabled;
+  final void Function(int index, int minutes) onChanged;
+
+  const _PerPeriodEditor({
+    required this.lengths,
+    required this.enabled,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final locale = S.of(context).locale;
+    final p = context.palette;
+    final total = lengths.fold<int>(0, (a, b) => a + b);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: 4),
+        for (var i = 0; i < lengths.length; i++)
+          Container(
+            margin: const EdgeInsets.only(bottom: 6),
+            padding: const EdgeInsetsDirectional.fromSTEB(12, 4, 4, 4),
+            decoration: BoxDecoration(
+              color: p.surfaceAlt.withValues(alpha: 0.45),
+              borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+              border: Border.all(color: p.line),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 26,
+                  height: 26,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: AppColors.modTimetable.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    locale.num(i + 1),
+                    style: AppTheme.tabular(
+                      const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.modTimetable,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    '${locale.num(i + 1)}م ساعت',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: p.ink,
+                    ),
+                  ),
+                ),
+                Text(
+                  'دقیقې',
+                  style: TextStyle(fontSize: 11.5, color: p.muted),
+                ),
+                const SizedBox(width: 8),
+                _Stepper(
+                  value: lengths[i],
+                  min: 20,
+                  max: 90,
+                  step: 5,
+                  enabled: enabled,
+                  onChanged: (v) => onChanged(i, v),
+                ),
+              ],
+            ),
+          ),
+        Padding(
+          padding: const EdgeInsets.only(top: 2),
+          child: Text(
+            'د درسونو ټول وخت ${locale.num(total)} دقیقې '
+            '(پرته له تفریح).',
+            style: TextStyle(fontSize: 11.5, color: p.muted),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 /// د ورځې د ساعتونو مخکتنه — د ساتلو دمخه.
 class _Preview extends StatelessWidget {
   final String dayStart;
@@ -514,6 +676,7 @@ class _Preview extends StatelessWidget {
   final int breakAfter;
   final int breakMinutes;
   final int breaksPerDay;
+  final List<int>? perPeriod;
 
   const _Preview({
     required this.dayStart,
@@ -522,6 +685,7 @@ class _Preview extends StatelessWidget {
     required this.breakAfter,
     required this.breakMinutes,
     required this.breaksPerDay,
+    this.perPeriod,
   });
 
   @override
@@ -541,13 +705,18 @@ class _Preview extends StatelessWidget {
     final items = <({String name, String from, String to, bool isBreak})>[];
     var breaksUsed = 0;
     for (var i = 1; i <= periods; i++) {
+      final len = TimetableRepository.minutesFor(
+        index: i - 1,
+        uniform: minutes,
+        perPeriod: perPeriod,
+      );
       items.add((
         name: '${locale.num(i)} ساعت',
         from: fmt(m),
-        to: fmt(m + minutes),
+        to: fmt(m + len),
         isBreak: false,
       ));
-      m += minutes;
+      m += len;
       if (breakAfter > 0 &&
           i % breakAfter == 0 &&
           i != periods &&

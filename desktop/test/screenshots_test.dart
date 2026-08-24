@@ -1803,6 +1803,64 @@ void main() {
     );
   });
 
+  testWidgets('65 — ټول شوی سایډبار: فرعي منو', (tester) async {
+    await _shoot(
+      tester,
+      name: '65-collapsed-sub-menu',
+      settle: const Duration(milliseconds: 600),
+      child: AppShell(
+        session: _session,
+        schoolName: 'د نور لیسه',
+        stats: _stats,
+        themeMode: ThemeMode.light,
+        onThemeChanged: (_) {},
+        onSignOut: () {},
+      ),
+      after: (tester) async {
+        // سایډبار ټولوو — یوازې نښانونه پاتې کېږي.
+        await tester.tap(find.byIcon(Icons.chevron_right_rounded));
+        await tester.pumpAndSettle();
+        // بیا پر «شاګردان» نښان — فرعي منو باید راشي.
+        await tester.tap(find.byTooltip('شاګردان'));
+        await tester.pumpAndSettle();
+      },
+    );
+  });
+
+  testWidgets('66 — د هر ساعت خپله اوږدوالی', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await _seedSchool(db);
+    await db
+        .into(db.schools)
+        .insert(
+          SchoolsCompanion.insert(
+            name: 'د نور مدرسه',
+            kind: const Value('madrasa'),
+            dayStart: const Value('07:00'),
+            periodsPerDay: const Value(6),
+            periodMinutes: const Value(45),
+            periodMinutesCsv: const Value('60,45,45,40,40,30'),
+            breakAfterPeriods: const Value(3),
+            breakMinutes: const Value(15),
+            breaksPerDay: const Value(1),
+          ),
+        );
+    await TimetableRepository(db).seedDefaultSlots();
+
+    await _shoot(
+      tester,
+      name: '66-timetable-per-period',
+      settle: const Duration(milliseconds: 700),
+      child: Scaffold(
+        body: TimetableSettingsPage(
+          timetable: TimetableRepository(db),
+          academic: AcademicRepository(db),
+        ),
+      ),
+    );
+  });
+
   testWidgets('45 — فرعي سایډبار (شاګردان)', (tester) async {
     await _shoot(
       tester,

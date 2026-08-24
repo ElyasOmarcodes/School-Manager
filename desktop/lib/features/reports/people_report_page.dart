@@ -194,6 +194,22 @@ class _PeopleReportPageState extends State<PeopleReportPage> {
     _ => 'د شاګردانو راپور',
   };
 
+  /// **دا پاڼه څه کار کوي؟**
+  ///
+  /// یوه کرښه، ځکه چې یو کارن چې لومړی ځل دلته راځي، د فلټرونو له
+  /// یوې قطارې سره مخ کېږي او نه پوهېږي چې پوښتنه يې څه ده.
+  String get _hint => switch (widget.audience) {
+    'teacher' =>
+      'کوم استاد په ټاکلې موده کې څومره راغلی او څومره يې پرېښې ده؟ '
+          'موده وټاکئ، بیا ډله‌ییز لیست وګورئ یا یو تن ونیسئ.',
+    'staff' =>
+      'کوم کارمند په ټاکلې موده کې څومره راغلی؟ '
+          'موده وټاکئ، بیا ډله‌ییز لیست وګورئ یا یو تن ونیسئ.',
+    _ =>
+      'کوم شاګرد په ټاکلې موده کې څومره راغلی او څومره يې غیرحاضري ده؟ '
+          'موده وټاکئ، بیا ډله‌ییز لیست وګورئ یا یو تن ونیسئ.',
+  };
+
   Color get _accent => switch (widget.audience) {
     'teacher' => AppColors.modTeachers,
     'staff' => AppColors.modStaff,
@@ -254,6 +270,11 @@ class _PeopleReportPageState extends State<PeopleReportPage> {
                       ),
                     ),
                   ],
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  _hint,
+                  style: TextStyle(fontSize: 12, color: p.muted),
                 ),
                 const SizedBox(height: 14),
 

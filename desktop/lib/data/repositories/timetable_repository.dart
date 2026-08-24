@@ -991,6 +991,15 @@ GROUP BY sub.id
   /// تر منځ د **ځای له مخې** نقشه جوړېږي: زوړ لومړی درسي ساعت →
   /// نوی لومړی، دویم → دویم. که نوی جوړښت لنډ وي، هغه درسونه چې
   /// ځای نه لري، ړنګېږي — او شمېره يې راګرځي، چې کارن پوه شي.
+  /// **د هر ساعت خپله اوږدوالی** — که ورکړل شي.
+  ///
+  /// **ولې دا پکار ده؟** ځکه چې هر ښوونځی یو شان نه دی. ځینې د
+  /// قرآن لومړی ساعت اوږد غواړي (۶۰ دقیقې) او پاتې لنډ (۴۵)؛ ځینې
+  /// وروستی ساعت لنډوي چې شاګردان ژر کور ته لاړ شي. یوه ثابته
+  /// شمېره به يې هېڅ یوه ته نه وه برابره.
+  ///
+  /// که `perPeriodMinutes` تش وي، ټول ساعتونه `periodMinutes`
+  /// اخلي — هغه ساده حالت چې ډېری ښوونځي يې کاروي.
   Future<int> rebuildSlots({
     required String dayStart,
     required int periodsPerDay,
@@ -998,6 +1007,7 @@ GROUP BY sub.id
     required int breakAfterPeriods,
     required int breakMinutes,
     required int breaksPerDay,
+    List<int>? perPeriodMinutes,
   }) async {
     final oldTeaching = (await slots()).where((s) => !s.isBreak).toList();
 
@@ -1025,6 +1035,11 @@ GROUP BY sub.id
       var breaksUsed = 0;
 
       for (var i = 1; i <= periodsPerDay; i++) {
+        final len = minutesFor(
+          index: i - 1,
+          uniform: periodMinutes,
+          perPeriod: perPeriodMinutes,
+        );
         newTeaching.add(
           await db
               .into(db.timeSlots)
@@ -1032,12 +1047,12 @@ GROUP BY sub.id
                 TimeSlotsCompanion.insert(
                   name: '$i ساعت',
                   startTime: fmt(minutes),
-                  endTime: fmt(minutes + periodMinutes),
+                  endTime: fmt(minutes + len),
                   sortOrder: Value(order++),
                 ),
               ),
         );
-        minutes += periodMinutes;
+        minutes += len;
 
         // تفریح د هرو `breakAfterPeriods` ساعتونو وروسته، خو له
         // ټاکل شوې شمېرې زیاته نه — او د ورځې تر پایه هېڅکله نه.
@@ -1087,6 +1102,22 @@ GROUP BY sub.id
     });
   }
 
+  /// د یوه ساعت اوږدوالی — یا ګډ، یا خپل.
+  ///
+  /// یوه ځای ټاکل شوې، ځکه چې مخکتنه، حساب او ذخیره درې واړه يې
+  /// کاروي — او که هر یوه خپله پرېکړه کوله، یوه ورځ به يې توپیر
+  /// کړی و.
+  static int minutesFor({
+    required int index,
+    required int uniform,
+    List<int>? perPeriod,
+  }) {
+    if (perPeriod == null || index >= perPeriod.length) return uniform;
+    final v = perPeriod[index];
+    // صفر یا منفي ساعت شتون نه لري — نو ګډې اندازې ته ورګرځي.
+    return v > 0 ? v : uniform;
+  }
+
   /// د ورځې د پای وخت — د تنظیماتو له مخې حساب شوی.
   static String computeDayEnd({
     required String dayStart,
@@ -1095,6 +1126,7 @@ GROUP BY sub.id
     required int breakAfterPeriods,
     required int breakMinutes,
     required int breaksPerDay,
+    List<int>? perPeriodMinutes,
   }) {
     final parts = dayStart.split(':');
     var m =
@@ -1103,7 +1135,11 @@ GROUP BY sub.id
 
     var breaksUsed = 0;
     for (var i = 1; i <= periodsPerDay; i++) {
-      m += periodMinutes;
+      m += minutesFor(
+        index: i - 1,
+        uniform: periodMinutes,
+        perPeriod: perPeriodMinutes,
+      );
       if (breakAfterPeriods > 0 &&
           i % breakAfterPeriods == 0 &&
           i != periodsPerDay &&

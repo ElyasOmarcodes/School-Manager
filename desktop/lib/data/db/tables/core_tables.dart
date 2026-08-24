@@ -59,6 +59,13 @@ class Schools extends Table {
   /// په ورځ کې څو تفریحې. که ۲ وي، دویمه يې د دویم بند په منځ کې ده.
   IntColumn get breaksPerDay => integer().withDefault(const Constant(1))();
 
+  /// **د هر ساعت خپله اوږدوالی** — د کامې په واسطه بېل، «60,45,45».
+  ///
+  /// که تش وي، ټول ساعتونه `periodMinutes` اخلي. یو ښوونځی چې د
+  /// قرآن لومړی ساعت اوږد غواړي، دلته يې لیکي — پرته له دې به يې
+  /// یوازې دوه لارې لرلې: یا ټول اوږد، یا ټول لنډ.
+  TextColumn get periodMinutesCsv => text().nullable()();
+
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
 

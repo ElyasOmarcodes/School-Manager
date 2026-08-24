@@ -246,6 +246,17 @@ class $SchoolsTable extends Schools with TableInfo<$SchoolsTable, School> {
     requiredDuringInsert: false,
     defaultValue: const Constant(1),
   );
+  static const VerificationMeta _periodMinutesCsvMeta = const VerificationMeta(
+    'periodMinutesCsv',
+  );
+  @override
+  late final GeneratedColumn<String> periodMinutesCsv = GeneratedColumn<String>(
+    'period_minutes_csv',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -281,6 +292,7 @@ class $SchoolsTable extends Schools with TableInfo<$SchoolsTable, School> {
     breakAfterPeriods,
     breakMinutes,
     breaksPerDay,
+    periodMinutesCsv,
     createdAt,
   ];
   @override
@@ -453,6 +465,15 @@ class $SchoolsTable extends Schools with TableInfo<$SchoolsTable, School> {
         ),
       );
     }
+    if (data.containsKey('period_minutes_csv')) {
+      context.handle(
+        _periodMinutesCsvMeta,
+        periodMinutesCsv.isAcceptableOrUnknown(
+          data['period_minutes_csv']!,
+          _periodMinutesCsvMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -552,6 +573,10 @@ class $SchoolsTable extends Schools with TableInfo<$SchoolsTable, School> {
         DriftSqlType.int,
         data['${effectivePrefix}breaks_per_day'],
       )!,
+      periodMinutesCsv: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}period_minutes_csv'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -610,6 +635,13 @@ class School extends DataClass implements Insertable<School> {
 
   /// په ورځ کې څو تفریحې. که ۲ وي، دویمه يې د دویم بند په منځ کې ده.
   final int breaksPerDay;
+
+  /// **د هر ساعت خپله اوږدوالی** — د کامې په واسطه بېل، «60,45,45».
+  ///
+  /// که تش وي، ټول ساعتونه `periodMinutes` اخلي. یو ښوونځی چې د
+  /// قرآن لومړی ساعت اوږد غواړي، دلته يې لیکي — پرته له دې به يې
+  /// یوازې دوه لارې لرلې: یا ټول اوږد، یا ټول لنډ.
+  final String? periodMinutesCsv;
   final DateTime createdAt;
   const School({
     required this.id,
@@ -633,6 +665,7 @@ class School extends DataClass implements Insertable<School> {
     required this.breakAfterPeriods,
     required this.breakMinutes,
     required this.breaksPerDay,
+    this.periodMinutesCsv,
     required this.createdAt,
   });
   @override
@@ -669,6 +702,9 @@ class School extends DataClass implements Insertable<School> {
     map['break_after_periods'] = Variable<int>(breakAfterPeriods);
     map['break_minutes'] = Variable<int>(breakMinutes);
     map['breaks_per_day'] = Variable<int>(breaksPerDay);
+    if (!nullToAbsent || periodMinutesCsv != null) {
+      map['period_minutes_csv'] = Variable<String>(periodMinutesCsv);
+    }
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
   }
@@ -706,6 +742,9 @@ class School extends DataClass implements Insertable<School> {
       breakAfterPeriods: Value(breakAfterPeriods),
       breakMinutes: Value(breakMinutes),
       breaksPerDay: Value(breaksPerDay),
+      periodMinutesCsv: periodMinutesCsv == null && nullToAbsent
+          ? const Value.absent()
+          : Value(periodMinutesCsv),
       createdAt: Value(createdAt),
     );
   }
@@ -737,6 +776,7 @@ class School extends DataClass implements Insertable<School> {
       breakAfterPeriods: serializer.fromJson<int>(json['breakAfterPeriods']),
       breakMinutes: serializer.fromJson<int>(json['breakMinutes']),
       breaksPerDay: serializer.fromJson<int>(json['breaksPerDay']),
+      periodMinutesCsv: serializer.fromJson<String?>(json['periodMinutesCsv']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
   }
@@ -765,6 +805,7 @@ class School extends DataClass implements Insertable<School> {
       'breakAfterPeriods': serializer.toJson<int>(breakAfterPeriods),
       'breakMinutes': serializer.toJson<int>(breakMinutes),
       'breaksPerDay': serializer.toJson<int>(breaksPerDay),
+      'periodMinutesCsv': serializer.toJson<String?>(periodMinutesCsv),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
   }
@@ -791,6 +832,7 @@ class School extends DataClass implements Insertable<School> {
     int? breakAfterPeriods,
     int? breakMinutes,
     int? breaksPerDay,
+    Value<String?> periodMinutesCsv = const Value.absent(),
     DateTime? createdAt,
   }) => School(
     id: id ?? this.id,
@@ -814,6 +856,9 @@ class School extends DataClass implements Insertable<School> {
     breakAfterPeriods: breakAfterPeriods ?? this.breakAfterPeriods,
     breakMinutes: breakMinutes ?? this.breakMinutes,
     breaksPerDay: breaksPerDay ?? this.breaksPerDay,
+    periodMinutesCsv: periodMinutesCsv.present
+        ? periodMinutesCsv.value
+        : this.periodMinutesCsv,
     createdAt: createdAt ?? this.createdAt,
   );
   School copyWithCompanion(SchoolsCompanion data) {
@@ -861,6 +906,9 @@ class School extends DataClass implements Insertable<School> {
       breaksPerDay: data.breaksPerDay.present
           ? data.breaksPerDay.value
           : this.breaksPerDay,
+      periodMinutesCsv: data.periodMinutesCsv.present
+          ? data.periodMinutesCsv.value
+          : this.periodMinutesCsv,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
   }
@@ -889,6 +937,7 @@ class School extends DataClass implements Insertable<School> {
           ..write('breakAfterPeriods: $breakAfterPeriods, ')
           ..write('breakMinutes: $breakMinutes, ')
           ..write('breaksPerDay: $breaksPerDay, ')
+          ..write('periodMinutesCsv: $periodMinutesCsv, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -917,6 +966,7 @@ class School extends DataClass implements Insertable<School> {
     breakAfterPeriods,
     breakMinutes,
     breaksPerDay,
+    periodMinutesCsv,
     createdAt,
   ]);
   @override
@@ -944,6 +994,7 @@ class School extends DataClass implements Insertable<School> {
           other.breakAfterPeriods == this.breakAfterPeriods &&
           other.breakMinutes == this.breakMinutes &&
           other.breaksPerDay == this.breaksPerDay &&
+          other.periodMinutesCsv == this.periodMinutesCsv &&
           other.createdAt == this.createdAt);
 }
 
@@ -969,6 +1020,7 @@ class SchoolsCompanion extends UpdateCompanion<School> {
   final Value<int> breakAfterPeriods;
   final Value<int> breakMinutes;
   final Value<int> breaksPerDay;
+  final Value<String?> periodMinutesCsv;
   final Value<DateTime> createdAt;
   const SchoolsCompanion({
     this.id = const Value.absent(),
@@ -992,6 +1044,7 @@ class SchoolsCompanion extends UpdateCompanion<School> {
     this.breakAfterPeriods = const Value.absent(),
     this.breakMinutes = const Value.absent(),
     this.breaksPerDay = const Value.absent(),
+    this.periodMinutesCsv = const Value.absent(),
     this.createdAt = const Value.absent(),
   });
   SchoolsCompanion.insert({
@@ -1016,6 +1069,7 @@ class SchoolsCompanion extends UpdateCompanion<School> {
     this.breakAfterPeriods = const Value.absent(),
     this.breakMinutes = const Value.absent(),
     this.breaksPerDay = const Value.absent(),
+    this.periodMinutesCsv = const Value.absent(),
     this.createdAt = const Value.absent(),
   }) : name = Value(name);
   static Insertable<School> custom({
@@ -1040,6 +1094,7 @@ class SchoolsCompanion extends UpdateCompanion<School> {
     Expression<int>? breakAfterPeriods,
     Expression<int>? breakMinutes,
     Expression<int>? breaksPerDay,
+    Expression<String>? periodMinutesCsv,
     Expression<DateTime>? createdAt,
   }) {
     return RawValuesInsertable({
@@ -1065,6 +1120,7 @@ class SchoolsCompanion extends UpdateCompanion<School> {
       if (breakAfterPeriods != null) 'break_after_periods': breakAfterPeriods,
       if (breakMinutes != null) 'break_minutes': breakMinutes,
       if (breaksPerDay != null) 'breaks_per_day': breaksPerDay,
+      if (periodMinutesCsv != null) 'period_minutes_csv': periodMinutesCsv,
       if (createdAt != null) 'created_at': createdAt,
     });
   }
@@ -1091,6 +1147,7 @@ class SchoolsCompanion extends UpdateCompanion<School> {
     Value<int>? breakAfterPeriods,
     Value<int>? breakMinutes,
     Value<int>? breaksPerDay,
+    Value<String?>? periodMinutesCsv,
     Value<DateTime>? createdAt,
   }) {
     return SchoolsCompanion(
@@ -1115,6 +1172,7 @@ class SchoolsCompanion extends UpdateCompanion<School> {
       breakAfterPeriods: breakAfterPeriods ?? this.breakAfterPeriods,
       breakMinutes: breakMinutes ?? this.breakMinutes,
       breaksPerDay: breaksPerDay ?? this.breaksPerDay,
+      periodMinutesCsv: periodMinutesCsv ?? this.periodMinutesCsv,
       createdAt: createdAt ?? this.createdAt,
     );
   }
@@ -1185,6 +1243,9 @@ class SchoolsCompanion extends UpdateCompanion<School> {
     if (breaksPerDay.present) {
       map['breaks_per_day'] = Variable<int>(breaksPerDay.value);
     }
+    if (periodMinutesCsv.present) {
+      map['period_minutes_csv'] = Variable<String>(periodMinutesCsv.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -1215,6 +1276,7 @@ class SchoolsCompanion extends UpdateCompanion<School> {
           ..write('breakAfterPeriods: $breakAfterPeriods, ')
           ..write('breakMinutes: $breakMinutes, ')
           ..write('breaksPerDay: $breaksPerDay, ')
+          ..write('periodMinutesCsv: $periodMinutesCsv, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -22593,6 +22655,7 @@ typedef $$SchoolsTableCreateCompanionBuilder =
       Value<int> breakAfterPeriods,
       Value<int> breakMinutes,
       Value<int> breaksPerDay,
+      Value<String?> periodMinutesCsv,
       Value<DateTime> createdAt,
     });
 typedef $$SchoolsTableUpdateCompanionBuilder =
@@ -22618,6 +22681,7 @@ typedef $$SchoolsTableUpdateCompanionBuilder =
       Value<int> breakAfterPeriods,
       Value<int> breakMinutes,
       Value<int> breaksPerDay,
+      Value<String?> periodMinutesCsv,
       Value<DateTime> createdAt,
     });
 
@@ -22732,6 +22796,11 @@ class $$SchoolsTableFilterComposer
 
   ColumnFilters<int> get breaksPerDay => $composableBuilder(
     column: $table.breaksPerDay,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get periodMinutesCsv => $composableBuilder(
+    column: $table.periodMinutesCsv,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -22855,6 +22924,11 @@ class $$SchoolsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get periodMinutesCsv => $composableBuilder(
+    column: $table.periodMinutesCsv,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -22955,6 +23029,11 @@ class $$SchoolsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get periodMinutesCsv => $composableBuilder(
+    column: $table.periodMinutesCsv,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 }
@@ -23008,6 +23087,7 @@ class $$SchoolsTableTableManager
                 Value<int> breakAfterPeriods = const Value.absent(),
                 Value<int> breakMinutes = const Value.absent(),
                 Value<int> breaksPerDay = const Value.absent(),
+                Value<String?> periodMinutesCsv = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
               }) => SchoolsCompanion(
                 id: id,
@@ -23031,6 +23111,7 @@ class $$SchoolsTableTableManager
                 breakAfterPeriods: breakAfterPeriods,
                 breakMinutes: breakMinutes,
                 breaksPerDay: breaksPerDay,
+                periodMinutesCsv: periodMinutesCsv,
                 createdAt: createdAt,
               ),
           createCompanionCallback:
@@ -23056,6 +23137,7 @@ class $$SchoolsTableTableManager
                 Value<int> breakAfterPeriods = const Value.absent(),
                 Value<int> breakMinutes = const Value.absent(),
                 Value<int> breaksPerDay = const Value.absent(),
+                Value<String?> periodMinutesCsv = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
               }) => SchoolsCompanion.insert(
                 id: id,
@@ -23079,6 +23161,7 @@ class $$SchoolsTableTableManager
                 breakAfterPeriods: breakAfterPeriods,
                 breakMinutes: breakMinutes,
                 breaksPerDay: breaksPerDay,
+                periodMinutesCsv: periodMinutesCsv,
                 createdAt: createdAt,
               ),
           withReferenceMapper: (p0) => p0

@@ -222,27 +222,40 @@ class _NavBranchState extends State<_NavBranch> {
   Widget build(BuildContext context) {
     final children = widget.item.children;
 
+    final tile = _NavTile(
+      item: widget.item,
+      active: _ownsRoute,
+      expanded: widget.expanded,
+      showChevron: widget.item.hasChildren && widget.expanded,
+      chevronOpen: _showChildren,
+      onTap: () {
+        // ټول شوی + فرعي توکي = منو. پر مور لار تګ دلته نه کوو،
+        // ځکه چې منو کې لومړی توکی همغه مور پاڼه ده.
+        if (widget.item.hasChildren && !widget.expanded) {
+          _showCollapsedMenu(
+            context,
+            item: widget.item,
+            currentRoute: widget.currentRoute,
+            onNavigate: widget.onNavigate,
+          );
+          return;
+        }
+        if (widget.item.hasChildren && widget.expanded) {
+          setState(() => _open = !_ownsRoute || !_open);
+          // پر مور توکي کېکاږل لومړي فرعي توکي ته هم بیایي —
+          // که نه، کارن به دوه ځله کېکاږلو ته اړ و.
+          if (!_ownsRoute) widget.onNavigate(children.first.route);
+          return;
+        }
+        widget.onNavigate(widget.item.route);
+      },
+    );
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
-        _NavTile(
-          item: widget.item,
-          active: _ownsRoute,
-          expanded: widget.expanded,
-          showChevron: widget.item.hasChildren && widget.expanded,
-          chevronOpen: _showChildren,
-          onTap: () {
-            if (widget.item.hasChildren && widget.expanded) {
-              setState(() => _open = !_ownsRoute || !_open);
-              // پر مور توکي کېکاږل لومړي فرعي توکي ته هم بیایي —
-              // که نه، کارن به دوه ځله کېکاږلو ته اړ و.
-              if (!_ownsRoute) widget.onNavigate(children.first.route);
-              return;
-            }
-            widget.onNavigate(widget.item.route);
-          },
-        ),
+        tile,
         AnimatedSize(
           duration: AppMotion.normal,
           curve: AppMotion.standard,
@@ -259,6 +272,100 @@ class _NavBranchState extends State<_NavBranch> {
       ],
     );
   }
+}
+
+/// **د ټول شوي سایډبار فرعي منو.**
+///
+/// کله چې سایډبار یوازې نښانونه ښیي، فرعي توکي هلته ځای نه لري —
+/// خو پټېدل يې هم سم نه دي: هغه چې سایډبار يې د ځای د سپمولو لپاره
+/// ټول کړی و، د ازموینو تنظیماتو یا د کارت ډیزاینر ته يې لار نه
+/// لرله. اوس پر نښان یو کلیک دا منو راولي.
+///
+/// **ولې `showMenu` نه `PopupMenuButton`؟** ځکه چې د توکي کاشۍ خپله
+/// یو `GestureDetector` لري. که يې یو `PopupMenuButton` راتاو کړی
+/// وای، کلیک به تل کاشۍ اخیسته او منو به هېڅکله نه وه راغلې.
+Future<void> _showCollapsedMenu(
+  BuildContext context, {
+  required NavItem item,
+  required String currentRoute,
+  required ValueChanged<String> onNavigate,
+}) async {
+  final s = S.of(context);
+  final p = context.palette;
+  final c = item.color;
+
+  final box = context.findRenderObject() as RenderBox?;
+  final overlay =
+      Navigator.of(context).overlay?.context.findRenderObject() as RenderBox?;
+  if (box == null || overlay == null) return;
+
+  // منو د کاشۍ څنګ ته راځي، نه پر سر — نو نښان لا هم ښکاري او کارن
+  // پوهېږي چې دا د کوم توکي فرعي لیست دی.
+  final origin = box.localToGlobal(Offset.zero, ancestor: overlay);
+  final rect = RelativeRect.fromLTRB(
+    origin.dx + box.size.width,
+    origin.dy,
+    overlay.size.width - origin.dx - box.size.width,
+    0,
+  );
+
+  final picked = await showMenu<String>(
+    context: context,
+    position: rect,
+    // د اپ خپل سطح او څنډه — نه د متریال تلواله، چې منو د پاڼې
+    // له پاتې برخې سره یو ډول ښکاره شي.
+    color: p.surface,
+    surfaceTintColor: Colors.transparent,
+    shadowColor: Colors.black.withValues(alpha: 0.16),
+    elevation: 10,
+    constraints: const BoxConstraints(minWidth: 178, maxWidth: 260),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(14),
+      side: BorderSide(color: p.line),
+    ),
+    items: [
+      PopupMenuItem<String>(
+        enabled: false,
+        height: 32,
+        child: Text(
+          item.label(s),
+          style: TextStyle(
+            fontSize: 11.5,
+            fontWeight: FontWeight.w800,
+            color: p.faint,
+          ),
+        ),
+      ),
+      const PopupMenuDivider(),
+      for (final sub in item.children)
+        PopupMenuItem<String>(
+          value: sub.route,
+          height: 38,
+          child: Row(
+            children: [
+              Icon(
+                sub.icon,
+                size: 15,
+                color: currentRoute == sub.route ? c : p.muted,
+              ),
+              const SizedBox(width: 10),
+              Text(
+                sub.label(s),
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: currentRoute == sub.route
+                      ? FontWeight.w700
+                      : FontWeight.w500,
+                  color: currentRoute == sub.route ? c : p.inkSoft,
+                ),
+              ),
+            ],
+          ),
+        ),
+    ],
+  );
+
+  if (picked != null) onNavigate(picked);
 }
 
 /// **د فرعي توکو لیست** — یوه ریل او پرې یو ښویېدونکی نښان.

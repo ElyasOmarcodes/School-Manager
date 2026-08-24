@@ -1,42 +1,29 @@
 import 'package:flutter/material.dart';
 
-/// **ټوله پرده یوه نرمه پاڼه ده.**
+/// **د کلیک نرم ځواب.**
 ///
-/// کله چې کارن هر ځای کېکاږي، هغه ټکی لږ ښکته ننوځي — بیا په نرمۍ
-/// سره بېرته خپل حالت ته راځي، لکه یوه نرمه پاڼه چې ګوته پرې
-/// کېږدې.
+/// کله چې کارن هر ځای کېکاږي، د هماغه ټکي شاوخوا یوه ډېره نرمه
+/// رڼا راښکاره کېږي، لږ غځېږي او ورکېږي — لکه اوبه چې پرې څاڅکی
+/// ولوېږي.
 ///
-/// **ولې یو عمومي افکټ او نه پر هره تڼۍ باندې؟**
-/// ځکه چې «نرمه پاڼه» یوه **د پردې** ځانګړتیا ده، نه د تڼۍ. که پر
-/// هره تڼۍ جلا لګول کېده، دوه ستونزې راتلې:
-///   ۱. هر نوی ویجیټ به يې بیا لګولو ته اړ و — او یو هېر شوی به
-///      «سخت» ښکارېده، چې له نورو سره يې توپیر سترګو ته کېده.
-///   ۲. د جدول یوه کرښه، یو کارت، یو خالي ځای — دا ټول به بې‌ځوابه
-///      وو، حال دا چې پاڼه خو یوه ده.
+/// **پرده پخپله هېڅکله نه خوځېږي.**
 ///
-/// نو دلته د پردې پر سر یو **ژورت** رسمېږي: د کېکاږلو په ټکي کې
-/// یوه نرمه تیاره حلقه (سیوری) او تر لاندې يې یوه رڼا (منعکس شوې
-/// رڼا) — هماغه دوه څه چې سترګه پرې «ژور» او «راپورته» بېلوي. له
-/// هغې سره ټوله پاڼه د هماغه ټکي په لور یوه ذره ټیټېږي.
+/// لومړۍ هڅه مې د ټولې پردې یوه وړه اندازه‌بدلونه وه — چې د «نرمې
+/// پاڼې» احساس ورکړي. هغه یوه ریښتینې تېروتنه وه: کله چې د پردې
+/// ټول محتوا د هر کلیک سره وخوځېږي، سترګه او د بدن د انډول حس سره
+/// ټکر کوي — هماغه څه چې د موټر په ناستې کې زړه بدوالی راولي. یو
+/// افکټ چې کارونکی ناروغ کړي، هېڅ ښکلا يې نه پخلا کوي.
 ///
-/// **د حرکت کچه قصداً وړه ده** (۰.۶٪ اندازه). یو ښکاره «ټوپ» به د
-/// ورځې په سلګونو کلیکونو کې ستړی کوونکی و — دا باید احساس شي، نه
-/// ولیدل شي.
+/// نو اوس یوازې **رڼا** بدلېږي، هېڅ شی خپل ځای نه پرېږدي. د یوه
+/// ثابت انځور پر سر د رڼا بدلون سترګې نه ستړې کوي، ځکه چې مغز يې
+/// د حرکت په توګه نه لولي.
 class PaperSurface extends StatefulWidget {
   final Widget child;
 
-  /// د ژورت وسعت — د پکسلونو په کچه.
+  /// د رڼا وروستۍ کچه — د پکسلونو په کچه.
   final double radius;
 
-  /// څومره ټیټېږي (۱ = ۱۰۰٪). تلواله ۰.۰۰۶ ده.
-  final double depth;
-
-  const PaperSurface({
-    super.key,
-    required this.child,
-    this.radius = 132,
-    this.depth = 0.006,
-  });
+  const PaperSurface({super.key, required this.child, this.radius = 58});
 
   @override
   State<PaperSurface> createState() => _PaperSurfaceState();
@@ -46,16 +33,9 @@ class _PaperSurfaceState extends State<PaperSurface>
     with SingleTickerProviderStateMixin {
   late final AnimationController _c = AnimationController(
     vsync: this,
-    // **ښکته تګ ګړندی، راختل ورو.** ریښتیني نرم شیان همداسې کوي:
-    // د فشار لاندې سمدستي ټیټېږي، خو بېرته راختل يې وخت نیسي.
-    duration: const Duration(milliseconds: 110),
-    reverseDuration: const Duration(milliseconds: 340),
-  );
-
-  late final Animation<double> _t = CurvedAnimation(
-    parent: _c,
-    curve: Curves.easeOutCubic,
-    reverseCurve: Curves.easeOutCubic,
+    // یو ځل ځغلي او ورکېږي — نه دا چې تر پرېښودو پورې ولاړ وي.
+    // یوه اوږده ژوندۍ نښه به د لیکلو پر مهال ستړې کوونکې وه.
+    duration: const Duration(milliseconds: 420),
   );
 
   Offset? _point;
@@ -67,21 +47,12 @@ class _PaperSurfaceState extends State<PaperSurface>
   }
 
   void _down(PointerDownEvent e) {
-    // یوازې لومړی ګوته/کلیک — د څو ګوتو ټکر ژورت نه دوه‌ځلی کوي.
-    if (_c.status == AnimationStatus.forward) return;
     setState(() => _point = e.localPosition);
-    _c.forward();
-  }
-
-  void _up([PointerEvent? _]) {
-    if (!mounted) return;
-    _c.reverse();
+    _c.forward(from: 0);
   }
 
   @override
   Widget build(BuildContext context) {
-    // د حرکت کمولو غوښتنه (د سیسټم لاسرسي تنظیم) درناوی کېږي —
-    // ځینې کارن له حرکته سرخوږی مومي.
     if (MediaQuery.maybeDisableAnimationsOf(context) ?? false) {
       return widget.child;
     }
@@ -89,75 +60,50 @@ class _PaperSurfaceState extends State<PaperSurface>
     final dark = Theme.of(context).brightness == Brightness.dark;
 
     return Listener(
-      // **`translucent`** — پاڼه پخپله هېڅ کلیک نه اخلي؛ یوازې يې
-      // ویني. که `opaque` وای، د لاندې هره تڼۍ به مړه شوې وه.
+      // پاڼه پخپله هېڅ کلیک نه اخلي؛ یوازې يې ویني.
       behavior: HitTestBehavior.translucent,
       onPointerDown: _down,
-      onPointerUp: _up,
-      onPointerCancel: _up,
-      child: AnimatedBuilder(
-        animation: _t,
-        child: widget.child,
-        builder: (context, child) {
-          final t = _t.value;
-          final at = _point;
-          // په ارام حالت کې هېڅ اضافي پرت نه رسمېږي — نو نه د
-          // کارکردګۍ لګښت شته، نه د عکس ازموینو کې بدلون.
-          if (t <= 0.001 || at == null) return child!;
-
-          return LayoutBuilder(
-            builder: (context, box) {
-              final w = box.maxWidth;
-              final h = box.maxHeight;
-              // د ټیټېدو محور هماغه ټکی دی چې ګوته پرې ده — نو پاڼه
-              // د خپل منځه نه، بلکې **د فشار له ځایه** ننوځي.
-              final align = Alignment(
-                w == 0 ? 0 : (at.dx / w) * 2 - 1,
-                h == 0 ? 0 : (at.dy / h) * 2 - 1,
-              );
-
-              return Stack(
-                children: [
-                  Transform.scale(
-                    scale: 1 - widget.depth * t,
-                    alignment: align,
-                    child: child,
-                  ),
-                  Positioned.fill(
-                    child: IgnorePointer(
-                      child: CustomPaint(
-                        painter: _DentPainter(
-                          at: at,
-                          t: t,
-                          radius: widget.radius,
-                          dark: dark,
-                        ),
-                      ),
+      child: Stack(
+        children: [
+          widget.child,
+          Positioned.fill(
+            child: IgnorePointer(
+              child: AnimatedBuilder(
+                animation: _c,
+                builder: (context, _) {
+                  final t = _c.value;
+                  final at = _point;
+                  // په ارام حالت کې هېڅ نه رسمېږي — نه لګښت، نه د
+                  // عکس ازموینو کې بدلون.
+                  if (t <= 0 || t >= 1 || at == null) {
+                    return const SizedBox.shrink();
+                  }
+                  return CustomPaint(
+                    painter: _GlowPainter(
+                      at: at,
+                      t: t,
+                      radius: widget.radius,
+                      dark: dark,
                     ),
-                  ),
-                ],
-              );
-            },
-          );
-        },
+                  );
+                },
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-/// د ژورت رسمول — یو سیوری پاس، یوه رڼا ښکته.
-///
-/// **دا ولې د ژورت احساس ورکوي؟** ځکه چې سترګه ژوروالی له رڼا څخه
-/// اټکل کوي. که رڼا له پاسه راځي (لکه هره خونه)، نو یوه ژوره کندې
-/// پورتنۍ څنډه **تیاره** وي او لاندنۍ يې **روښانه**. همدا دوه
-/// نرمې دايرې بس دي — هېڅ شېډر ته اړتیا نشته.
-class _DentPainter extends CustomPainter {
+/// یوه نرمه رڼا چې غځېږي او ورکېږي.
+class _GlowPainter extends CustomPainter {
   final Offset at;
   final double t;
   final double radius;
   final bool dark;
 
-  const _DentPainter({
+  const _GlowPainter({
     required this.at,
     required this.t,
     required this.radius,
@@ -166,30 +112,30 @@ class _DentPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final r = radius * (0.72 + 0.28 * t);
+    // **غځېدل ژر، ورکېدل ورو.** دا هغه بڼه ده چې طبیعي ښکاري —
+    // یو ځواب چې سمدستي راځي او په ارامۍ ولاړېږي.
+    final grow = Curves.easeOutCubic.transform(t.clamp(0.0, 1.0));
+    final fade = 1 - Curves.easeInCubic.transform(t.clamp(0.0, 1.0));
+    final r = radius * (0.35 + 0.65 * grow);
 
-    // په تیاره بڼه کې سیوری لږ کمزوری او رڼا لږ پیاوړې ده — که نه،
-    // پر تیاره شالید به سیوری بیخي نه ښکارېده.
-    final shadowA = (dark ? 0.10 : 0.055) * t;
-    final lightA = (dark ? 0.055 : 0.14) * t;
+    // ډېره سپکه ده — احساس شي، ونه لیدل شي.
+    final peak = dark ? 0.085 : 0.055;
+    final color = (dark ? Colors.white : Colors.black).withValues(
+      alpha: peak * fade,
+    );
 
-    void blob(Offset center, Color color) {
-      canvas.drawCircle(
-        center,
-        r,
-        Paint()
-          ..shader = RadialGradient(
-            colors: [color, color.withValues(alpha: 0)],
-            stops: const [0, 1],
-          ).createShader(Rect.fromCircle(center: center, radius: r)),
-      );
-    }
-
-    blob(at.translate(0, -r * 0.10), Colors.black.withValues(alpha: shadowA));
-    blob(at.translate(0, r * 0.16), Colors.white.withValues(alpha: lightA));
+    canvas.drawCircle(
+      at,
+      r,
+      Paint()
+        ..shader = RadialGradient(
+          colors: [color, color.withValues(alpha: 0)],
+          stops: const [0, 1],
+        ).createShader(Rect.fromCircle(center: at, radius: r)),
+    );
   }
 
   @override
-  bool shouldRepaint(_DentPainter old) =>
+  bool shouldRepaint(_GlowPainter old) =>
       old.t != t || old.at != at || old.dark != dark;
 }
