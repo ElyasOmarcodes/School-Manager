@@ -48,6 +48,7 @@ import 'package:school_manager/features/exams/top_students_page.dart';
 import 'package:school_manager/features/exams/combined_results_page.dart';
 import 'package:school_manager/data/repositories/report_repository.dart';
 import 'package:school_manager/features/fees/fees_page.dart';
+import 'package:school_manager/features/reports/people_report_page.dart';
 import 'package:school_manager/features/reports/reports_page.dart';
 import 'package:school_manager/features/payroll/payroll_page.dart';
 import 'package:school_manager/features/users/users_page.dart';
@@ -714,6 +715,81 @@ void main() {
           lanLookup: (_) async => const [],
         ),
       ),
+    );
+  });
+
+  testWidgets('63 — د شاګردانو راپور', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await _seedSchool(db);
+    await _seedAbsences(db);
+
+    await _shoot(
+      tester,
+      name: '63-report-students',
+      settle: const Duration(milliseconds: 800),
+      child: Scaffold(
+        body: PeopleReportPage(
+          reports: ReportRepository(db, clock: () => DateTime(2026, 5, 12)),
+          academic: AcademicRepository(db),
+          schoolName: 'د نور لیسه',
+          audience: 'student',
+          clock: () => DateTime(2026, 5, 12),
+          onPrint: (_) async {},
+          onExport: (_, _) async {},
+        ),
+      ),
+      after: (tester) async {
+        await tester.tap(find.byIcon(Icons.tune_rounded));
+        await tester.pumpAndSettle();
+      },
+    );
+  });
+
+  testWidgets('64 — د استادانو راپور (اونیز)', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await _seedSchool(db);
+    await _seedTeachers(db);
+
+    // د اونۍ حاضري — چې د دورې پرمخ‌تګ او شمېرې دواړه ښکاره شي.
+    final teachers = await db.select(db.teachers).get();
+    const plan = ['present', 'present', 'late', 'present', 'absent'];
+    for (var i = 0; i < teachers.length; i++) {
+      for (var d = 0; d < plan.length; d++) {
+        await db
+            .into(db.staffAttendances)
+            .insert(
+              StaffAttendancesCompanion.insert(
+                personKind: 'teacher',
+                personId: teachers[i].id,
+                date: DateTime(2026, 5, 9 + d),
+                status: i.isEven ? plan[d] : 'present',
+                recordedAt: Value(DateTime(2026, 5, 9 + d, 7, 5)),
+              ),
+            );
+      }
+    }
+
+    await _shoot(
+      tester,
+      name: '64-report-teachers',
+      settle: const Duration(milliseconds: 800),
+      child: Scaffold(
+        body: PeopleReportPage(
+          reports: ReportRepository(db, clock: () => DateTime(2026, 5, 12)),
+          academic: AcademicRepository(db),
+          schoolName: 'د نور لیسه',
+          audience: 'teacher',
+          clock: () => DateTime(2026, 5, 12),
+          onPrint: (_) async {},
+          onExport: (_, _) async {},
+        ),
+      ),
+      after: (tester) async {
+        await tester.tap(find.text('اونیز'));
+        await tester.pumpAndSettle();
+      },
     );
   });
 

@@ -53,6 +53,8 @@ import '../id_cards/card_designer_page.dart';
 import '../id_cards/cards_page.dart';
 import '../messages/messages_page.dart';
 import '../payroll/payroll_page.dart';
+import '../reports/people_report_page.dart';
+import '../reports/report_pdf.dart';
 import '../reports/reports_page.dart';
 import '../settings/settings_page.dart';
 import '../staff/staff_page.dart';
@@ -738,15 +740,34 @@ class _AppShellState extends State<AppShell> {
     if (_route == '/users' && widget.userRepo != null) {
       return UsersPage(users: widget.userRepo!, session: widget.session);
     }
-    if (_route == '/reports' &&
+    if (_route.startsWith('/reports') &&
         widget.reportRepo != null &&
         academic != null &&
         widget.examRepo != null) {
-      return ReportsPage(
+      if (_route == '/reports/summary') {
+        return ReportsPage(
+          reports: widget.reportRepo!,
+          academic: academic,
+          exams: widget.examRepo!,
+          schoolName: widget.schoolName,
+        );
+      }
+      return PeopleReportPage(
+        key: ValueKey(_route),
         reports: widget.reportRepo!,
         academic: academic,
-        exams: widget.examRepo!,
         schoolName: widget.schoolName,
+        audience: switch (_route) {
+          '/reports/teachers' => 'teacher',
+          '/reports/staff' => 'staff',
+          _ => 'student',
+        },
+        onPrint: (t) =>
+            printReport(table: t, schoolName: widget.schoolName),
+        onExport: (t, csv) => _saveCsv(
+          csv,
+          '${t.title.replaceAll(' ', '-')}.csv',
+        ),
       );
     }
     if (_route.startsWith('/settings') &&

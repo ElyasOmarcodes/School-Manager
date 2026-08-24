@@ -335,6 +335,309 @@ void main() {
     });
   });
 
+  // ═════════════════════════════════════════════════════════
+  group('د کسانو راپور', () {
+    /// د دورې د کړکۍ لنډه لار.
+    PeopleReportFilter forRange(
+      String audience,
+      ReportRange range,
+      DateTime anchor, {
+      ReportScope scope = ReportScope.group,
+      int? personId,
+      int? below,
+      String? section,
+    }) {
+      final (from, to) = PeopleReportFilter.window(range, anchor);
+      return PeopleReportFilter(
+        audience: audience,
+        from: from,
+        to: to,
+        range: range,
+        scope: scope,
+        personId: personId,
+        belowPercent: below,
+      );
+    }
+
+    Future<void> markStudent(int id, int day, String status) =>
+        attendance.markRoster(
+          sectionId: sectionId,
+          date: DateTime(2026, 5, day),
+          statusByStudentId: {id: status},
+          byUserId: 1,
+        );
+
+    Future<int> addTeacher(String name, String no, String spec) => db
+        .into(db.teachers)
+        .insert(
+          TeachersCompanion.insert(
+            employeeNo: no,
+            fullName: name,
+            gender: 'male',
+            specialization: Value(spec),
+          ),
+        );
+
+    Future<void> markStaffPerson(
+      String kind,
+      int id,
+      int day,
+      String status,
+    ) => db
+        .into(db.staffAttendances)
+        .insert(
+          StaffAttendancesCompanion.insert(
+            personKind: kind,
+            personId: id,
+            date: DateTime(2026, 5, day),
+            status: status,
+          ),
+        );
+
+    test('**د کچې کړکۍ** — ورځ، اونۍ، میاشت', () {
+      // سه‌شنبه، ۱۲ می ۲۰۲۶.
+      final at = DateTime(2026, 5, 12);
+
+      final (d1, d2) = PeopleReportFilter.window(ReportRange.day, at);
+      expect(d1, DateTime(2026, 5, 12));
+      expect(d2, DateTime(2026, 5, 12));
+
+      // اونۍ له شنبې پیلېږي — نو د سه‌شنبې اونۍ ۹ می ده.
+      final (w1, w2) = PeopleReportFilter.window(ReportRange.week, at);
+      expect(w1.weekday, DateTime.saturday);
+      expect(w1, DateTime(2026, 5, 9));
+      expect(w2, DateTime(2026, 5, 15));
+
+      final (m1, m2) = PeopleReportFilter.window(ReportRange.month, at);
+      expect(m1, DateTime(2026, 5, 1));
+      expect(m2, DateTime(2026, 5, 31));
+    });
+
+    test('ډله‌ییز: هر شاګرد یوه کرښه، سلنه د ثبت شویو له مخې', () async {
+      // احمد: ۸ حاضر + ۲ غیرحاضر = ۸۰٪
+      for (var d = 1; d <= 8; d++) {
+        await markStudent(byName['احمد']!, d, 'present');
+      }
+      for (var d = 9; d <= 10; d++) {
+        await markStudent(byName['احمد']!, d, 'absent');
+      }
+      // کریم: یوازې ۲ ورځې ثبت، دواړه حاضر = ۱۰۰٪
+      await markStudent(byName['کریم']!, 1, 'present');
+      await markStudent(byName['کریم']!, 2, 'present');
+
+      final t = await reports.peopleReport(
+        forRange('student', ReportRange.month, month),
+      );
+      expect(t.rows, hasLength(3));
+
+      final ahmad = t.rows.firstWhere((r) => r.first == 'احمد');
+      expect(ahmad[3], '8');
+      expect(ahmad[5], '2');
+      expect(ahmad.last, '80٪');
+
+      // **د کریم سلنه ۱۰۰٪ ده، نه ۲۰٪** — هغه اته ورځې چې حاضري
+      // يې نه ده اخیستل شوې، د چا په حساب کې نه راځي.
+      final karim = t.rows.firstWhere((r) => r.first == 'کریم');
+      expect(karim.last, '100٪');
+
+      // هغه چې هېڅ ثبت نه لري — کرښه لري خو سلنه يې «—» ده.
+      final z = t.rows.firstWhere((r) => r.first == 'زرغونه');
+      expect(z.last, '—');
+    });
+
+    test('**«له ۹۰٪ ټیټ»** یوازې ستونزمن راوړي', () async {
+      for (var d = 1; d <= 8; d++) {
+        await markStudent(byName['احمد']!, d, 'present');
+      }
+      for (var d = 9; d <= 10; d++) {
+        await markStudent(byName['احمد']!, d, 'absent');
+      }
+      await markStudent(byName['کریم']!, 1, 'present');
+
+      final t = await reports.peopleReport(
+        forRange('student', ReportRange.month, month, below: 90),
+      );
+      // احمد ۸۰٪ → راځي. کریم ۱۰۰٪ → نه. زرغونه هېڅ ثبت نه لري،
+      // نو «ستونزه» يې نه شو ویلی — هغه هم نه راځي.
+      expect(t.rows.map((r) => r.first), ['احمد']);
+    });
+
+    test('انفرادي: هره ثبت شوې ورځ یوه کرښه', () async {
+      await markStudent(byName['احمد']!, 3, 'present');
+      await markStudent(byName['احمد']!, 4, 'absent');
+      await markStudent(byName['کریم']!, 3, 'present');
+
+      final t = await reports.peopleReport(
+        forRange(
+          'student',
+          ReportRange.month,
+          month,
+          scope: ReportScope.individual,
+          personId: byName['احمد'],
+        ),
+      );
+      expect(t.title, contains('احمد'));
+      expect(t.rows, hasLength(2));
+      expect(t.rows.first.first, '2026-05-03');
+      expect(t.rows.first[2], 'حاضر');
+      expect(t.rows.last[2], 'غیرحاضر');
+    });
+
+    test('ورځنۍ کچه یوازې هماغه ورځ راوړي', () async {
+      await markStudent(byName['احمد']!, 12, 'present');
+      await markStudent(byName['احمد']!, 13, 'absent');
+
+      final t = await reports.peopleReport(
+        forRange('student', ReportRange.day, DateTime(2026, 5, 12)),
+      );
+      final ahmad = t.rows.firstWhere((r) => r.first == 'احمد');
+      expect(ahmad[3], '1');
+      expect(ahmad[5], '0');
+    });
+
+    test('**د استادانو راپور له خپل جدوله راځي**', () async {
+      final t1 = await addTeacher('استاد احمد', 'T-0001', 'ریاضي');
+      await addTeacher('استاد کریم', 'T-0002', 'فزیک');
+      await markStaffPerson('teacher', t1, 5, 'present');
+      await markStaffPerson('teacher', t1, 6, 'absent');
+
+      final t = await reports.peopleReport(
+        forRange('teacher', ReportRange.month, month),
+      );
+      expect(t.title, 'د استادانو راپور');
+      expect(t.rows, hasLength(2));
+      final row = t.rows.firstWhere((r) => r.first == 'استاد احمد');
+      expect(row[2], 'ریاضي');
+      expect(row[3], '1');
+      expect(row[5], '1');
+      expect(row.last, '50٪');
+    });
+
+    test('د استاد او شاګرد یو id سره نه ګډېږي', () async {
+      // دواړه `id = 1` — که پوښتنه `person_kind` هېره کړې وای، د
+      // شاګرد حاضري به د استاد په حساب کې راغلې وه.
+      final t1 = await addTeacher('استاد احمد', 'T-0001', 'ریاضي');
+      expect(t1, 1);
+      for (var d = 1; d <= 5; d++) {
+        await markStudent(byName['احمد']!, d, 'present');
+      }
+
+      final t = await reports.peopleReport(
+        forRange('teacher', ReportRange.month, month),
+      );
+      expect(t.rows.single.last, '—');
+    });
+
+    test('د کارمندانو راپور او د څانګې فلټر', () async {
+      final s1 = await db
+          .into(db.staffMembers)
+          .insert(
+            StaffMembersCompanion.insert(
+              employeeNo: 'S-0001',
+              fullName: 'عبدالغفار',
+              jobTitle: 'محاسب',
+              gender: 'male',
+              department: const Value('مالي'),
+            ),
+          );
+      await db
+          .into(db.staffMembers)
+          .insert(
+            StaffMembersCompanion.insert(
+              employeeNo: 'S-0002',
+              fullName: 'نور محمد',
+              jobTitle: 'سرایدار',
+              gender: 'male',
+              department: const Value('پاکوالی'),
+            ),
+          );
+      await markStaffPerson('staff', s1, 4, 'present');
+
+      // ترتیب د SQLite د بایټونو له مخې دی، نه د پښتو الفبا — نو
+      // یوازې محتوا ازمویو، نه ترتیب.
+      expect(
+        (await reports.reportTags('staff')).toSet(),
+        {'مالي', 'پاکوالی'},
+      );
+
+      final all = await reports.peopleReport(
+        forRange('staff', ReportRange.month, month),
+      );
+      expect(all.rows, hasLength(2));
+
+      final (from, to) = PeopleReportFilter.window(ReportRange.month, month);
+      final filtered = await reports.peopleReport(
+        PeopleReportFilter(
+          audience: 'staff',
+          from: from,
+          to: to,
+          department: 'مالي',
+        ),
+      );
+      expect(filtered.rows.single.first, 'عبدالغفار');
+    });
+
+    test('د پلټنې او ټولګي فلټرونه', () async {
+      final byQuery = await reports.people(
+        PeopleReportFilter(
+          audience: 'student',
+          from: month,
+          to: month,
+          query: 'زرغونه',
+        ),
+      );
+      expect(byQuery.single.name, 'زرغونه');
+
+      final byGender = await reports.people(
+        PeopleReportFilter(
+          audience: 'student',
+          from: month,
+          to: month,
+          gender: 'female',
+        ),
+      );
+      expect(byGender, hasLength(1));
+
+      final bySection = await reports.people(
+        PeopleReportFilter(
+          audience: 'student',
+          from: month,
+          to: month,
+          sectionId: sectionId,
+        ),
+      );
+      expect(bySection, hasLength(3));
+      expect(bySection.first.group, isNotEmpty);
+    });
+
+    test('د فلټرونو شمېره تلواله حالت نه شمېري', () {
+      final base = PeopleReportFilter(
+        audience: 'student',
+        from: month,
+        to: month,
+      );
+      expect(base.activeCount, 0);
+      expect(base.copyWith(gender: 'male').activeCount, 1);
+      expect(base.copyWith(belowPercent: 75).activeCount, 1);
+      // کچه او ساحه فلټر نه دي — کارن يې د شمېرې په څېر نه ګوري.
+      expect(base.copyWith(range: ReportRange.week).activeCount, 0);
+      expect(base.copyWith(scope: ReportScope.individual).activeCount, 0);
+    });
+
+    test('تش لیست یو ښکاره پیغام راوړي، نه یو تش جدول', () async {
+      final t = await reports.peopleReport(
+        PeopleReportFilter(
+          audience: 'student',
+          from: month,
+          to: month,
+          query: 'هېڅوک',
+        ),
+      );
+      expect(t.rows, isEmpty);
+      expect(t.subtitle, contains('ونه موندل شو'));
+    });
+  });
+
   group('CSV', () {
     test('BOM لري — که نه، Excel پښتو خځلې ښیي', () {
       final csv = Csv.build(columns: const ['نوم'], rows: const []);

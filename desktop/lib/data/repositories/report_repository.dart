@@ -44,6 +44,179 @@ enum ReportKind {
   const ReportKind(this.label);
 }
 
+
+// ═══════════════════════════════════════════════════════════
+//  د کسانو راپورونه — شاګردان، استادان، کارمندان
+// ═══════════════════════════════════════════════════════════
+
+/// د راپور د وخت کچه.
+enum ReportRange {
+  day('ورځنی'),
+  week('اونیز'),
+  month('میاشتنی'),
+  custom('ټاکلې دوره');
+
+  final String label;
+  const ReportRange(this.label);
+}
+
+/// ډله‌ییز که انفرادي.
+///
+/// **دا ولې دوه بېل راپورونه دي او نه یو؟** ځکه چې پوښتنې يې بېلې
+/// دي. د ډلې پوښتنه «څوک ښه دی او څوک نه؟» ده — نو هر کس یوه کرښه
+/// او شمېرې يې راټولې. د یوه کس پوښتنه «څه پېښ شول؟» ده — نو هره
+/// ورځ یوه کرښه. یو ګډ جدول به دواړو ته نیمګړی و.
+enum ReportScope {
+  group('ډله‌ییز'),
+  individual('انفرادي');
+
+  final String label;
+  const ReportScope(this.label);
+}
+
+/// د یوه کس لنډه پېژندنه — د «انفرادي» د ټاکلو لپاره.
+class ReportPerson {
+  final int id;
+  final String name;
+  final String idNo;
+  final String group;
+
+  const ReportPerson({
+    required this.id,
+    required this.name,
+    required this.idNo,
+    this.group = '',
+  });
+
+  String get label => group.isEmpty ? name : '$name — $group';
+}
+
+/// د کسانو د راپور فلټرونه.
+///
+/// **یو ټولګی د درې واړو ډلو لپاره.** د شاګرد فلټرونه (ټولګی،
+/// استوګنه) د استاد لپاره تش پاتې کېږي او برعکس — خو یوه بڼه دا
+/// معنا لري چې پاڼه، پوښتنه او اکسپورټ درې ځله نه لیکل کېږي.
+class PeopleReportFilter {
+  /// `student` | `teacher` | `staff`
+  final String audience;
+
+  final DateTime from;
+  final DateTime to;
+  final ReportRange range;
+  final ReportScope scope;
+
+  /// د «انفرادي» لپاره — که تش وي، لومړی کس اخیستل کېږي.
+  final int? personId;
+
+  final String query;
+  final String? status;
+  final String? gender;
+
+  // ── د شاګردانو ───────────────────────────────────────────
+  final int? sectionId;
+  final String? residency;
+
+  // ── د استادانو ───────────────────────────────────────────
+  final String? specialization;
+
+  // ── د کارمندانو ──────────────────────────────────────────
+  final String? department;
+
+  /// یوازې هغه چې حاضري يې له دې سلنې ټیټه ده — د «ستونزمنو»
+  /// موندلو لپاره.
+  final int? belowPercent;
+
+  const PeopleReportFilter({
+    required this.audience,
+    required this.from,
+    required this.to,
+    this.range = ReportRange.month,
+    this.scope = ReportScope.group,
+    this.personId,
+    this.query = '',
+    this.status = 'active',
+    this.gender,
+    this.sectionId,
+    this.residency,
+    this.specialization,
+    this.department,
+    this.belowPercent,
+  });
+
+  /// څو فلټرونه فعال دي — د تڼۍ د شمېرې لپاره. حالت چې «فعال» وي،
+  /// تلواله ده، نو نه شمېرل کېږي.
+  int get activeCount => [
+    if (status != null && status != 'active') status,
+    gender,
+    sectionId,
+    residency,
+    specialization,
+    department,
+    belowPercent,
+  ].whereType<Object>().length;
+
+  PeopleReportFilter copyWith({
+    String? audience,
+    DateTime? from,
+    DateTime? to,
+    ReportRange? range,
+    ReportScope? scope,
+    int? personId,
+    String? query,
+    String? status,
+    String? gender,
+    int? sectionId,
+    String? residency,
+    String? specialization,
+    String? department,
+    int? belowPercent,
+    bool clearPerson = false,
+    bool clearStatus = false,
+    bool clearGender = false,
+    bool clearSection = false,
+    bool clearResidency = false,
+    bool clearSpecialization = false,
+    bool clearDepartment = false,
+    bool clearBelow = false,
+  }) => PeopleReportFilter(
+    audience: audience ?? this.audience,
+    from: from ?? this.from,
+    to: to ?? this.to,
+    range: range ?? this.range,
+    scope: scope ?? this.scope,
+    personId: clearPerson ? null : (personId ?? this.personId),
+    query: query ?? this.query,
+    status: clearStatus ? null : (status ?? this.status),
+    gender: clearGender ? null : (gender ?? this.gender),
+    sectionId: clearSection ? null : (sectionId ?? this.sectionId),
+    residency: clearResidency ? null : (residency ?? this.residency),
+    specialization: clearSpecialization
+        ? null
+        : (specialization ?? this.specialization),
+    department: clearDepartment ? null : (department ?? this.department),
+    belowPercent: clearBelow ? null : (belowPercent ?? this.belowPercent),
+  );
+
+  /// د یوې کچې لپاره د نېټو کړکۍ — د یوې لنګر نېټې له مخې.
+  static (DateTime, DateTime) window(ReportRange range, DateTime anchor) {
+    final d = DateTime(anchor.year, anchor.month, anchor.day);
+    return switch (range) {
+      ReportRange.day => (d, d),
+      // اونۍ له شنبې پیلېږي — د افغانستان درسي اونۍ همداسې ده.
+      ReportRange.week => () {
+        final back = (d.weekday - DateTime.saturday + 7) % 7;
+        final start = d.subtract(Duration(days: back));
+        return (start, start.add(const Duration(days: 6)));
+      }(),
+      ReportRange.month => (
+        DateTime(d.year, d.month, 1),
+        DateTime(d.year, d.month + 1, 0),
+      ),
+      ReportRange.custom => (d, d),
+    };
+  }
+}
+
 class ReportRepository {
   final AppDatabase db;
 
@@ -614,4 +787,428 @@ GROUP BY department
       ],
     );
   }
+
+  // ═══════════════════════════════════════════════════════
+  //  ۶. د کسانو راپورونه
+  // ═══════════════════════════════════════════════════════
+
+  /// **هغه کسان چې فلټر يې مني** — د راپور بنسټ او د «انفرادي» لیست.
+  ///
+  /// **ولې د راپور جوړولو څخه جلا؟** ځکه چې همدا لیست د «انفرادي»
+  /// د کس ټاکلو لپاره هم پکار دی. که دننه پټ و، پاڼې به بله ورته
+  /// پوښتنه لیکلې وه — او دوه پوښتنې چې یو شی راوړي، یوه ورځ سره
+  /// توپیر کوي.
+  Future<List<ReportPerson>> people(PeopleReportFilter f) async {
+    final q = f.query.trim();
+    final like = '%$q%';
+
+    if (f.audience == 'student') {
+      final where = <String>['s.deleted_at IS NULL', 'e.is_active = 1'];
+      final args = <Variable<Object>>[];
+      if (f.status != null) {
+        where.add('s.status = ?');
+        args.add(Variable<String>(f.status!));
+      }
+      if (f.gender != null) {
+        where.add('s.gender = ?');
+        args.add(Variable<String>(f.gender!));
+      }
+      if (f.residency != null) {
+        where.add('s.residency = ?');
+        args.add(Variable<String>(f.residency!));
+      }
+      if (f.sectionId != null) {
+        where.add('e.section_id = ?');
+        args.add(Variable<int>(f.sectionId!));
+      }
+      if (q.isNotEmpty) {
+        where.add('(s.first_name LIKE ? OR s.last_name LIKE ? '
+            'OR s.admission_no LIKE ?)');
+        args
+          ..add(Variable<String>(like))
+          ..add(Variable<String>(like))
+          ..add(Variable<String>(like));
+      }
+
+      final rows = await db
+          .customSelect(
+            '''
+SELECT s.id, s.admission_no AS id_no,
+       s.first_name || COALESCE(' ' || s.last_name, '') AS name,
+       g.name || ' — ' || sec.name AS grp
+FROM students s
+JOIN enrollments e ON e.student_id = s.id
+JOIN sections sec ON sec.id = e.section_id
+JOIN grades g ON g.id = sec.grade_id
+WHERE ${where.join(' AND ')}
+ORDER BY g.level, sec.name, s.first_name
+''',
+            variables: args,
+            readsFrom: {db.students, db.enrollments, db.sections, db.grades},
+          )
+          .get();
+      return [
+        for (final r in rows)
+          ReportPerson(
+            id: r.read<int>('id'),
+            name: r.read<String>('name'),
+            idNo: r.read<String>('id_no'),
+            group: r.read<String>('grp'),
+          ),
+      ];
+    }
+
+    final teacher = f.audience == 'teacher';
+    final table = teacher ? 'teachers' : 'staff_members';
+    final grpCol = teacher ? 'specialization' : 'department';
+    final where = <String>['deleted_at IS NULL'];
+    final args = <Variable<Object>>[];
+    if (f.status != null) {
+      where.add('status = ?');
+      args.add(Variable<String>(f.status!));
+    }
+    if (f.gender != null) {
+      where.add('gender = ?');
+      args.add(Variable<String>(f.gender!));
+    }
+    final tag = teacher ? f.specialization : f.department;
+    if (tag != null) {
+      where.add('$grpCol = ?');
+      args.add(Variable<String>(tag));
+    }
+    if (q.isNotEmpty) {
+      where.add('(full_name LIKE ? OR employee_no LIKE ?)');
+      args
+        ..add(Variable<String>(like))
+        ..add(Variable<String>(like));
+    }
+
+    final rows = await db
+        .customSelect(
+          '''
+SELECT id, employee_no AS id_no, full_name AS name,
+       COALESCE($grpCol, '') AS grp
+FROM $table
+WHERE ${where.join(' AND ')}
+ORDER BY full_name
+''',
+          variables: args,
+          readsFrom: {db.teachers, db.staffMembers},
+        )
+        .get();
+    return [
+      for (final r in rows)
+        ReportPerson(
+          id: r.read<int>('id'),
+          name: r.read<String>('name'),
+          idNo: r.read<String>('id_no'),
+          group: r.read<String>('grp'),
+        ),
+    ];
+  }
+
+  /// هغه ارزښتونه چې د فلټر ډراپ‌ډاونونو ته ځي — له ډیټابیسه، نه
+  /// یو ثابت لیست، چې هر ښوونځی خپل وویني.
+  Future<List<String>> reportTags(String audience) async {
+    if (audience == 'student') return const [];
+    final teacher = audience == 'teacher';
+    final table = teacher ? 'teachers' : 'staff_members';
+    final col = teacher ? 'specialization' : 'department';
+    final rows = await db
+        .customSelect(
+          "SELECT DISTINCT $col AS v FROM $table WHERE deleted_at IS NULL "
+          "AND $col IS NOT NULL AND $col != '' ORDER BY $col",
+          readsFrom: {db.teachers, db.staffMembers},
+        )
+        .get();
+    return rows.map((r) => r.read<String>('v')).toList();
+  }
+
+  /// **د کسانو راپور** — ډله‌ییز یا انفرادي.
+  Future<ReportTable> peopleReport(PeopleReportFilter f) async {
+    final title = switch (f.audience) {
+      'teacher' => 'د استادانو راپور',
+      'staff' => 'د کارمندانو راپور',
+      _ => 'د شاګردانو راپور',
+    };
+    final span = f.from == f.to
+        ? _iso(f.from)
+        : '${_iso(f.from)} → ${_iso(f.to)}';
+
+    final roster = await people(f);
+    if (roster.isEmpty) {
+      return ReportTable(
+        title: title,
+        subtitle: '$span — هېڅ کس ونه موندل شو',
+        columns: const [],
+        rows: const [],
+      );
+    }
+
+    return f.scope == ReportScope.individual
+        ? _individual(f, roster, title, span)
+        : _group(f, roster, title, span);
+  }
+
+  /// د هر کس یوه کرښه — د دورې راټولې شمېرې.
+  Future<ReportTable> _group(
+    PeopleReportFilter f,
+    List<ReportPerson> roster,
+    String title,
+    String span,
+  ) async {
+    final marks = await _marks(f, [for (final p in roster) p.id]);
+
+    final rows = <List<String>>[];
+    var tPresent = 0, tLate = 0, tAbsent = 0, tLeave = 0;
+    var flagged = 0;
+
+    for (final p in roster) {
+      final m = marks[p.id] ?? const _Tally();
+      final marked = m.marked;
+      // **سلنه د ثبت شویو ورځو له مخې ده، نه د دورې.** که ښوونځی
+      // تړلی و یا حاضري نه وه اخیستل شوې، هغه ورځې د چا په حساب
+      // کې نه راځي — که نه، د هر چا حاضري به غلطه ټیټه ښکارېده.
+      final pct = marked == 0 ? 0.0 : (m.present + m.late) / marked * 100;
+      if (f.belowPercent != null && (marked == 0 || pct >= f.belowPercent!)) {
+        continue;
+      }
+      if (f.belowPercent != null) flagged++;
+
+      tPresent += m.present;
+      tLate += m.late;
+      tAbsent += m.absent;
+      tLeave += m.leave;
+
+      rows.add([
+        p.name,
+        p.idNo,
+        p.group,
+        _n(m.present),
+        _n(m.late),
+        _n(m.absent),
+        _n(m.leave),
+        marked == 0 ? '—' : _pct(pct),
+      ]);
+    }
+
+    final totalMarked = tPresent + tLate + tAbsent + tLeave;
+    return ReportTable(
+      title: title,
+      subtitle: '$span  ·  ${f.range.label}  ·  ${f.scope.label}',
+      columns: [
+        'نوم',
+        'نمبر',
+        f.audience == 'student' ? 'ټولګی' : 'څانګه',
+        'حاضر',
+        'ناوخته',
+        'غیرحاضر',
+        'رخصت',
+        'سلنه',
+      ],
+      rows: rows,
+      totals: [
+        'ټول (${_n(rows.length)})',
+        '',
+        '',
+        _n(tPresent),
+        _n(tLate),
+        _n(tAbsent),
+        _n(tLeave),
+        totalMarked == 0
+            ? '—'
+            : _pct((tPresent + tLate) / totalMarked * 100),
+      ],
+      highlights: [
+        (label: 'کسان', value: _n(rows.length), warn: false),
+        (label: 'حاضر', value: _n(tPresent), warn: false),
+        (label: 'غیرحاضر', value: _n(tAbsent), warn: tAbsent > 0),
+        (
+          label: 'اوسط حاضري',
+          value: totalMarked == 0
+              ? '—'
+              : _pct((tPresent + tLate) / totalMarked * 100),
+          warn: totalMarked > 0 && (tPresent + tLate) / totalMarked < 0.85,
+        ),
+        if (f.belowPercent != null)
+          (label: 'ښودل شوي', value: _n(flagged), warn: flagged > 0),
+      ],
+    );
+  }
+
+  /// د یوه کس هره ورځ یوه کرښه.
+  Future<ReportTable> _individual(
+    PeopleReportFilter f,
+    List<ReportPerson> roster,
+    String title,
+    String span,
+  ) async {
+    final person = roster.firstWhere(
+      (p) => p.id == f.personId,
+      orElse: () => roster.first,
+    );
+
+    final student = f.audience == 'student';
+    final rows = await db
+        .customSelect(
+          student
+              ? 'SELECT date, status, check_in_at FROM attendances '
+                    'WHERE student_id = ? AND date >= ? AND date <= ? '
+                    'ORDER BY date'
+              : 'SELECT date, status, check_in_at FROM staff_attendances '
+                    'WHERE person_kind = ? AND person_id = ? '
+                    'AND date >= ? AND date <= ? ORDER BY date',
+          variables: [
+            if (!student) Variable<String>(f.audience),
+            Variable<int>(person.id),
+            Variable<DateTime>(dateOnly(f.from)),
+            Variable<DateTime>(dateOnly(f.to)),
+          ],
+          readsFrom: {db.attendances, db.staffAttendances},
+        )
+        .get();
+
+    const names = {
+      'present': 'حاضر',
+      'late': 'ناوخته',
+      'absent': 'غیرحاضر',
+      'leave': 'رخصت',
+    };
+    final counts = <String, int>{};
+    final out = <List<String>>[];
+
+    for (final r in rows) {
+      final at = DateTime.fromMillisecondsSinceEpoch(
+        r.read<int>('date') * 1000,
+        isUtc: true,
+      ).toLocal();
+      final status = r.read<String>('status');
+      counts[status] = (counts[status] ?? 0) + 1;
+
+      final inAt = r.data['check_in_at'] as int?;
+      out.add([
+        _iso(at),
+        _weekday(at),
+        names[status] ?? status,
+        inAt == null
+            ? '—'
+            : () {
+                final t = DateTime.fromMillisecondsSinceEpoch(
+                  inAt * 1000,
+                ).toLocal();
+                return '${t.hour.toString().padLeft(2, '0')}:'
+                    '${t.minute.toString().padLeft(2, '0')}';
+              }(),
+      ]);
+    }
+
+    final marked = out.length;
+    final ok = (counts['present'] ?? 0) + (counts['late'] ?? 0);
+
+    return ReportTable(
+      title: '$title — ${person.name}',
+      subtitle: '$span  ·  ${person.idNo}'
+          '${person.group.isEmpty ? '' : '  ·  ${person.group}'}',
+      columns: const ['نېټه', 'ورځ', 'حالت', 'د راتګ وخت'],
+      rows: out,
+      totals: [
+        'ثبت شوې ورځې',
+        _n(marked),
+        marked == 0 ? '—' : _pct(ok / marked * 100),
+        '',
+      ],
+      highlights: [
+        for (final e in const ['present', 'late', 'absent', 'leave'])
+          (
+            label: names[e]!,
+            value: _n(counts[e] ?? 0),
+            warn: e == 'absent' && (counts[e] ?? 0) > 0,
+          ),
+      ],
+    );
+  }
+
+  /// د ټولو کسانو د دورې شمېرې — یوه پوښتنه، نه پر هر کس یوه.
+  Future<Map<int, _Tally>> _marks(
+    PeopleReportFilter f,
+    List<int> ids,
+  ) async {
+    if (ids.isEmpty) return const {};
+    final student = f.audience == 'student';
+    final holes = ids.map((_) => '?').join(',');
+
+    final rows = await db
+        .customSelect(
+          student
+              ? '''
+SELECT student_id AS pid, status, COUNT(*) AS c FROM attendances
+WHERE date >= ? AND date <= ? AND student_id IN ($holes)
+GROUP BY student_id, status
+'''
+              : '''
+SELECT person_id AS pid, status, COUNT(*) AS c FROM staff_attendances
+WHERE person_kind = ? AND date >= ? AND date <= ? AND person_id IN ($holes)
+GROUP BY person_id, status
+''',
+          variables: [
+            if (!student) Variable<String>(f.audience),
+            Variable<DateTime>(dateOnly(f.from)),
+            Variable<DateTime>(dateOnly(f.to)),
+            for (final id in ids) Variable<int>(id),
+          ],
+          readsFrom: {db.attendances, db.staffAttendances},
+        )
+        .get();
+
+    final out = <int, _Tally>{};
+    for (final r in rows) {
+      final id = r.read<int>('pid');
+      final c = r.read<int>('c');
+      final t = out[id] ?? const _Tally();
+      out[id] = switch (r.read<String>('status')) {
+        'present' => t.copyWith(present: t.present + c),
+        'late' => t.copyWith(late: t.late + c),
+        'absent' => t.copyWith(absent: t.absent + c),
+        'leave' => t.copyWith(leave: t.leave + c),
+        _ => t,
+      };
+    }
+    return out;
+  }
+
+  static String _weekday(DateTime d) => const {
+    1: 'دوشنبه',
+    2: 'سه‌شنبه',
+    3: 'چهارشنبه',
+    4: 'پنجشنبه',
+    5: 'جمعه',
+    6: 'شنبه',
+    7: 'یکشنبه',
+  }[d.weekday]!;
+
+}
+
+/// د یوه کس د حالتونو شمېرې — یوه ساده جمع کوونکې.
+class _Tally {
+  final int present;
+  final int late;
+  final int absent;
+  final int leave;
+
+  const _Tally({
+    this.present = 0,
+    this.late = 0,
+    this.absent = 0,
+    this.leave = 0,
+  });
+
+  int get marked => present + late + absent + leave;
+
+  _Tally copyWith({int? present, int? late, int? absent, int? leave}) =>
+      _Tally(
+        present: present ?? this.present,
+        late: late ?? this.late,
+        absent: absent ?? this.absent,
+        leave: leave ?? this.leave,
+      );
 }

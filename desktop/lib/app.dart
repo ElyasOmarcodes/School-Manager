@@ -2,6 +2,7 @@ import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 
 import 'core/config/app_config.dart';
+import 'core/widgets/paper_press.dart';
 import 'core/l10n/strings.dart';
 import 'core/theme/app_colors.dart';
 import 'core/theme/app_theme.dart';
@@ -299,8 +300,14 @@ class _SchoolManagerAppState extends State<SchoolManagerApp> {
         theme: AppTheme.build(Brightness.light),
         darkTheme: AppTheme.build(Brightness.dark),
         themeMode: _themeMode,
-        builder: (context, child) =>
-            Directionality(textDirection: _locale.direction, child: child!),
+        // **نرمه پاڼه ټوله ونه رانغاړي** — دیالوګونه، منوګانې او
+        // ټول اورلې يې هم پکې دي، ځکه چې `builder` د Navigator له
+        // پاسه دی. که یوازې د پاڼې شاوخوا وای، یو دیالوګ به «سخت»
+        // احساس شوی و.
+        builder: (context, child) => Directionality(
+          textDirection: _locale.direction,
+          child: PaperSurface(child: child!),
+        ),
         home: Builder(builder: (context) => _buildStage()),
       ),
     );

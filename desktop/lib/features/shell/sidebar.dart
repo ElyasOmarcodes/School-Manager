@@ -248,23 +248,112 @@ class _NavBranchState extends State<_NavBranch> {
           curve: AppMotion.standard,
           alignment: Alignment.topCenter,
           child: _showChildren
-              ? Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    for (final c in children)
-                      _SubTile(
-                        sub: c,
-                        color: widget.item.color,
-                        active: widget.currentRoute == c.route,
-                        onTap: () => widget.onNavigate(c.route),
-                      ),
-                    const SizedBox(height: 3),
-                  ],
+              ? _SubList(
+                  items: children,
+                  color: widget.item.color,
+                  currentRoute: widget.currentRoute,
+                  onNavigate: widget.onNavigate,
                 )
               : const SizedBox.shrink(),
         ),
       ],
+    );
+  }
+}
+
+/// **د فرعي توکو لیست** — یوه ریل او پرې یو ښویېدونکی نښان.
+///
+/// **ولې ریل؟** ځکه چې فرعي توکي یوه ډله ده، نه څو خپلواک تڼۍ. یوه
+/// دوامداره کرښه دا ډله سترګو ته یو شی ښیي، او پر هغې باندې یو
+/// نښان چې له یوه توکي بل ته **ښویېږي** — نه دا چې یو ځای ورک او
+/// بل ځای پیدا شي.
+///
+/// د ښویېدو ګټه یوازې ښکلا نه ده: کله چې نښان حرکت وکړي، سترګه يې
+/// تعقیبوي او کارن پوهېږي چې **له کومه کوم ته** لاړ — هغه څه چې د
+/// ناڅاپي بدلون سره ورک وي.
+class _SubList extends StatelessWidget {
+  final List<NavSubItem> items;
+  final Color color;
+  final String currentRoute;
+  final ValueChanged<String> onNavigate;
+
+  /// د یوې کرښې لوړوالی — نښان پرې حسابېږي، نو ثابت دی.
+  static const double rowHeight = 34;
+
+  const _SubList({
+    required this.items,
+    required this.color,
+    required this.currentRoute,
+    required this.onNavigate,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final index = items.indexWhere((c) => c.route == currentRoute);
+
+    return Padding(
+      // پیل (RTL کې ښي) لور کې د مور توکي د نښان لاندې ودرېږي —
+      // نو ریل د هغه له عمودي کرښې سره برابر وي.
+      padding: const EdgeInsetsDirectional.fromSTEB(26, 3, 14, 7),
+      child: Stack(
+        children: [
+          // ── ریل ─────────────────────────────────────────
+          PositionedDirectional(
+            start: 0,
+            top: 4,
+            bottom: 4,
+            child: Container(
+              width: 2,
+              decoration: BoxDecoration(
+                color: p.line,
+                borderRadius: BorderRadius.circular(1),
+              ),
+            ),
+          ),
+
+          // ── ښویېدونکی نښان ──────────────────────────────
+          //
+          // یوازې هغه وخت ښکاري چې یو فرعي توکی واقعاً فعال وي —
+          // که مور لار پرانیستې وي خو فرعي یو هم نه، یو ګنګس نښان
+          // به پر ریل ولاړ و.
+          if (index >= 0)
+            AnimatedPositionedDirectional(
+              duration: AppMotion.normal,
+              curve: AppMotion.emphasized,
+              start: -1,
+              top: index * rowHeight + 8,
+              child: Container(
+                width: 4,
+                height: rowHeight - 16,
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(3),
+                  boxShadow: [
+                    BoxShadow(
+                      color: color.withValues(alpha: 0.45),
+                      blurRadius: 7,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final c in items)
+                _SubTile(
+                  sub: c,
+                  color: color,
+                  active: currentRoute == c.route,
+                  onTap: () => onNavigate(c.route),
+                ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
@@ -295,6 +384,7 @@ class _SubTileState extends State<_SubTile> {
     final p = context.palette;
     final s = S.of(context);
     final c = widget.color;
+    final active = widget.active;
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,
@@ -303,54 +393,75 @@ class _SubTileState extends State<_SubTile> {
       child: GestureDetector(
         onTap: widget.onTap,
         behavior: HitTestBehavior.opaque,
-        child: AnimatedContainer(
-          duration: AppMotion.fast,
-          curve: AppMotion.standard,
-          // د ښي خوا زیات فاصله (RTL کې) — چې د مور توکي لاندې
-          // ښکاره ښکاري، نه د هغه په څنګ کې.
-          margin: const EdgeInsetsDirectional.fromSTEB(10, 1, 26, 1),
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-          decoration: BoxDecoration(
-            color: widget.active
-                ? c.withValues(alpha: 0.10)
-                : _hover
-                ? p.surfaceAlt
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Row(
-            children: [
-              // د څانګې کرښه — د بصري تړاو لپاره.
-              Container(
-                width: 2,
-                height: 16,
-                margin: const EdgeInsetsDirectional.only(end: 9),
-                decoration: BoxDecoration(
-                  color: widget.active ? c : p.line,
-                  borderRadius: BorderRadius.circular(1),
+        child: SizedBox(
+          height: _SubList.rowHeight,
+          child: Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: AnimatedContainer(
+              duration: AppMotion.fast,
+              curve: AppMotion.standard,
+              margin: const EdgeInsetsDirectional.only(start: 12),
+              padding: const EdgeInsetsDirectional.fromSTEB(11, 6, 12, 6),
+              decoration: BoxDecoration(
+                // فعال توکی یو نرم ګرادیانت اخلي چې د ریل په لور
+                // پای ته رسېږي — نو د نښان سره تړلی ښکاري، نه یو
+                // خپلواک رنګین څلورضلعی.
+                gradient: active
+                    ? LinearGradient(
+                        begin: AlignmentDirectional.centerStart,
+                        end: AlignmentDirectional.centerEnd,
+                        colors: [
+                          c.withValues(alpha: 0.14),
+                          c.withValues(alpha: 0.02),
+                        ],
+                      )
+                    : null,
+                color: active
+                    ? null
+                    : (_hover ? p.surfaceAlt : Colors.transparent),
+                borderRadius: const BorderRadiusDirectional.horizontal(
+                  start: Radius.circular(3),
+                  end: Radius.circular(9),
                 ),
               ),
-              Icon(
-                widget.sub.icon,
-                size: 14,
-                color: widget.active ? c : p.muted,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  widget.sub.label(s),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: widget.active
-                        ? FontWeight.w700
-                        : FontWeight.w500,
-                    color: widget.active ? c : p.muted,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // د هوور پر مهال لږ ښي خوا ته ښویېږي — یو کوچنی
+                  // ژوندی ځواب چې «دا کېکاږل کېږي» وايي.
+                  AnimatedSlide(
+                    duration: AppMotion.fast,
+                    curve: AppMotion.standard,
+                    offset: Offset(_hover && !active ? 0.10 : 0, 0),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          widget.sub.icon,
+                          size: 14.5,
+                          color: active ? c : (_hover ? p.inkSoft : p.muted),
+                        ),
+                        const SizedBox(width: 9),
+                        Text(
+                          widget.sub.label(s),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: active
+                                ? FontWeight.w700
+                                : FontWeight.w500,
+                            color: active
+                                ? c
+                                : (_hover ? p.inkSoft : p.muted),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),

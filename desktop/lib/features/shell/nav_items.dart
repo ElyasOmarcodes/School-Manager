@@ -84,6 +84,11 @@ const _financeRoles = {'admin', 'accountant'};
 
 // د فرعي توکو نومونه — `const` لیستونه یوازې `const` فعالیتونه مني،
 // نو د لامبډا پر ځای نومول شوي فعالیتونه دي.
+String _lblReportStudents(S s) => 'د شاګردانو راپور';
+String _lblReportTeachers(S s) => 'د استادانو راپور';
+String _lblReportStaff(S s) => 'د کارمندانو راپور';
+String _lblReportSummary(S s) => 'عمومي راپورونه';
+
 String _lblStudentList(S s) => s.students;
 String _lblNewEnrolment(S s) => s.newEnrolment;
 String _lblTakeAttendance(S s) => s.attendanceTaking;
@@ -294,6 +299,28 @@ List<NavGroup> buildNav() => [
       icon: Icons.insights_rounded,
       color: AppColors.modReports,
       label: (s) => s.reports,
+      children: const [
+        NavSubItem(
+          route: '/reports',
+          icon: Icons.school_rounded,
+          label: _lblReportStudents,
+        ),
+        NavSubItem(
+          route: '/reports/teachers',
+          icon: Icons.person_rounded,
+          label: _lblReportTeachers,
+        ),
+        NavSubItem(
+          route: '/reports/staff',
+          icon: Icons.badge_rounded,
+          label: _lblReportStaff,
+        ),
+        NavSubItem(
+          route: '/reports/summary',
+          icon: Icons.query_stats_rounded,
+          label: _lblReportSummary,
+        ),
+      ],
     ),
     NavItem(
       route: '/users',

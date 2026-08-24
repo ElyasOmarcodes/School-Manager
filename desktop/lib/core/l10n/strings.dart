@@ -230,6 +230,7 @@ class S {
   String get sortByMarks => _pick('د نمرو له مخې', 'بر اساس نمره', 'By marks');
   String get sortByName => _pick('د نوم له مخې', 'بر اساس نام', 'By name');
   String get export => _pick('اکسپورټ', 'خروجی', 'Export');
+  String get print => _pick('چاپ', 'چاپ', 'Print');
   String get weight => _pick('وزن', 'وزن', 'Weight');
 
   // ── ګډ ────────────────────────────────────────────────
