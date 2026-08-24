@@ -124,6 +124,16 @@ class TeacherFilter {
     subjectId,
   ].whereType<Object>().length;
 
+  /// **یوازې پرمختللي فلټرونه** — تخصص پکې نشته، ځکه چې هغه پر
+  /// پورتنۍ کرښه ښکاره ولاړ دی او خپل حال پخپله ښیي.
+  int get advancedCount => [
+    if (status != null && status != 'active') status,
+    gender,
+    qualification,
+    homeroom,
+    subjectId,
+  ].whereType<Object>().length;
+
   TeacherFilter copyWith({
     String? query,
     String? status,

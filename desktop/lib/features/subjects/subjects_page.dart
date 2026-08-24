@@ -8,6 +8,8 @@ import '../../core/utils/numerals.dart';
 import '../../core/widgets/panel.dart';
 import '../../data/db/database.dart';
 import '../../data/repositories/academic_repository.dart';
+import '../../data/repositories/teacher_repository.dart';
+import '../../widgets/filter_bar.dart';
 
 /// د مضامینو اداره — د مکتب او مدرسې دواړو لپاره.
 ///
@@ -16,11 +18,37 @@ import '../../data/repositories/academic_repository.dart';
 /// کتاب، او هغه یوازې د درجه رابعه لپاره. نو کله چې ښوونځی مدرسه
 /// وي، د کتاب خانه ښکاره کېږي او وړاندیزونه د هماغې درجې له رسمي
 /// نصاب څخه راځي.
+/// **د کتاب نوم مخکې، فن وروسته.**
+///
+/// یوه مدرسه «صرف» نه تدریسوي — «صرف بهایي» تدریسوي. فن یوه کورنۍ
+/// ده، کتاب هغه څیز دی چې شاګرد يې په لاس کې لري او استاد يې له
+/// مخې لوستل کوي. نو هرچېرې چې یو نوم ښکاري، هغه باید د کتاب وي؛
+/// فن یوازې د ډله‌بندۍ لپاره ورسره پاتې کېږي.
+String subjectTitle(Subject s) {
+  final book = s.book?.trim() ?? '';
+  return book.isEmpty ? s.name : book;
+}
+
+/// فن — یوازې هغه وخت چې له کتابه بېل وي.
+String? subjectFan(Subject s) {
+  final book = s.book?.trim() ?? '';
+  if (book.isEmpty || book == s.name) return null;
+  return s.name;
+}
+
 class SubjectsPage extends StatefulWidget {
   final AcademicRepository academic;
+
+  /// د «مدرس استاد» ټاکنې لپاره. که `null` وي، هغه ساحه نه ښکاري.
+  final TeacherRepository? teachers;
   final bool canEdit;
 
-  const SubjectsPage({super.key, required this.academic, this.canEdit = true});
+  const SubjectsPage({
+    super.key,
+    required this.academic,
+    this.teachers,
+    this.canEdit = true,
+  });
 
   @override
   State<SubjectsPage> createState() => _SubjectsPageState();
@@ -32,8 +60,44 @@ class _SubjectsPageState extends State<SubjectsPage> {
   bool _madrasa = false;
   bool _loading = true;
 
+  List<Teacher> _teachers = const [];
+
   int? _gradeFilter;
   String _query = '';
+  final _search = TextEditingController();
+
+  // پرمختللي فلټرونه
+  bool _showFilters = false;
+  String? _fanFilter;
+  String? _difficultyFilter;
+  bool? _religiousFilter;
+  int? _teacherFilter;
+
+  int get _advancedCount => [
+    _fanFilter,
+    _difficultyFilter,
+    _religiousFilter,
+    _teacherFilter,
+  ].whereType<Object>().length;
+
+  /// ټول هغه فنون چې ریښتیا کارېږي — نه یو ثابت لیست.
+  List<String> get _fans {
+    final set = <String>{};
+    for (final x in _subjects) {
+      final fan = subjectFan(x);
+      if (fan != null) set.add(fan);
+    }
+    final out = set.toList()..sort();
+    return out;
+  }
+
+  String? _teacherName(int? id) {
+    if (id == null) return null;
+    for (final t in _teachers) {
+      if (t.id == id) return t.fullName;
+    }
+    return null;
+  }
 
   @override
   void initState() {
@@ -45,11 +109,13 @@ class _SubjectsPageState extends State<SubjectsPage> {
     final grades = await widget.academic.grades();
     final subjects = await widget.academic.subjects();
     final madrasa = await widget.academic.isMadrasa();
+    final teachers = await widget.teachers?.activeTeachers() ?? const <Teacher>[];
     if (!mounted) return;
     setState(() {
       _grades = grades;
       _subjects = subjects;
       _madrasa = madrasa;
+      _teachers = teachers;
       _loading = false;
     });
   }
@@ -66,8 +132,18 @@ class _SubjectsPageState extends State<SubjectsPage> {
     final q = _query.trim();
     return _subjects.where((s) {
       if (_gradeFilter != null && s.gradeId != _gradeFilter) return false;
+      if (_fanFilter != null && subjectFan(s) != _fanFilter) return false;
+      if (_difficultyFilter != null && s.difficulty != _difficultyFilter) {
+        return false;
+      }
+      if (_religiousFilter != null && s.isReligious != _religiousFilter) {
+        return false;
+      }
+      if (_teacherFilter != null && s.teacherId != _teacherFilter) return false;
       if (q.isEmpty) return true;
-      return s.name.contains(q) || (s.book?.contains(q) ?? false);
+      return s.name.contains(q) ||
+          (s.book?.contains(q) ?? false) ||
+          (_teacherName(s.teacherId)?.contains(q) ?? false);
     }).toList();
   }
 
@@ -77,6 +153,7 @@ class _SubjectsPageState extends State<SubjectsPage> {
       builder: (_) => _SubjectDialog(
         academic: widget.academic,
         grades: _grades,
+        teachers: _teachers,
         madrasa: _madrasa,
         existing: existing,
         presetGrade: presetGrade ?? _gradeFilter,
@@ -89,7 +166,7 @@ class _SubjectsPageState extends State<SubjectsPage> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('«${s.name}» ړنګ شي؟'),
+        title: Text('«${subjectTitle(s)}» ړنګ شي؟'),
         content: const Text(
           'دا کار بېرته نه ګرځي. که مضمون په ازموینو کې کارېدلی وي، '
           'ړنګېدی نه شي.',
@@ -148,16 +225,106 @@ class _SubjectsPageState extends State<SubjectsPage> {
 
     return Column(
       children: [
-        _Toolbar(
-          madrasa: _madrasa,
-          grades: _grades,
-          gradeFilter: _gradeFilter,
-          total: _subjects.length,
-          shown: visible.length,
-          canEdit: widget.canEdit,
-          onQuery: (v) => setState(() => _query = v),
-          onGrade: (v) => setState(() => _gradeFilter = v),
-          onAdd: () => _openEditor(),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              FilterBar(
+                searchController: _search,
+                onSearchChanged: (v) => setState(() => _query = v),
+                searchHint: 'د کتاب نوم، فن یا استاد…',
+                searchWidth: 280,
+                primary: [
+                  if (_grades.isNotEmpty)
+                    QuickFilter<int>(
+                      label: _madrasa ? 'ټولې درجې' : 'ټول ټولګي',
+                      icon: Icons.class_rounded,
+                      value: _gradeFilter,
+                      options: [
+                        for (final g in _grades) (value: g.id, label: g.name),
+                      ],
+                      onChanged: (v) => setState(() => _gradeFilter = v),
+                    ),
+                ],
+                activeCount: _advancedCount,
+                open: _showFilters,
+                onToggle: () => setState(() => _showFilters = !_showFilters),
+                countLabel: visible.length == _subjects.length
+                    ? '${locale.num(_subjects.length)} کتابونه'
+                    : '${locale.num(visible.length)} له '
+                          '${locale.num(_subjects.length)}',
+                actions: [
+                  if (widget.canEdit)
+                    FilledButton.icon(
+                      onPressed: () => _openEditor(),
+                      icon: const Icon(Icons.add_rounded, size: 17),
+                      label: Text(s.add),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.modSubjects,
+                        minimumSize: const Size(0, 44),
+                      ),
+                    ),
+                ],
+              ),
+              FilterSheet(
+                open: _showFilters,
+                activeCount: _advancedCount,
+                onClear: () => setState(() {
+                  _fanFilter = null;
+                  _difficultyFilter = null;
+                  _religiousFilter = null;
+                  _teacherFilter = null;
+                }),
+                children: [
+                  FilterDropdown<String>(
+                    label: 'فن',
+                    allLabel: 'ټول فنون',
+                    value: _fanFilter,
+                    options: [for (final f in _fans) (value: f, label: f)],
+                    onChanged: (v) => setState(() => _fanFilter = v),
+                  ),
+                  FilterDropdown<String>(
+                    label: s.difficulty,
+                    allLabel: 'هر سختوالی',
+                    value: _difficultyFilter,
+                    options: [
+                      (value: 'easy', label: s.diffEasy),
+                      (value: 'medium', label: s.diffMedium),
+                      (value: 'hard', label: s.diffHard),
+                    ],
+                    onChanged: (v) => setState(() => _difficultyFilter = v),
+                  ),
+                  if (_teachers.isNotEmpty)
+                    FilterDropdown<int>(
+                      label: 'مدرس استاد',
+                      allLabel: 'ټول استادان',
+                      value: _teacherFilter,
+                      options: [
+                        for (final t in _teachers)
+                          (value: t.id, label: t.fullName),
+                      ],
+                      onChanged: (v) => setState(() => _teacherFilter = v),
+                    ),
+                  FilterField(
+                    label: 'ډول',
+                    width: 258,
+                    child: SegmentedChoice<bool?>(
+                      value: _religiousFilter,
+                      color: AppColors.modHifz,
+                      options: [
+                        (value: null, label: s.all, icon: null),
+                        (value: true, label: 'دیني', icon: null),
+                        (value: false, label: 'عصري', icon: null),
+                      ],
+                      onChanged: (v) => setState(() => _religiousFilter = v),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+            ],
+          ),
         ),
         Expanded(
           child: visible.isEmpty
@@ -189,7 +356,7 @@ class _SubjectsPageState extends State<SubjectsPage> {
                             title: _gradeName(keys[i]) ?? 'عام مضامین',
                             subtitle: keys[i] == null
                                 ? 'ټولو ټولګیو ته ګډ'
-                                : '${locale.num(groups[keys[i]]!.length)} مضمونه',
+                                : '${locale.num(groups[keys[i]]!.length)} کتابونه',
                             icon: keys[i] == null
                                 ? Icons.public_rounded
                                 : Icons.school_rounded,
@@ -214,6 +381,7 @@ class _SubjectsPageState extends State<SubjectsPage> {
                                     subject: sub,
                                     madrasa: _madrasa,
                                     canEdit: widget.canEdit,
+                                    teacherName: _teacherName(sub.teacherId),
                                     onEdit: () => _openEditor(existing: sub),
                                     onDelete: () => _delete(sub),
                                   ),
@@ -223,7 +391,7 @@ class _SubjectsPageState extends State<SubjectsPage> {
                         ),
                       ),
                     Text(
-                      'ټول: ${locale.num(_subjects.length)} مضامین',
+                      'ټول: ${locale.num(_subjects.length)} کتابونه',
                       style: TextStyle(fontSize: 11.5, color: p.faint),
                     ),
                   ],
@@ -245,92 +413,6 @@ class _SubjectsPageState extends State<SubjectsPage> {
 //  د پورتنۍ کرښې وسایل
 // ═══════════════════════════════════════════════════════════
 
-class _Toolbar extends StatelessWidget {
-  final bool madrasa;
-  final List<Grade> grades;
-  final int? gradeFilter;
-  final int total;
-  final int shown;
-  final bool canEdit;
-  final ValueChanged<String> onQuery;
-  final ValueChanged<int?> onGrade;
-  final VoidCallback onAdd;
-
-  const _Toolbar({
-    required this.madrasa,
-    required this.grades,
-    required this.gradeFilter,
-    required this.total,
-    required this.shown,
-    required this.canEdit,
-    required this.onQuery,
-    required this.onGrade,
-    required this.onAdd,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final s = S.of(context);
-    final p = context.palette;
-
-    return Container(
-      padding: const EdgeInsets.fromLTRB(24, 16, 24, 14),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 260,
-            child: TextField(
-              onChanged: onQuery,
-              decoration: InputDecoration(
-                hintText: '${s.search}…',
-                isDense: true,
-                prefixIcon: const Icon(Icons.search_rounded, size: 18),
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          SizedBox(
-            width: 220,
-            child: DropdownButtonFormField<int?>(
-              initialValue: gradeFilter,
-              isDense: true,
-              isExpanded: true,
-              decoration: InputDecoration(
-                labelText: madrasa ? 'درجه' : s.grade,
-                isDense: true,
-              ),
-              items: [
-                DropdownMenuItem(value: null, child: Text(s.all)),
-                for (final g in grades)
-                  DropdownMenuItem(value: g.id, child: Text(g.name)),
-              ],
-              onChanged: onGrade,
-            ),
-          ),
-          const Spacer(),
-          if (shown != total)
-            Padding(
-              padding: const EdgeInsetsDirectional.only(end: 10),
-              child: Text(
-                '${s.locale.num(shown)} له ${s.locale.num(total)}',
-                style: TextStyle(fontSize: 12, color: p.muted),
-              ),
-            ),
-          if (canEdit)
-            FilledButton.icon(
-              onPressed: onAdd,
-              icon: const Icon(Icons.add_rounded, size: 17),
-              label: Text(s.add),
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.modSubjects,
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
 // ═══════════════════════════════════════════════════════════
 //  یوه کرښه
 // ═══════════════════════════════════════════════════════════
@@ -346,6 +428,7 @@ class _SubjectRow extends StatefulWidget {
   final Subject subject;
   final bool madrasa;
   final bool canEdit;
+  final String? teacherName;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
@@ -355,6 +438,7 @@ class _SubjectRow extends StatefulWidget {
     required this.canEdit,
     required this.onEdit,
     required this.onDelete,
+    this.teacherName,
   });
 
   @override
@@ -369,6 +453,7 @@ class _SubjectRowState extends State<_SubjectRow> {
     final s = S.of(context);
     final p = context.palette;
     final sub = widget.subject;
+    final fan = subjectFan(sub);
     final diff = difficultyStyle(sub.difficulty, s);
 
     return MouseRegion(
@@ -391,37 +476,56 @@ class _SubjectRowState extends State<_SubjectRow> {
               ),
             ),
             const SizedBox(width: 12),
-            SizedBox(
-              width: 190,
-              child: Text(
-                sub.name,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 13.5,
-                  fontWeight: FontWeight.w600,
-                  color: p.ink,
-                ),
+            // **مخکې د کتاب نوم** — هغه څه چې شاګرد يې په لاس کې لري.
+            Expanded(
+              flex: 3,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    subjectTitle(sub),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w600,
+                      color: p.ink,
+                    ),
+                  ),
+                  if (fan != null || widget.teacherName != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      [
+                        if (fan != null) fan,
+                        if (widget.teacherName != null) widget.teacherName!,
+                      ].join(' · '),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 11.5, color: p.muted),
+                    ),
+                  ],
+                ],
               ),
             ),
-            if (widget.madrasa)
-              Expanded(
-                child: Text(
-                  sub.book ?? '—',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: 12.5, color: p.muted),
-                ),
-              )
-            else
-              Expanded(
-                child: Text(
-                  sub.code ?? '',
-                  style: AppTheme.tabular(
-                    TextStyle(fontSize: 12, color: p.faint),
-                  ),
+            if (sub.pages != null) ...[
+              Text(
+                '${s.locale.num(sub.pages!)} مخه',
+                style: AppTheme.tabular(
+                  TextStyle(fontSize: 11.5, color: p.faint),
                 ),
               ),
+              const SizedBox(width: 12),
+            ],
+            if (!widget.madrasa && (sub.code?.isNotEmpty ?? false)) ...[
+              Text(
+                sub.code!,
+                style: AppTheme.tabular(
+                  TextStyle(fontSize: 12, color: p.faint),
+                ),
+              ),
+              const SizedBox(width: 12),
+            ],
             Pill(color: diff.color, text: diff.label),
             const SizedBox(width: 10),
             Text(
@@ -466,6 +570,7 @@ class _SubjectRowState extends State<_SubjectRow> {
 class _SubjectDialog extends StatefulWidget {
   final AcademicRepository academic;
   final List<Grade> grades;
+  final List<Teacher> teachers;
   final bool madrasa;
   final Subject? existing;
   final int? presetGrade;
@@ -473,6 +578,7 @@ class _SubjectDialog extends StatefulWidget {
   const _SubjectDialog({
     required this.academic,
     required this.grades,
+    required this.teachers,
     required this.madrasa,
     this.existing,
     this.presetGrade,
@@ -483,8 +589,18 @@ class _SubjectDialog extends StatefulWidget {
 }
 
 class _SubjectDialogState extends State<_SubjectDialog> {
-  late final _name = TextEditingController(text: widget.existing?.name ?? '');
-  late final _book = TextEditingController(text: widget.existing?.book ?? '');
+  /// **فن** — اختیاري. که تش پاتې شي، د کتاب نوم پکې لیکل کېږي،
+  /// ځکه چې د ډیټابیس `name` تش نه مني او هرچېرې فالبیک دی.
+  late final _fan = TextEditingController(
+    text: widget.existing == null ? '' : (subjectFan(widget.existing!) ?? ''),
+  );
+  late final _book = TextEditingController(
+    text: widget.existing == null ? '' : subjectTitle(widget.existing!),
+  );
+  late final _pages = TextEditingController(
+    text: widget.existing?.pages == null ? '' : '${widget.existing!.pages}',
+  );
+  int? _teacherId;
   late final _code = TextEditingController(text: widget.existing?.code ?? '');
   late final _full = TextEditingController(
     text: '${widget.existing?.fullMark ?? 100}',
@@ -503,13 +619,15 @@ class _SubjectDialogState extends State<_SubjectDialog> {
   @override
   void initState() {
     super.initState();
+    _teacherId = widget.existing?.teacherId;
     _loadSuggestions();
   }
 
   @override
   void dispose() {
-    _name.dispose();
+    _fan.dispose();
     _book.dispose();
+    _pages.dispose();
     _code.dispose();
     _full.dispose();
     _pass.dispose();
@@ -526,25 +644,33 @@ class _SubjectDialogState extends State<_SubjectDialog> {
   }
 
   Future<void> _save() async {
-    final name = _name.text.trim();
-    if (name.isEmpty) return;
+    final book = _book.text.trim();
+    if (book.isEmpty) return;
     setState(() => _busy = true);
+
+    // **فن اختیاري دی، خو `name` تش نه مني.** که کارن فن ونه لیکي،
+    // د کتاب نوم پکې کېږي — نو هرې پوښتنې ته یو ځواب شته او هېڅ
+    // کرښه بې‌نومه نه پاتې کېږي.
+    final fan = _fan.text.trim();
+    final name = fan.isEmpty ? book : fan;
 
     final full = int.tryParse(Numerals.toLatin(_full.text)) ?? 100;
     final pass = int.tryParse(Numerals.toLatin(_pass.text)) ?? 40;
-    final book = _book.text.trim();
     final code = _code.text.trim();
+    final pages = int.tryParse(Numerals.toLatin(_pages.text));
 
     if (widget.existing == null) {
       await widget.academic.addSubject(
         name: name,
         gradeId: _gradeId,
-        book: book.isEmpty ? null : book,
+        book: book,
         code: code.isEmpty ? null : code,
         difficulty: _difficulty,
         fullMark: full,
         passMark: pass,
         isReligious: _religious,
+        teacherId: _teacherId,
+        pages: pages,
       );
     } else {
       await widget.academic.updateSubject(
@@ -552,12 +678,16 @@ class _SubjectDialogState extends State<_SubjectDialog> {
         name: name,
         gradeId: _gradeId,
         clearGrade: _gradeId == null,
-        book: book.isEmpty ? '' : book,
+        book: book,
         code: code.isEmpty ? '' : code,
         difficulty: _difficulty,
         fullMark: full,
         passMark: pass,
         isReligious: _religious,
+        teacherId: _teacherId,
+        clearTeacher: _teacherId == null,
+        pages: pages,
+        clearPages: pages == null,
       );
     }
     if (mounted) Navigator.pop(context, true);
@@ -570,7 +700,7 @@ class _SubjectDialogState extends State<_SubjectDialog> {
 
     return AlertDialog(
       title: Text(
-        widget.existing == null ? 'نوی مضمون' : 'د مضمون سمون',
+        widget.existing == null ? 'نوی کتاب' : 'د کتاب سمون',
         style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
       ),
       content: SizedBox(
@@ -605,20 +735,25 @@ class _SubjectDialogState extends State<_SubjectDialog> {
               ),
               const SizedBox(height: 14),
 
+              // **۱ — د کتاب نوم.** دا هغه څه دي چې شاګرد يې په لاس
+              // کې لري، نو لومړی او اړین دی.
               TextField(
-                controller: _name,
-                decoration: const InputDecoration(
-                  labelText: 'د مضمون نوم',
+                controller: _book,
+                autofocus: true,
+                decoration: InputDecoration(
+                  labelText: 'د کتاب نوم',
+                  hintText: widget.madrasa ? 'لکه: اصول الشاشي' : 'لکه: ریاضي',
                   isDense: true,
+                  prefixIcon: const Icon(Icons.menu_book_rounded, size: 18),
                 ),
               ),
 
               // **وړاندیزونه، نه بندیزونه.** کارن پر یوه کېکاږي او
-              // نوم (او که وي، کتاب) ډکېږي؛ یا خپل نوم لیکي.
+              // کتاب او فن دواړه ډکېږي؛ یا خپل نوم لیکي.
               if (_suggestions.isNotEmpty) ...[
                 const SizedBox(height: 10),
                 Text(
-                  widget.madrasa ? 'د دې درجې فنون:' : 'عام مضامین:',
+                  widget.madrasa ? 'د دې درجې نصاب:' : 'عام مضامین:',
                   style: TextStyle(fontSize: 11.5, color: p.faint),
                 ),
                 const SizedBox(height: 6),
@@ -629,13 +764,13 @@ class _SubjectDialogState extends State<_SubjectDialog> {
                     for (final sug in _suggestions)
                       ActionChip(
                         label: Text(
-                          sug.name,
+                          sug.book ?? sug.name,
                           style: const TextStyle(fontSize: 11.5),
                         ),
                         visualDensity: VisualDensity.compact,
                         onPressed: () => setState(() {
-                          _name.text = sug.name;
-                          if (sug.book != null) _book.text = sug.book!;
+                          _book.text = sug.book ?? sug.name;
+                          _fan.text = sug.name;
                           _religious = sug.religious;
                         }),
                       ),
@@ -644,16 +779,20 @@ class _SubjectDialogState extends State<_SubjectDialog> {
               ],
 
               const SizedBox(height: 14),
-              if (widget.madrasa)
-                TextField(
-                  controller: _book,
-                  decoration: InputDecoration(
-                    labelText: s.book,
-                    hintText: 'لکه: اصول الشاشي',
-                    isDense: true,
-                  ),
-                )
-              else
+
+              // **۲ — فن.** اختیاري: یوه کورنۍ چې کتاب پکې راځي.
+              TextField(
+                controller: _fan,
+                decoration: const InputDecoration(
+                  labelText: 'د مضمون فن (اختیاري)',
+                  hintText: 'لکه: اصول فقه',
+                  isDense: true,
+                  prefixIcon: Icon(Icons.category_rounded, size: 18),
+                ),
+              ),
+
+              if (!widget.madrasa) ...[
+                const SizedBox(height: 14),
                 TextField(
                   controller: _code,
                   decoration: const InputDecoration(
@@ -662,6 +801,7 @@ class _SubjectDialogState extends State<_SubjectDialog> {
                     isDense: true,
                   ),
                 ),
+              ],
 
               const SizedBox(height: 16),
               Text(
@@ -680,6 +820,44 @@ class _SubjectDialogState extends State<_SubjectDialog> {
                     (value: 'hard', label: s.diffHard, icon: null),
                   ],
                   onChanged: (v) => setState(() => _difficulty = v),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // **۴ — مدرس استاد.** اختیاري: د مهالویش له ټاکنې بېل.
+              // هلته یو ساعت یو استاد لري؛ دلته کتاب یو استاد لري.
+              if (widget.teachers.isNotEmpty) ...[
+                DropdownButtonFormField<int?>(
+                  initialValue: _teacherId,
+                  isExpanded: true,
+                  isDense: true,
+                  decoration: const InputDecoration(
+                    labelText: 'مدرس استاد (اختیاري)',
+                    isDense: true,
+                    prefixIcon: Icon(Icons.person_rounded, size: 18),
+                  ),
+                  items: [
+                    const DropdownMenuItem(
+                      value: null,
+                      child: Text('نه دی ټاکل شوی'),
+                    ),
+                    for (final t in widget.teachers)
+                      DropdownMenuItem(value: t.id, child: Text(t.fullName)),
+                  ],
+                  onChanged: (v) => setState(() => _teacherId = v),
+                ),
+                const SizedBox(height: 14),
+              ],
+
+              // **۵ — د پاڼو شمېر.** اختیاري: د نصاب د وېش لپاره —
+              // «۱۲۰ مخه په اووه میاشتو کې» یوه ریښتینې پوښتنه ده.
+              TextField(
+                controller: _pages,
+                decoration: const InputDecoration(
+                  labelText: 'د صفحو تعداد (اختیاري)',
+                  isDense: true,
+                  prefixIcon: Icon(Icons.description_rounded, size: 18),
                 ),
               ),
 

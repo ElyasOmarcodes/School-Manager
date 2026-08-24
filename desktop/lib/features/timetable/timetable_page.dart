@@ -43,6 +43,23 @@ class _TimetablePageState extends State<TimetablePage> {
   List<Teacher> _teachers = const [];
   List<TimetableConflict> _conflicts = const [];
 
+  /// **د ټکر خانې — د چټکې کتنې لپاره یوه ټولګه.**
+  ///
+  /// یو ټکر یعنې یو استاد په یوه ورځ او یوه ساعت کې دوه ځایه دی.
+  /// نو کلي «استاد-ورځ-ساعت» دی، او هره خانه چې همدې کلي ته ورته
+  /// وي، ټکر لري.
+  Set<String> get _clashKeys => {
+    for (final c in _conflicts) '${c.teacherId}-${c.dayOfWeek}-${c.slotId}',
+  };
+
+  static String clashKeyOf(TimetableCell c) =>
+      '${c.entry.teacherId}-${c.entry.dayOfWeek}-${c.entry.slotId}';
+
+  bool _dailyClash(TimetableCell? c) =>
+      c != null &&
+      c.entry.teacherId != null &&
+      _clashKeys.contains(clashKeyOf(c));
+
   /// `weekly` (مکتب) یا `daily` (مدرسه).
   String _mode = 'weekly';
   DailyGrid? _daily;
@@ -106,12 +123,17 @@ class _TimetablePageState extends State<TimetablePage> {
       // بیا د هغه کتار له مخې تنګوي.
       final daily = await widget.timetable.dailyGrid();
       final subjects = await widget.academic.subjects();
+      // **ټکرونه دلته هم شمېرل کېږي.** مخکې يې دلته پرېښودل — او
+      // د مدرسې جدول (چې ټولې درجې یو ځای ښیي) هماغه ځای دی چې یو
+      // استاد په دوو درجو کې ښکاري. یعنې هغه ځای چې ټکر ترې پیدا
+      // کېږي، هماغه یو و چې خبر يې نه ورکاوه.
+      final conflicts = await widget.timetable.conflicts();
       if (!mounted) return;
       setState(() {
         _daily = daily;
         _subjects = subjects;
         _teachers = teachers;
-        _conflicts = const [];
+        _conflicts = conflicts;
         _loading = false;
       });
       return;
@@ -557,6 +579,7 @@ class _TimetablePageState extends State<TimetablePage> {
                 slot: slot,
                 days: grid.days,
                 grid: grid,
+                clashes: _clashKeys,
                 sectionId: _section?.sectionId,
                 onTap: slot.isBreak ? null : _editCell,
                 onDrop: slot.isBreak
@@ -705,6 +728,9 @@ class _TimetablePageState extends State<TimetablePage> {
                                   )
                                 : _Cell(
                                     cell: daily.at(row.sectionId, slot.id),
+                                    conflict: _dailyClash(
+                                      daily.at(row.sectionId, slot.id),
+                                    ),
                                     onTap: () => _editDailyCell(
                                       row.sectionId,
                                       slot,
@@ -754,6 +780,9 @@ class _SlotRow extends StatelessWidget {
   final void Function(int day, TimeSlot slot)? onTap;
   final void Function(CellDrag from, int day)? onDrop;
 
+  /// «استاد-ورځ-ساعت» کلي چې ټکر لري.
+  final Set<String> clashes;
+
   const _SlotRow({
     required this.slot,
     required this.days,
@@ -761,7 +790,13 @@ class _SlotRow extends StatelessWidget {
     this.sectionId,
     this.onTap,
     this.onDrop,
+    this.clashes = const {},
   });
+
+  bool _hasClash(TimetableCell? c) =>
+      c != null &&
+      c.entry.teacherId != null &&
+      clashes.contains(_TimetablePageState.clashKeyOf(c));
 
   @override
   Widget build(BuildContext context) {
@@ -829,6 +864,7 @@ class _SlotRow extends StatelessWidget {
               Expanded(
                 child: _Cell(
                   cell: grid.at(day, slot.id),
+                  conflict: _hasClash(grid.at(day, slot.id)),
                   onTap: onTap == null ? null : () => onTap!(day, slot),
                   drag: sectionId == null || grid.at(day, slot.id) == null
                       ? null
@@ -870,15 +906,60 @@ class _Cell extends StatefulWidget {
   /// کله چې بله خانه دلته پرېښودل شي.
   final void Function(CellDrag from)? onDrop;
 
-  const _Cell({this.cell, this.onTap, this.drag, this.onDrop});
+  /// **دا خانه له بلې سره ټکر لري** — یو استاد په یوه وخت کې دوه
+  /// ځایه دی.
+  final bool conflict;
+
+  const _Cell({
+    this.cell,
+    this.onTap,
+    this.drag,
+    this.onDrop,
+    this.conflict = false,
+  });
 
   @override
   State<_Cell> createState() => _CellState();
 }
 
-class _CellState extends State<_Cell> {
+class _CellState extends State<_Cell>
+    with SingleTickerProviderStateMixin {
   bool _hover = false;
   bool _over = false;
+
+  /// **د ټکر چشمک.**
+  ///
+  /// یوه ثابته سره څنډه هم کار ورکوي، خو سترګه ورسره روږدې کېږي —
+  /// دوه دقیقې وروسته یې نه ویني. یو ډېر نرم، ورو تنفس (۱٫۶ ثانیې)
+  /// ژوندی پاتې کېږي پرته له دې چې ځوروونکی شي. **چټک ټوپ نه** —
+  /// هغه هماغه شی دی چې د پردې خوځښت يې کوي: سترګه ستړې کوي.
+  late final AnimationController _pulse = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1600),
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.conflict) _pulse.repeat(reverse: true);
+  }
+
+  @override
+  void didUpdateWidget(_Cell old) {
+    super.didUpdateWidget(old);
+    if (widget.conflict && !_pulse.isAnimating) {
+      _pulse.repeat(reverse: true);
+    } else if (!widget.conflict && _pulse.isAnimating) {
+      _pulse.stop();
+      _pulse.value = 0;
+    }
+  }
+
+  @override
+  void dispose() {
+    _pulse.dispose();
+    super.dispose();
+  }
 
   /// **د مضمون رنګ د نامه له مخې.** یو ثابت نقشه به هر ښوونځي ته
   /// نه برابرېده — ځینې «فزیک» لري، ځینې «حدیث». نو د نامه له
@@ -899,7 +980,57 @@ class _CellState extends State<_Cell> {
 
   @override
   Widget build(BuildContext context) {
-    final body = _body(context);
+    final body = widget.conflict
+        ? AnimatedBuilder(
+            animation: _pulse,
+            builder: (context, child) {
+              final t = Curves.easeInOut.transform(_pulse.value);
+              return Stack(
+                children: [
+                  child!,
+                  Positioned.fill(
+                    child: IgnorePointer(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: AppColors.danger.withValues(
+                            alpha: 0.06 + 0.10 * t,
+                          ),
+                          border: Border.all(
+                            color: AppColors.danger.withValues(
+                              alpha: 0.30 + 0.45 * t,
+                            ),
+                            width: 1.4,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  // **په کونج کې یوه وړه خبرداري نښه.** رنګ یوازې
+                  // هغه چا ته وايي چې پوهېږي رنګ څه معنا لري؛ نښه
+                  // هر چا ته وايي.
+                  PositionedDirectional(
+                    top: 3,
+                    start: 3,
+                    child: IgnorePointer(
+                      child: Tooltip(
+                        message: 'ټکر — دا استاد په دې وخت کې بل '
+                            'ځای هم ټاکل شوی دی.',
+                        child: Icon(
+                          Icons.warning_amber_rounded,
+                          size: 13,
+                          color: AppColors.danger.withValues(
+                            alpha: 0.65 + 0.35 * t,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
+            child: _body(context),
+          )
+        : _body(context);
     if (widget.onDrop == null) return body;
 
     // **`DragTarget` بهر دی او `Draggable` دننه.** برعکس يې کار نه
@@ -954,7 +1085,7 @@ class _CellState extends State<_Cell> {
                 : cell == null
                 ? (_hover ? p.surfaceAlt : Colors.transparent)
                 : _colorFor(
-                    cell.subjectName,
+                    cell.title,
                   ).withValues(alpha: _hover ? 0.18 : 0.11),
             border: Border(
               right: BorderSide(color: p.line),
@@ -977,28 +1108,33 @@ class _CellState extends State<_Cell> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    // **لومړۍ کرښه: د کتاب نوم.** فن یوه کورنۍ ده؛
+                    // کتاب هغه څیز دی چې شاګرد يې راوړي او استاد
+                    // يې لولي. درې درجې چې «فقه» ولري، یو شان
+                    // ښکارېدې — خو «قدوري» او «هدایه» نه.
                     Text(
-                      cell.subjectName,
+                      cell.title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w700,
-                        color: _colorFor(cell.subjectName),
+                        color: _colorFor(cell.title),
                       ),
                     ),
                     const SizedBox(height: 2),
-                    // کتاب لومړیتوب لري — د مدرسې د جدول ارزښت
-                    // همدا دی. که کتاب نه وي (مکتب)، استاد ښیي.
+                    // **دویمه کرښه: استاد** — لږ کوچنی فونټ، چې
+                    // کتاب لومړیتوب وساتي.
                     Text(
-                      cell.detail ?? 'استاد نه دی ټاکل شوی',
+                      cell.teacherName ?? 'استاد نه دی ټاکل شوی',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontSize: 10.5,
-                        color: cell.detail == null
+                        fontSize: 10,
+                        fontWeight: FontWeight.w500,
+                        color: cell.teacherName == null
                             ? AppColors.warning
                             : p.muted,
                       ),

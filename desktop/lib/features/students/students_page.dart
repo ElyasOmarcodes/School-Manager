@@ -14,6 +14,7 @@ import '../../data/db/database.dart';
 import '../../data/repositories/academic_repository.dart';
 import '../../data/repositories/student_repository.dart';
 import '../../widgets/data_table_view.dart';
+import '../../widgets/filter_bar.dart';
 
 class StudentsPage extends StatefulWidget {
   final StudentRepository repo;
@@ -123,35 +124,159 @@ class _StudentsPageState extends State<StudentsPage> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           FadeSlideIn(
-            child: _Toolbar(
-              controller: _searchController,
+            child: FilterBar(
+              searchController: _searchController,
               onSearchChanged: _onSearchChanged,
-              filter: _filter,
-              onFilterChanged: _setFilter,
-              onAdd: widget.onAddStudent,
-              total: _page.total,
-              filtersOpen: _showFilters,
-              onToggleFilters: () =>
-                  setState(() => _showFilters = !_showFilters),
+              searchHint: 'نوم، د پلار نوم، آی‌ډي یا تلیفون…',
+              searchWidth: 320,
+              primary: [
+                if (_grades.isNotEmpty)
+                  QuickFilter<int>(
+                    label: _madrasa ? 'ټولې درجې' : 'ټول ټولګي',
+                    icon: Icons.class_rounded,
+                    value: _filter.gradeId,
+                    options: [
+                      for (final g in _grades) (value: g.id, label: g.name),
+                    ],
+                    onChanged: (v) => _setFilter(
+                      v == null
+                          ? _filter.copyWith(clearGrade: true)
+                          : _filter.copyWith(gradeId: v),
+                    ),
+                  ),
+              ],
+              activeCount: _filter.advancedCount,
+              open: _showFilters,
+              onToggle: () => setState(() => _showFilters = !_showFilters),
+              countLabel: '${locale.grouped(_page.total)} ${s.students}',
+              actions: [
+                FilledButton.icon(
+                  onPressed: widget.onAddStudent,
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
+                  ),
+                  icon: const Icon(Icons.person_add_rounded, size: 17),
+                  label: const Text('نوی شاګرد'),
+                ),
+              ],
             ),
           ),
-          // د تختې پرانیستل/بندول په نرمۍ سره — جدول ښکته ښویېږي،
-          // نه چې ټوپ ووهي.
-          AnimatedSize(
-            duration: AppMotion.normal,
-            curve: AppMotion.standard,
-            alignment: Alignment.topCenter,
-            child: _showFilters
-                ? Padding(
-                    padding: const EdgeInsets.only(top: 12),
-                    child: _FilterPanel(
-                      filter: _filter,
-                      grades: _grades,
-                      madrasa: _madrasa,
-                      onChanged: _setFilter,
+          FilterSheet(
+            open: _showFilters,
+            activeCount: _filter.advancedCount,
+            onClear: () => _setFilter(
+              StudentFilter(query: _filter.query, gradeId: _filter.gradeId),
+            ),
+            children: [
+              FilterDropdown<String>(
+                label: 'جنس',
+                allLabel: 'ټول جنس',
+                value: _filter.gender,
+                options: const [
+                  (value: 'male', label: 'زلمي'),
+                  (value: 'female', label: 'نجونې'),
+                ],
+                onChanged: (v) => _setFilter(
+                  v == null
+                      ? _filter.copyWith(clearGender: true)
+                      : _filter.copyWith(gender: v),
+                ),
+              ),
+              FilterDropdown<String>(
+                label: 'حالت',
+                allLabel: 'ټول حالتونه',
+                value: _filter.status,
+                options: const [
+                  (value: 'active', label: 'فعال'),
+                  (value: 'graduated', label: 'فارغ'),
+                  (value: 'transferred', label: 'لېږدېدلی'),
+                  (value: 'dropped', label: 'پرېښی'),
+                  (value: 'suspended', label: 'ځنډول شوی'),
+                ],
+                onChanged: (v) => _setFilter(
+                  v == null
+                      ? _filter.copyWith(clearStatus: true)
+                      : _filter.copyWith(status: v),
+                ),
+              ),
+              FilterField(
+                label: s.province,
+                child: TypeAheadField(
+                  label: s.province,
+                  icon: Icons.map_rounded,
+                  value: _filter.province,
+                  options: provinceNames,
+                  onChanged: (v) => _setFilter(
+                    v == null
+                        ? _filter.copyWith(clearProvince: true)
+                        : _filter.copyWith(province: v, clearDistrict: true),
+                  ),
+                ),
+              ),
+              FilterField(
+                label: s.district,
+                child: TypeAheadField(
+                  label: s.district,
+                  icon: Icons.place_rounded,
+                  // ولسوالۍ د ولایت پرته معنا نه لري — نو تر هغې بنده ده.
+                  enabled: _filter.province != null,
+                  hint: _filter.province == null ? 'لومړی ولایت وټاکئ' : null,
+                  value: _filter.district,
+                  options: districtsOf(_filter.province),
+                  onChanged: (v) => _setFilter(
+                    v == null
+                        ? _filter.copyWith(clearDistrict: true)
+                        : _filter.copyWith(district: v),
+                  ),
+                ),
+              ),
+              FilterField(
+                label: 'سکونت',
+                width: 250,
+                child: SegmentedChoice<String?>(
+                  value: _filter.residency,
+                  options: [
+                    (value: null, label: s.all, icon: null),
+                    (
+                      value: 'day',
+                      label: s.dayScholar,
+                      icon: Icons.wb_sunny_rounded,
                     ),
-                  )
-                : const SizedBox(width: double.infinity),
+                    (
+                      value: 'boarding',
+                      label: s.boarder,
+                      icon: Icons.night_shelter_rounded,
+                    ),
+                  ],
+                  onChanged: (v) => _setFilter(
+                    v == null
+                        ? _filter.copyWith(clearResidency: true)
+                        : _filter.copyWith(residency: v),
+                  ),
+                ),
+              ),
+              FilterField(
+                label: 'پروفایل',
+                width: 250,
+                child: SegmentedChoice<bool>(
+                  value: _filter.onlyIncomplete,
+                  color: AppColors.warning,
+                  options: [
+                    (value: false, label: 'ټول', icon: null),
+                    (
+                      value: true,
+                      label: s.incompleteProfile,
+                      icon: Icons.report_problem_rounded,
+                    ),
+                  ],
+                  onChanged: (v) =>
+                      _setFilter(_filter.copyWith(onlyIncomplete: v)),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
           Expanded(
@@ -286,399 +411,4 @@ class _StudentsPageState extends State<StudentsPage> {
     'suspended' => AppColors.danger,
     _ => AppColors.warning,
   };
-}
-
-// ═══════════════════════════════════════════════════════════
-//  پورتنۍ کرښه — لټون، سرغړاوی، نوی شاګرد
-// ═══════════════════════════════════════════════════════════
-
-class _Toolbar extends StatelessWidget {
-  final TextEditingController controller;
-  final ValueChanged<String> onSearchChanged;
-  final StudentFilter filter;
-  final ValueChanged<StudentFilter> onFilterChanged;
-  final VoidCallback? onAdd;
-  final int total;
-  final bool filtersOpen;
-  final VoidCallback onToggleFilters;
-
-  const _Toolbar({
-    required this.controller,
-    required this.onSearchChanged,
-    required this.filter,
-    required this.onFilterChanged,
-    required this.onAdd,
-    required this.total,
-    required this.filtersOpen,
-    required this.onToggleFilters,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final s = S.of(context);
-    final p = context.palette;
-
-    return Row(
-      children: [
-        SizedBox(
-          width: 320,
-          child: TextField(
-            controller: controller,
-            onChanged: onSearchChanged,
-            decoration: const InputDecoration(
-              hintText: 'نوم، د پلار نوم، آی‌ډي یا تلیفون…',
-              prefixIcon: Icon(Icons.search_rounded, size: 19),
-              isDense: true,
-              contentPadding: EdgeInsets.symmetric(
-                horizontal: 14,
-                vertical: 13,
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(width: 10),
-        _FilterChip(
-          label: 'ټول جنس',
-          selected: filter.gender == null,
-          options: const {'male': 'زلمي', 'female': 'نجونې'},
-          value: filter.gender,
-          onChanged: (v) => onFilterChanged(
-            v == null
-                ? filter.copyWith(clearGender: true)
-                : filter.copyWith(gender: v),
-          ),
-        ),
-        const SizedBox(width: 8),
-        _FilterChip(
-          label: 'ټول حالتونه',
-          selected: filter.status == null,
-          options: const {
-            'active': 'فعال',
-            'graduated': 'فارغ',
-            'transferred': 'لېږدېدلی',
-            'suspended': 'ځنډول شوی',
-          },
-          value: filter.status,
-          onChanged: (v) => onFilterChanged(
-            v == null
-                ? filter.copyWith(clearStatus: true)
-                : filter.copyWith(status: v),
-          ),
-        ),
-        const SizedBox(width: 8),
-
-        // **د پرمختللو فلټرونو تڼۍ خپل شمېر وړي.** پرته له دې،
-        // کارن به تختې ته اړ و چې وګوري ولې لیست دومره لنډ دی.
-        _FilterToggle(
-          open: filtersOpen,
-          count: filter.activeCount,
-          onTap: onToggleFilters,
-        ),
-        const Spacer(),
-        Text(
-          '${s.locale.grouped(total)} ${s.students}',
-          style: TextStyle(fontSize: 12.5, color: p.muted),
-        ),
-        const SizedBox(width: 14),
-        FilledButton.icon(
-          onPressed: onAdd,
-          style: FilledButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          ),
-          icon: const Icon(Icons.person_add_rounded, size: 17),
-          label: const Text('نوی شاګرد'),
-        ),
-      ],
-    );
-  }
-}
-
-class _FilterToggle extends StatelessWidget {
-  final bool open;
-  final int count;
-  final VoidCallback onTap;
-
-  const _FilterToggle({
-    required this.open,
-    required this.count,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final s = S.of(context);
-    final p = context.palette;
-    final active = count > 0;
-
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: AppMotion.fast,
-        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
-        decoration: BoxDecoration(
-          color: active || open
-              ? AppColors.primary.withValues(alpha: 0.09)
-              : p.surface,
-          borderRadius: BorderRadius.circular(AppTheme.radiusSm),
-          border: Border.all(
-            color: active || open
-                ? AppColors.primary.withValues(alpha: 0.4)
-                : p.line,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.tune_rounded,
-              size: 16,
-              color: active || open ? AppColors.primary : p.muted,
-            ),
-            const SizedBox(width: 6),
-            Text(
-              s.filters,
-              style: TextStyle(
-                fontSize: 12.5,
-                fontWeight: active ? FontWeight.w700 : FontWeight.w500,
-                color: active || open ? AppColors.primary : p.inkSoft,
-              ),
-            ),
-            if (active) ...[
-              const SizedBox(width: 6),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 6,
-                  vertical: 1,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius: BorderRadius.circular(9),
-                ),
-                child: Text(
-                  s.locale.num(count),
-                  style: const TextStyle(
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// د پرمختللو فلټرونو تخته.
-///
-/// **ولې دومره فلټرونه؟** ځکه چې د اته سوو شاګردانو په لیست کې د
-/// یوه موندل د نوم په لیکلو کېږي — خو د یوې **ډلې** موندل نه.
-/// «د پکتیا د زرمت هغه لیلیه شاګردان چې پروفایل يې نیمګړی دی» —
-/// دا هغه پوښتنه ده چې مدیر يې ورځ کوي، او پرته له دې فلټرونو،
-/// ځواب يې د اته سوو کرښو په لاسي کتلو کې و.
-class _FilterPanel extends StatelessWidget {
-  final StudentFilter filter;
-  final List<Grade> grades;
-  final bool madrasa;
-  final ValueChanged<StudentFilter> onChanged;
-
-  const _FilterPanel({
-    required this.filter,
-    required this.grades,
-    required this.madrasa,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final s = S.of(context);
-    final p = context.palette;
-
-    return Panel(
-      padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              if (grades.isNotEmpty)
-                SizedBox(
-                  width: 200,
-                  child: DropdownButtonFormField<int?>(
-                    initialValue: filter.gradeId,
-                    isDense: true,
-                    isExpanded: true,
-                    decoration: InputDecoration(
-                      labelText: madrasa ? 'درجه' : s.grade,
-                      isDense: true,
-                    ),
-                    items: [
-                      DropdownMenuItem(value: null, child: Text(s.all)),
-                      for (final g in grades)
-                        DropdownMenuItem(value: g.id, child: Text(g.name)),
-                    ],
-                    onChanged: (v) => onChanged(
-                      v == null
-                          ? filter.copyWith(clearGrade: true)
-                          : filter.copyWith(gradeId: v),
-                    ),
-                  ),
-                ),
-              SizedBox(
-                width: 200,
-                child: TypeAheadField(
-                  label: s.province,
-                  icon: Icons.map_rounded,
-                  value: filter.province,
-                  options: provinceNames,
-                  onChanged: (v) => onChanged(
-                    v == null
-                        ? filter.copyWith(clearProvince: true)
-                        : filter.copyWith(province: v, clearDistrict: true),
-                  ),
-                ),
-              ),
-              SizedBox(
-                width: 200,
-                child: TypeAheadField(
-                  label: s.district,
-                  icon: Icons.place_rounded,
-                  // ولسوالۍ د ولایت پرته معنا نه لري — نو تر هغې بنده ده.
-                  enabled: filter.province != null,
-                  hint: filter.province == null ? 'لومړی ولایت وټاکئ' : null,
-                  value: filter.district,
-                  options: districtsOf(filter.province),
-                  onChanged: (v) => onChanged(
-                    v == null
-                        ? filter.copyWith(clearDistrict: true)
-                        : filter.copyWith(district: v),
-                  ),
-                ),
-              ),
-              SegmentedChoice<String?>(
-                value: filter.residency,
-                options: [
-                  (value: null, label: s.all, icon: null),
-                  (
-                    value: 'day',
-                    label: s.dayScholar,
-                    icon: Icons.wb_sunny_rounded,
-                  ),
-                  (
-                    value: 'boarding',
-                    label: s.boarder,
-                    icon: Icons.night_shelter_rounded,
-                  ),
-                ],
-                onChanged: (v) => onChanged(
-                  v == null
-                      ? filter.copyWith(clearResidency: true)
-                      : filter.copyWith(residency: v),
-                ),
-              ),
-              SegmentedChoice<bool>(
-                value: filter.onlyIncomplete,
-                color: AppColors.warning,
-                options: [
-                  (value: false, label: 'ټول پروفایلونه', icon: null),
-                  (
-                    value: true,
-                    label: s.incompleteProfile,
-                    icon: Icons.report_problem_rounded,
-                  ),
-                ],
-                onChanged: (v) => onChanged(filter.copyWith(onlyIncomplete: v)),
-              ),
-            ],
-          ),
-          if (filter.activeCount > 0) ...[
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                Text(
-                  '${s.locale.num(filter.activeCount)} فلټرونه فعال دي',
-                  style: TextStyle(fontSize: 12, color: p.muted),
-                ),
-                const Spacer(),
-                TextButton.icon(
-                  onPressed: () => onChanged(
-                    const StudentFilter().copyWith(query: filter.query),
-                  ),
-                  icon: const Icon(Icons.clear_all_rounded, size: 16),
-                  label: Text(s.clearFilters),
-                ),
-              ],
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _FilterChip extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final Map<String, String> options;
-  final String? value;
-  final ValueChanged<String?> onChanged;
-
-  const _FilterChip({
-    required this.label,
-    required this.selected,
-    required this.options,
-    required this.value,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final p = context.palette;
-    final active = value != null;
-
-    return PopupMenuButton<String?>(
-      tooltip: '',
-      onSelected: onChanged,
-      itemBuilder: (_) => [
-        PopupMenuItem<String?>(value: null, child: Text(label)),
-        const PopupMenuDivider(),
-        for (final e in options.entries)
-          PopupMenuItem<String?>(value: e.key, child: Text(e.value)),
-      ],
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
-        decoration: BoxDecoration(
-          color: active ? AppColors.primary.withValues(alpha: 0.09) : p.surface,
-          borderRadius: BorderRadius.circular(AppTheme.radiusSm),
-          border: Border.all(
-            color: active ? AppColors.primary.withValues(alpha: 0.4) : p.line,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              active ? options[value]! : label,
-              style: TextStyle(
-                fontSize: 12.5,
-                fontWeight: active ? FontWeight.w600 : FontWeight.w500,
-                color: active ? AppColors.primary : p.inkSoft,
-              ),
-            ),
-            const SizedBox(width: 5),
-            Icon(
-              Icons.expand_more_rounded,
-              size: 16,
-              color: active ? AppColors.primary : p.muted,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }

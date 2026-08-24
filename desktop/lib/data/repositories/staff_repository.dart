@@ -29,24 +29,36 @@ class StaffFilter {
   final String query;
   final String? status;
   final String? department;
+  final String? gender;
 
   const StaffFilter({
     this.query = '',
     this.status = 'active',
     this.department,
+    this.gender,
   });
 
   StaffFilter copyWith({
     String? query,
     String? status,
     String? department,
+    String? gender,
     bool clearStatus = false,
     bool clearDepartment = false,
+    bool clearGender = false,
   }) => StaffFilter(
     query: query ?? this.query,
     status: clearStatus ? null : (status ?? this.status),
     department: clearDepartment ? null : (department ?? this.department),
+    gender: clearGender ? null : (gender ?? this.gender),
   );
+
+  /// **یوازې پرمختللي فلټرونه** — څانګه پکې نشته، ځکه چې هغه پر
+  /// پورتنۍ کرښه ښکاره ولاړه ده.
+  int get advancedCount => [
+    if (status != null && status != 'active') status,
+    gender,
+  ].whereType<Object>().length;
 }
 
 /// د معاشونو لنډیز — د یوې څانګې لپاره.
@@ -81,6 +93,10 @@ class StaffRepository {
     if (filter.department != null) {
       where.add('s.department = ?');
       args.add(Variable<String>(filter.department!));
+    }
+    if (filter.gender != null) {
+      where.add('s.gender = ?');
+      args.add(Variable<String>(filter.gender!));
     }
 
     final q = filter.query.trim();

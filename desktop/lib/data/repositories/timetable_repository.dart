@@ -40,8 +40,15 @@ class TimetableCell {
     this.book,
   });
 
-  /// د خانې دویمه کرښه — کتاب که وي، که نه استاد.
-  String? get detail => book ?? teacherName;
+  /// **د خانې لومړۍ کرښه — د کتاب نوم.**
+  ///
+  /// که کتاب نه وي ثبت شوی (مکتب معمولاً نه لري)، فن پاتې کېږي.
+  String get title {
+    final b = book?.trim() ?? '';
+    return b.isEmpty ? subjectName : b;
+  }
+
+
 }
 
 /// د یوه بخش بشپړ اونیز جدول.

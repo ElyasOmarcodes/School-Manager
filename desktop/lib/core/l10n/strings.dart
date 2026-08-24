@@ -239,6 +239,8 @@ class S {
   String get add => _pick('زیاتول', 'افزودن', 'Add');
   String get close => _pick('بندول', 'بستن', 'Close');
   String get filters => _pick('فلټرونه', 'فیلترها', 'Filters');
+  String get advancedFilters =>
+      _pick('پرمختللي فلټرونه', 'فیلترهای پیشرفته', 'Advanced filters');
   String get clearFilters => _pick('پاک کړه', 'پاک کن', 'Clear');
   String get all => _pick('ټول', 'همه', 'All');
   String get individual => _pick('فردي', 'فردی', 'Individual');

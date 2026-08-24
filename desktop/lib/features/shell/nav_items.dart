@@ -46,7 +46,15 @@ class NavItem {
   bool get hasChildren => children.isNotEmpty;
 
   /// ایا دا لار د دې توکي (یا د یوه فرعي توکي) ده؟
-  bool owns(String r) => r == route || children.any((c) => c.route == r);
+  /// **پټې لارې هم د خپلې څانګې دي.**
+  ///
+  /// `/attendance/today` په فرعي لیست کې نشته (له ډاشبورډه راځي)،
+  /// خو سایډبار باید بیا هم «حاضري» روښانه وښیي — که نه، کارن به
+  /// نه پوهېده چې په کومه برخه کې دی.
+  bool owns(String r) =>
+      r == route ||
+      children.any((c) => c.route == r) ||
+      (route != '/' && r.startsWith('$route/'));
 
   /// د اجازو ماډل کلی — «/students» → «students».
   ///
@@ -92,7 +100,6 @@ String _lblReportSummary(S s) => 'عمومي راپورونه';
 String _lblStudentList(S s) => s.students;
 String _lblNewEnrolment(S s) => s.newEnrolment;
 String _lblTakeAttendance(S s) => s.attendanceTaking;
-String _lblNewSession(S s) => s.newSession;
 String _lblSessionSettings(S s) => s.sessionSettings;
 String _lblLeaveList(S s) => s.leaveRequests;
 String _lblNewLeave(S s) => s.newLeave;
@@ -147,11 +154,6 @@ List<NavGroup> buildNav() => [
           route: '/attendance',
           icon: Icons.how_to_reg_rounded,
           label: _lblTakeAttendance,
-        ),
-        NavSubItem(
-          route: '/attendance/new',
-          icon: Icons.add_task_rounded,
-          label: _lblNewSession,
         ),
         NavSubItem(
           route: '/attendance/settings',

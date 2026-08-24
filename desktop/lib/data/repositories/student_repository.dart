@@ -109,6 +109,20 @@ class StudentFilter {
     );
   }
 
+  /// **یوازې پرمختللي فلټرونه** — درجه پکې نشته، ځکه چې هغه پر
+  /// پورتنۍ کرښه ښکاره ولاړ دی او خپل حال پخپله ښیي. که شمېرل
+  /// کېده، تڼۍ به يې «۱» ښوده او کارن به تختې ته اړ و چې وګوري
+  /// کوم فلټر دی — هغه چې مخې ته يې پروت و.
+  int get advancedCount => [
+    sectionId != null,
+    gender != null,
+    province != null,
+    district != null,
+    residency != null,
+    onlyIncomplete,
+    status != 'active',
+  ].where((v) => v).length;
+
   /// څو فلټرونه فعال دي — د «پاک کړه» تڼۍ يې ښیي.
   int get activeCount => [
     sectionId != null,

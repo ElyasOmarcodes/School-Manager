@@ -85,7 +85,7 @@ class AppDatabase extends _$AppDatabase {
   );
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -200,6 +200,12 @@ class AppDatabase extends _$AppDatabase {
       // بدلون نه ویني.
       if (from < 8) {
         await m.addColumn(schools, schools.periodMinutesCsv);
+      }
+
+      // ── ۸ → ۹: کتاب خپل استاد او خپلې پاڼې لري ───────────
+      if (from < 9) {
+        await m.addColumn(subjects, subjects.teacherId);
+        await m.addColumn(subjects, subjects.pages);
       }
       await _createIndexes();
     },

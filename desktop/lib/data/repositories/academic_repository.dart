@@ -23,7 +23,21 @@ class SectionOption {
     required this.enrolledCount,
   });
 
-  String get label => '$gradeName — $sectionName';
+  /// **یوه درجه چې اجزا نه لري، خپل نوم لري — بس.**
+  ///
+  /// مدرسه «درجه اولی — الف» نه لري؛ یوازې «درجه اولی» لري. کله چې
+  /// شمېر ډېر شي او مدیر يې په اجزاوو ووېشي، بیا نوم ورسره ملګری
+  /// کېږي. نو یو تش نوم دلته «هېڅ جز نشته» معنا لري، نه یوه ورکه
+  /// ډیټا.
+  String get label =>
+      sectionName.trim().isEmpty ? gradeName : '$gradeName — $sectionName';
+
+  /// یو لنډ نوم چې د نښې دننه ځای ونیسي — بې‌نومه جز «ټول» شي.
+  String get partLabel =>
+      sectionName.trim().isEmpty ? 'ټوله' : sectionName;
+
+  /// ایا دا درجه/ټولګی په اجزاوو وېشل شوی دی؟
+  bool get isWhole => sectionName.trim().isEmpty;
   bool get isFull => enrolledCount >= capacity;
   int get freeSeats => capacity - enrolledCount;
 }
@@ -135,11 +149,13 @@ ORDER BY g.level, sec.name
     if (existing.isNotEmpty) return;
 
     if (madrasa) {
+      // **مدرسه د «الف/ب» ویش نه اخلي.** هغه دوه نومه د مکتب دي؛
+      // دلته هره درجه یوه ده، او که مدیر ورته اجزا وغواړي، په لاس
+      // يې جوړوي.
       return seedMadrasaStructure(
         yearLabel: yearLabel,
         startsOn: startsOn,
         endsOn: endsOn,
-        sectionNames: sectionNames,
         capacity: capacity ?? madrasaDefaultCapacity,
       );
     }
@@ -209,7 +225,12 @@ ORDER BY g.level, sec.name
     required String yearLabel,
     required DateTime startsOn,
     required DateTime endsOn,
-    List<String> sectionNames = const ['الف'],
+    /// **تلواله: یو بې‌نومه جز** — یعنې «ټوله درجه».
+    ///
+    /// مخکې «الف» جوړېده او هره درجه به «درجه اولی — الف» ښکارېده،
+    /// که څه هم دویم جز يې هېڅکله نه و. یو نوم چې یوازې یو غړی
+    /// لري، نوم نه دی — شور دی.
+    List<String> sectionNames = const [''],
     int capacity = madrasaDefaultCapacity,
   }) async {
     await db.transaction(() async {
@@ -405,6 +426,29 @@ ORDER BY g.level, sec.name
     final year = await currentYear();
     if (year == null) throw StateError('د زده‌کړې کال نشته');
     final school = await this.school();
+
+    // **لومړی جز چې زیاتېږي، بې‌نومه يې نوم اخلي.**
+    //
+    // یوه درجه چې تر اوسه یوه وه، اوس دوه کېږي — نو هغه بې‌نومه
+    // «ټوله» باید «الف» شي. که نه، لیست به «درجه اولی» او «درجه
+    // اولی — ب» ښودل، چې لومړی يې څه دی معلوم نه و.
+    //
+    // **دا قاعده دلته ده، نه په پاڼه کې**، ځکه چې هر هغه لار چې
+    // جز زیاتوي — پاڼه، ویزارډ، یا یو راتلونکی import — همدې
+    // پایلې ته اړتیا لري.
+    if (name.trim().isNotEmpty) {
+      final whole =
+          await (db.select(db.sections)
+                ..where((x) => x.gradeId.equals(gradeId))
+                ..where((x) => x.name.equals(''))
+                ..limit(1))
+              .getSingleOrNull();
+      if (whole != null) {
+        await (db.update(db.sections)..where((x) => x.id.equals(whole.id)))
+            .write(const SectionsCompanion(name: Value('الف')));
+      }
+    }
+
     return db
         .into(db.sections)
         .insert(
@@ -518,6 +562,8 @@ ORDER BY g.level, sec.name
     int fullMark = 100,
     int passMark = 40,
     bool isReligious = false,
+    int? teacherId,
+    int? pages,
   }) async {
     // د دې ټولګي په پای کې کېښودل شي، نه په سر کې — چې د نصاب
     // ترتیب خراب نه شي.
@@ -542,6 +588,8 @@ ORDER BY g.level, sec.name
             fullMark: Value(fullMark),
             passMark: Value(passMark),
             isReligious: Value(isReligious),
+            teacherId: Value(teacherId),
+            pages: Value(pages),
             sortOrder: Value(row.read<int>('m') + 1),
           ),
         );
@@ -558,6 +606,10 @@ ORDER BY g.level, sec.name
     int? fullMark,
     int? passMark,
     bool? isReligious,
+    int? teacherId,
+    bool clearTeacher = false,
+    int? pages,
+    bool clearPages = false,
   }) {
     return (db.update(db.subjects)..where((s) => s.id.equals(id))).write(
       SubjectsCompanion(
@@ -575,6 +627,12 @@ ORDER BY g.level, sec.name
         isReligious: isReligious == null
             ? const Value.absent()
             : Value(isReligious),
+        teacherId: clearTeacher
+            ? const Value(null)
+            : (teacherId == null ? const Value.absent() : Value(teacherId)),
+        pages: clearPages
+            ? const Value(null)
+            : (pages == null ? const Value.absent() : Value(pages)),
       ),
     );
   }

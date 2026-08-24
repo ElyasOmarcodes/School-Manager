@@ -3226,6 +3226,1097 @@ class SectionsCompanion extends UpdateCompanion<Section> {
   }
 }
 
+class $TeachersTable extends Teachers with TableInfo<$TeachersTable, Teacher> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $TeachersTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _employeeNoMeta = const VerificationMeta(
+    'employeeNo',
+  );
+  @override
+  late final GeneratedColumn<String> employeeNo = GeneratedColumn<String>(
+    'employee_no',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _fullNameMeta = const VerificationMeta(
+    'fullName',
+  );
+  @override
+  late final GeneratedColumn<String> fullName = GeneratedColumn<String>(
+    'full_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _fatherNameMeta = const VerificationMeta(
+    'fatherName',
+  );
+  @override
+  late final GeneratedColumn<String> fatherName = GeneratedColumn<String>(
+    'father_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _genderMeta = const VerificationMeta('gender');
+  @override
+  late final GeneratedColumn<String> gender = GeneratedColumn<String>(
+    'gender',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _phoneMeta = const VerificationMeta('phone');
+  @override
+  late final GeneratedColumn<String> phone = GeneratedColumn<String>(
+    'phone',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _emailMeta = const VerificationMeta('email');
+  @override
+  late final GeneratedColumn<String> email = GeneratedColumn<String>(
+    'email',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _addressMeta = const VerificationMeta(
+    'address',
+  );
+  @override
+  late final GeneratedColumn<String> address = GeneratedColumn<String>(
+    'address',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _photoPathMeta = const VerificationMeta(
+    'photoPath',
+  );
+  @override
+  late final GeneratedColumn<String> photoPath = GeneratedColumn<String>(
+    'photo_path',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _qualificationMeta = const VerificationMeta(
+    'qualification',
+  );
+  @override
+  late final GeneratedColumn<String> qualification = GeneratedColumn<String>(
+    'qualification',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _specializationMeta = const VerificationMeta(
+    'specialization',
+  );
+  @override
+  late final GeneratedColumn<String> specialization = GeneratedColumn<String>(
+    'specialization',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _hiredOnMeta = const VerificationMeta(
+    'hiredOn',
+  );
+  @override
+  late final GeneratedColumn<DateTime> hiredOn = GeneratedColumn<DateTime>(
+    'hired_on',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('active'),
+  );
+  static const VerificationMeta _monthlySalaryMeta = const VerificationMeta(
+    'monthlySalary',
+  );
+  @override
+  late final GeneratedColumn<int> monthlySalary = GeneratedColumn<int>(
+    'monthly_salary',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _qrSecretMeta = const VerificationMeta(
+    'qrSecret',
+  );
+  @override
+  late final GeneratedColumn<String> qrSecret = GeneratedColumn<String>(
+    'qr_secret',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _fingerprintIdMeta = const VerificationMeta(
+    'fingerprintId',
+  );
+  @override
+  late final GeneratedColumn<String> fingerprintId = GeneratedColumn<String>(
+    'fingerprint_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _cardVersionMeta = const VerificationMeta(
+    'cardVersion',
+  );
+  @override
+  late final GeneratedColumn<int> cardVersion = GeneratedColumn<int>(
+    'card_version',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  static const VerificationMeta _cardExpiresOnMeta = const VerificationMeta(
+    'cardExpiresOn',
+  );
+  @override
+  late final GeneratedColumn<DateTime> cardExpiresOn =
+      GeneratedColumn<DateTime>(
+        'card_expires_on',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    employeeNo,
+    fullName,
+    fatherName,
+    gender,
+    phone,
+    email,
+    address,
+    photoPath,
+    qualification,
+    specialization,
+    hiredOn,
+    status,
+    monthlySalary,
+    qrSecret,
+    fingerprintId,
+    cardVersion,
+    cardExpiresOn,
+    deletedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'teachers';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Teacher> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('employee_no')) {
+      context.handle(
+        _employeeNoMeta,
+        employeeNo.isAcceptableOrUnknown(data['employee_no']!, _employeeNoMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_employeeNoMeta);
+    }
+    if (data.containsKey('full_name')) {
+      context.handle(
+        _fullNameMeta,
+        fullName.isAcceptableOrUnknown(data['full_name']!, _fullNameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_fullNameMeta);
+    }
+    if (data.containsKey('father_name')) {
+      context.handle(
+        _fatherNameMeta,
+        fatherName.isAcceptableOrUnknown(data['father_name']!, _fatherNameMeta),
+      );
+    }
+    if (data.containsKey('gender')) {
+      context.handle(
+        _genderMeta,
+        gender.isAcceptableOrUnknown(data['gender']!, _genderMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_genderMeta);
+    }
+    if (data.containsKey('phone')) {
+      context.handle(
+        _phoneMeta,
+        phone.isAcceptableOrUnknown(data['phone']!, _phoneMeta),
+      );
+    }
+    if (data.containsKey('email')) {
+      context.handle(
+        _emailMeta,
+        email.isAcceptableOrUnknown(data['email']!, _emailMeta),
+      );
+    }
+    if (data.containsKey('address')) {
+      context.handle(
+        _addressMeta,
+        address.isAcceptableOrUnknown(data['address']!, _addressMeta),
+      );
+    }
+    if (data.containsKey('photo_path')) {
+      context.handle(
+        _photoPathMeta,
+        photoPath.isAcceptableOrUnknown(data['photo_path']!, _photoPathMeta),
+      );
+    }
+    if (data.containsKey('qualification')) {
+      context.handle(
+        _qualificationMeta,
+        qualification.isAcceptableOrUnknown(
+          data['qualification']!,
+          _qualificationMeta,
+        ),
+      );
+    }
+    if (data.containsKey('specialization')) {
+      context.handle(
+        _specializationMeta,
+        specialization.isAcceptableOrUnknown(
+          data['specialization']!,
+          _specializationMeta,
+        ),
+      );
+    }
+    if (data.containsKey('hired_on')) {
+      context.handle(
+        _hiredOnMeta,
+        hiredOn.isAcceptableOrUnknown(data['hired_on']!, _hiredOnMeta),
+      );
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    }
+    if (data.containsKey('monthly_salary')) {
+      context.handle(
+        _monthlySalaryMeta,
+        monthlySalary.isAcceptableOrUnknown(
+          data['monthly_salary']!,
+          _monthlySalaryMeta,
+        ),
+      );
+    }
+    if (data.containsKey('qr_secret')) {
+      context.handle(
+        _qrSecretMeta,
+        qrSecret.isAcceptableOrUnknown(data['qr_secret']!, _qrSecretMeta),
+      );
+    }
+    if (data.containsKey('fingerprint_id')) {
+      context.handle(
+        _fingerprintIdMeta,
+        fingerprintId.isAcceptableOrUnknown(
+          data['fingerprint_id']!,
+          _fingerprintIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('card_version')) {
+      context.handle(
+        _cardVersionMeta,
+        cardVersion.isAcceptableOrUnknown(
+          data['card_version']!,
+          _cardVersionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('card_expires_on')) {
+      context.handle(
+        _cardExpiresOnMeta,
+        cardExpiresOn.isAcceptableOrUnknown(
+          data['card_expires_on']!,
+          _cardExpiresOnMeta,
+        ),
+      );
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {employeeNo},
+  ];
+  @override
+  Teacher map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Teacher(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      employeeNo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}employee_no'],
+      )!,
+      fullName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}full_name'],
+      )!,
+      fatherName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}father_name'],
+      ),
+      gender: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}gender'],
+      )!,
+      phone: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}phone'],
+      ),
+      email: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}email'],
+      ),
+      address: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}address'],
+      ),
+      photoPath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}photo_path'],
+      ),
+      qualification: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}qualification'],
+      ),
+      specialization: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}specialization'],
+      ),
+      hiredOn: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}hired_on'],
+      ),
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
+      monthlySalary: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}monthly_salary'],
+      ),
+      qrSecret: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}qr_secret'],
+      ),
+      fingerprintId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}fingerprint_id'],
+      ),
+      cardVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}card_version'],
+      )!,
+      cardExpiresOn: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}card_expires_on'],
+      ),
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+    );
+  }
+
+  @override
+  $TeachersTable createAlias(String alias) {
+    return $TeachersTable(attachedDatabase, alias);
+  }
+}
+
+class Teacher extends DataClass implements Insertable<Teacher> {
+  final int id;
+  final String employeeNo;
+  final String fullName;
+  final String? fatherName;
+  final String gender;
+  final String? phone;
+  final String? email;
+  final String? address;
+  final String? photoPath;
+  final String? qualification;
+  final String? specialization;
+  final DateTime? hiredOn;
+
+  /// `active` | `on_leave` | `resigned` | `terminated`
+  final String status;
+  final int? monthlySalary;
+  final String? qrSecret;
+
+  /// د ګوتې نښه — د استادانو د حاضرۍ لپاره، اختیاري.
+  final String? fingerprintId;
+  final int cardVersion;
+
+  /// **کارت کله باطلېږي.**
+  ///
+  /// یو آی‌ډي کارت د یوه درسي کال لپاره دی. که نېټه پرې نه وه،
+  /// یو پخوانی شاګرد به تر ابده د ښوونځي دروازه پرانیستله — او
+  /// د دروازې ساتونکی د کارت له مخې پرېکړه کوي، نه د ډیټابیس.
+  /// نو نېټه باید **پر کارت** وي، او ډیټابیس يې هم وپېژني چې
+  /// «کوم کارتونه سبا باطلېږي» ولوستل شي.
+  final DateTime? cardExpiresOn;
+  final DateTime? deletedAt;
+  const Teacher({
+    required this.id,
+    required this.employeeNo,
+    required this.fullName,
+    this.fatherName,
+    required this.gender,
+    this.phone,
+    this.email,
+    this.address,
+    this.photoPath,
+    this.qualification,
+    this.specialization,
+    this.hiredOn,
+    required this.status,
+    this.monthlySalary,
+    this.qrSecret,
+    this.fingerprintId,
+    required this.cardVersion,
+    this.cardExpiresOn,
+    this.deletedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['employee_no'] = Variable<String>(employeeNo);
+    map['full_name'] = Variable<String>(fullName);
+    if (!nullToAbsent || fatherName != null) {
+      map['father_name'] = Variable<String>(fatherName);
+    }
+    map['gender'] = Variable<String>(gender);
+    if (!nullToAbsent || phone != null) {
+      map['phone'] = Variable<String>(phone);
+    }
+    if (!nullToAbsent || email != null) {
+      map['email'] = Variable<String>(email);
+    }
+    if (!nullToAbsent || address != null) {
+      map['address'] = Variable<String>(address);
+    }
+    if (!nullToAbsent || photoPath != null) {
+      map['photo_path'] = Variable<String>(photoPath);
+    }
+    if (!nullToAbsent || qualification != null) {
+      map['qualification'] = Variable<String>(qualification);
+    }
+    if (!nullToAbsent || specialization != null) {
+      map['specialization'] = Variable<String>(specialization);
+    }
+    if (!nullToAbsent || hiredOn != null) {
+      map['hired_on'] = Variable<DateTime>(hiredOn);
+    }
+    map['status'] = Variable<String>(status);
+    if (!nullToAbsent || monthlySalary != null) {
+      map['monthly_salary'] = Variable<int>(monthlySalary);
+    }
+    if (!nullToAbsent || qrSecret != null) {
+      map['qr_secret'] = Variable<String>(qrSecret);
+    }
+    if (!nullToAbsent || fingerprintId != null) {
+      map['fingerprint_id'] = Variable<String>(fingerprintId);
+    }
+    map['card_version'] = Variable<int>(cardVersion);
+    if (!nullToAbsent || cardExpiresOn != null) {
+      map['card_expires_on'] = Variable<DateTime>(cardExpiresOn);
+    }
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    return map;
+  }
+
+  TeachersCompanion toCompanion(bool nullToAbsent) {
+    return TeachersCompanion(
+      id: Value(id),
+      employeeNo: Value(employeeNo),
+      fullName: Value(fullName),
+      fatherName: fatherName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(fatherName),
+      gender: Value(gender),
+      phone: phone == null && nullToAbsent
+          ? const Value.absent()
+          : Value(phone),
+      email: email == null && nullToAbsent
+          ? const Value.absent()
+          : Value(email),
+      address: address == null && nullToAbsent
+          ? const Value.absent()
+          : Value(address),
+      photoPath: photoPath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(photoPath),
+      qualification: qualification == null && nullToAbsent
+          ? const Value.absent()
+          : Value(qualification),
+      specialization: specialization == null && nullToAbsent
+          ? const Value.absent()
+          : Value(specialization),
+      hiredOn: hiredOn == null && nullToAbsent
+          ? const Value.absent()
+          : Value(hiredOn),
+      status: Value(status),
+      monthlySalary: monthlySalary == null && nullToAbsent
+          ? const Value.absent()
+          : Value(monthlySalary),
+      qrSecret: qrSecret == null && nullToAbsent
+          ? const Value.absent()
+          : Value(qrSecret),
+      fingerprintId: fingerprintId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(fingerprintId),
+      cardVersion: Value(cardVersion),
+      cardExpiresOn: cardExpiresOn == null && nullToAbsent
+          ? const Value.absent()
+          : Value(cardExpiresOn),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+    );
+  }
+
+  factory Teacher.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Teacher(
+      id: serializer.fromJson<int>(json['id']),
+      employeeNo: serializer.fromJson<String>(json['employeeNo']),
+      fullName: serializer.fromJson<String>(json['fullName']),
+      fatherName: serializer.fromJson<String?>(json['fatherName']),
+      gender: serializer.fromJson<String>(json['gender']),
+      phone: serializer.fromJson<String?>(json['phone']),
+      email: serializer.fromJson<String?>(json['email']),
+      address: serializer.fromJson<String?>(json['address']),
+      photoPath: serializer.fromJson<String?>(json['photoPath']),
+      qualification: serializer.fromJson<String?>(json['qualification']),
+      specialization: serializer.fromJson<String?>(json['specialization']),
+      hiredOn: serializer.fromJson<DateTime?>(json['hiredOn']),
+      status: serializer.fromJson<String>(json['status']),
+      monthlySalary: serializer.fromJson<int?>(json['monthlySalary']),
+      qrSecret: serializer.fromJson<String?>(json['qrSecret']),
+      fingerprintId: serializer.fromJson<String?>(json['fingerprintId']),
+      cardVersion: serializer.fromJson<int>(json['cardVersion']),
+      cardExpiresOn: serializer.fromJson<DateTime?>(json['cardExpiresOn']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'employeeNo': serializer.toJson<String>(employeeNo),
+      'fullName': serializer.toJson<String>(fullName),
+      'fatherName': serializer.toJson<String?>(fatherName),
+      'gender': serializer.toJson<String>(gender),
+      'phone': serializer.toJson<String?>(phone),
+      'email': serializer.toJson<String?>(email),
+      'address': serializer.toJson<String?>(address),
+      'photoPath': serializer.toJson<String?>(photoPath),
+      'qualification': serializer.toJson<String?>(qualification),
+      'specialization': serializer.toJson<String?>(specialization),
+      'hiredOn': serializer.toJson<DateTime?>(hiredOn),
+      'status': serializer.toJson<String>(status),
+      'monthlySalary': serializer.toJson<int?>(monthlySalary),
+      'qrSecret': serializer.toJson<String?>(qrSecret),
+      'fingerprintId': serializer.toJson<String?>(fingerprintId),
+      'cardVersion': serializer.toJson<int>(cardVersion),
+      'cardExpiresOn': serializer.toJson<DateTime?>(cardExpiresOn),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+    };
+  }
+
+  Teacher copyWith({
+    int? id,
+    String? employeeNo,
+    String? fullName,
+    Value<String?> fatherName = const Value.absent(),
+    String? gender,
+    Value<String?> phone = const Value.absent(),
+    Value<String?> email = const Value.absent(),
+    Value<String?> address = const Value.absent(),
+    Value<String?> photoPath = const Value.absent(),
+    Value<String?> qualification = const Value.absent(),
+    Value<String?> specialization = const Value.absent(),
+    Value<DateTime?> hiredOn = const Value.absent(),
+    String? status,
+    Value<int?> monthlySalary = const Value.absent(),
+    Value<String?> qrSecret = const Value.absent(),
+    Value<String?> fingerprintId = const Value.absent(),
+    int? cardVersion,
+    Value<DateTime?> cardExpiresOn = const Value.absent(),
+    Value<DateTime?> deletedAt = const Value.absent(),
+  }) => Teacher(
+    id: id ?? this.id,
+    employeeNo: employeeNo ?? this.employeeNo,
+    fullName: fullName ?? this.fullName,
+    fatherName: fatherName.present ? fatherName.value : this.fatherName,
+    gender: gender ?? this.gender,
+    phone: phone.present ? phone.value : this.phone,
+    email: email.present ? email.value : this.email,
+    address: address.present ? address.value : this.address,
+    photoPath: photoPath.present ? photoPath.value : this.photoPath,
+    qualification: qualification.present
+        ? qualification.value
+        : this.qualification,
+    specialization: specialization.present
+        ? specialization.value
+        : this.specialization,
+    hiredOn: hiredOn.present ? hiredOn.value : this.hiredOn,
+    status: status ?? this.status,
+    monthlySalary: monthlySalary.present
+        ? monthlySalary.value
+        : this.monthlySalary,
+    qrSecret: qrSecret.present ? qrSecret.value : this.qrSecret,
+    fingerprintId: fingerprintId.present
+        ? fingerprintId.value
+        : this.fingerprintId,
+    cardVersion: cardVersion ?? this.cardVersion,
+    cardExpiresOn: cardExpiresOn.present
+        ? cardExpiresOn.value
+        : this.cardExpiresOn,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+  );
+  Teacher copyWithCompanion(TeachersCompanion data) {
+    return Teacher(
+      id: data.id.present ? data.id.value : this.id,
+      employeeNo: data.employeeNo.present
+          ? data.employeeNo.value
+          : this.employeeNo,
+      fullName: data.fullName.present ? data.fullName.value : this.fullName,
+      fatherName: data.fatherName.present
+          ? data.fatherName.value
+          : this.fatherName,
+      gender: data.gender.present ? data.gender.value : this.gender,
+      phone: data.phone.present ? data.phone.value : this.phone,
+      email: data.email.present ? data.email.value : this.email,
+      address: data.address.present ? data.address.value : this.address,
+      photoPath: data.photoPath.present ? data.photoPath.value : this.photoPath,
+      qualification: data.qualification.present
+          ? data.qualification.value
+          : this.qualification,
+      specialization: data.specialization.present
+          ? data.specialization.value
+          : this.specialization,
+      hiredOn: data.hiredOn.present ? data.hiredOn.value : this.hiredOn,
+      status: data.status.present ? data.status.value : this.status,
+      monthlySalary: data.monthlySalary.present
+          ? data.monthlySalary.value
+          : this.monthlySalary,
+      qrSecret: data.qrSecret.present ? data.qrSecret.value : this.qrSecret,
+      fingerprintId: data.fingerprintId.present
+          ? data.fingerprintId.value
+          : this.fingerprintId,
+      cardVersion: data.cardVersion.present
+          ? data.cardVersion.value
+          : this.cardVersion,
+      cardExpiresOn: data.cardExpiresOn.present
+          ? data.cardExpiresOn.value
+          : this.cardExpiresOn,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Teacher(')
+          ..write('id: $id, ')
+          ..write('employeeNo: $employeeNo, ')
+          ..write('fullName: $fullName, ')
+          ..write('fatherName: $fatherName, ')
+          ..write('gender: $gender, ')
+          ..write('phone: $phone, ')
+          ..write('email: $email, ')
+          ..write('address: $address, ')
+          ..write('photoPath: $photoPath, ')
+          ..write('qualification: $qualification, ')
+          ..write('specialization: $specialization, ')
+          ..write('hiredOn: $hiredOn, ')
+          ..write('status: $status, ')
+          ..write('monthlySalary: $monthlySalary, ')
+          ..write('qrSecret: $qrSecret, ')
+          ..write('fingerprintId: $fingerprintId, ')
+          ..write('cardVersion: $cardVersion, ')
+          ..write('cardExpiresOn: $cardExpiresOn, ')
+          ..write('deletedAt: $deletedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    employeeNo,
+    fullName,
+    fatherName,
+    gender,
+    phone,
+    email,
+    address,
+    photoPath,
+    qualification,
+    specialization,
+    hiredOn,
+    status,
+    monthlySalary,
+    qrSecret,
+    fingerprintId,
+    cardVersion,
+    cardExpiresOn,
+    deletedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Teacher &&
+          other.id == this.id &&
+          other.employeeNo == this.employeeNo &&
+          other.fullName == this.fullName &&
+          other.fatherName == this.fatherName &&
+          other.gender == this.gender &&
+          other.phone == this.phone &&
+          other.email == this.email &&
+          other.address == this.address &&
+          other.photoPath == this.photoPath &&
+          other.qualification == this.qualification &&
+          other.specialization == this.specialization &&
+          other.hiredOn == this.hiredOn &&
+          other.status == this.status &&
+          other.monthlySalary == this.monthlySalary &&
+          other.qrSecret == this.qrSecret &&
+          other.fingerprintId == this.fingerprintId &&
+          other.cardVersion == this.cardVersion &&
+          other.cardExpiresOn == this.cardExpiresOn &&
+          other.deletedAt == this.deletedAt);
+}
+
+class TeachersCompanion extends UpdateCompanion<Teacher> {
+  final Value<int> id;
+  final Value<String> employeeNo;
+  final Value<String> fullName;
+  final Value<String?> fatherName;
+  final Value<String> gender;
+  final Value<String?> phone;
+  final Value<String?> email;
+  final Value<String?> address;
+  final Value<String?> photoPath;
+  final Value<String?> qualification;
+  final Value<String?> specialization;
+  final Value<DateTime?> hiredOn;
+  final Value<String> status;
+  final Value<int?> monthlySalary;
+  final Value<String?> qrSecret;
+  final Value<String?> fingerprintId;
+  final Value<int> cardVersion;
+  final Value<DateTime?> cardExpiresOn;
+  final Value<DateTime?> deletedAt;
+  const TeachersCompanion({
+    this.id = const Value.absent(),
+    this.employeeNo = const Value.absent(),
+    this.fullName = const Value.absent(),
+    this.fatherName = const Value.absent(),
+    this.gender = const Value.absent(),
+    this.phone = const Value.absent(),
+    this.email = const Value.absent(),
+    this.address = const Value.absent(),
+    this.photoPath = const Value.absent(),
+    this.qualification = const Value.absent(),
+    this.specialization = const Value.absent(),
+    this.hiredOn = const Value.absent(),
+    this.status = const Value.absent(),
+    this.monthlySalary = const Value.absent(),
+    this.qrSecret = const Value.absent(),
+    this.fingerprintId = const Value.absent(),
+    this.cardVersion = const Value.absent(),
+    this.cardExpiresOn = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+  });
+  TeachersCompanion.insert({
+    this.id = const Value.absent(),
+    required String employeeNo,
+    required String fullName,
+    this.fatherName = const Value.absent(),
+    required String gender,
+    this.phone = const Value.absent(),
+    this.email = const Value.absent(),
+    this.address = const Value.absent(),
+    this.photoPath = const Value.absent(),
+    this.qualification = const Value.absent(),
+    this.specialization = const Value.absent(),
+    this.hiredOn = const Value.absent(),
+    this.status = const Value.absent(),
+    this.monthlySalary = const Value.absent(),
+    this.qrSecret = const Value.absent(),
+    this.fingerprintId = const Value.absent(),
+    this.cardVersion = const Value.absent(),
+    this.cardExpiresOn = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+  }) : employeeNo = Value(employeeNo),
+       fullName = Value(fullName),
+       gender = Value(gender);
+  static Insertable<Teacher> custom({
+    Expression<int>? id,
+    Expression<String>? employeeNo,
+    Expression<String>? fullName,
+    Expression<String>? fatherName,
+    Expression<String>? gender,
+    Expression<String>? phone,
+    Expression<String>? email,
+    Expression<String>? address,
+    Expression<String>? photoPath,
+    Expression<String>? qualification,
+    Expression<String>? specialization,
+    Expression<DateTime>? hiredOn,
+    Expression<String>? status,
+    Expression<int>? monthlySalary,
+    Expression<String>? qrSecret,
+    Expression<String>? fingerprintId,
+    Expression<int>? cardVersion,
+    Expression<DateTime>? cardExpiresOn,
+    Expression<DateTime>? deletedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (employeeNo != null) 'employee_no': employeeNo,
+      if (fullName != null) 'full_name': fullName,
+      if (fatherName != null) 'father_name': fatherName,
+      if (gender != null) 'gender': gender,
+      if (phone != null) 'phone': phone,
+      if (email != null) 'email': email,
+      if (address != null) 'address': address,
+      if (photoPath != null) 'photo_path': photoPath,
+      if (qualification != null) 'qualification': qualification,
+      if (specialization != null) 'specialization': specialization,
+      if (hiredOn != null) 'hired_on': hiredOn,
+      if (status != null) 'status': status,
+      if (monthlySalary != null) 'monthly_salary': monthlySalary,
+      if (qrSecret != null) 'qr_secret': qrSecret,
+      if (fingerprintId != null) 'fingerprint_id': fingerprintId,
+      if (cardVersion != null) 'card_version': cardVersion,
+      if (cardExpiresOn != null) 'card_expires_on': cardExpiresOn,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+    });
+  }
+
+  TeachersCompanion copyWith({
+    Value<int>? id,
+    Value<String>? employeeNo,
+    Value<String>? fullName,
+    Value<String?>? fatherName,
+    Value<String>? gender,
+    Value<String?>? phone,
+    Value<String?>? email,
+    Value<String?>? address,
+    Value<String?>? photoPath,
+    Value<String?>? qualification,
+    Value<String?>? specialization,
+    Value<DateTime?>? hiredOn,
+    Value<String>? status,
+    Value<int?>? monthlySalary,
+    Value<String?>? qrSecret,
+    Value<String?>? fingerprintId,
+    Value<int>? cardVersion,
+    Value<DateTime?>? cardExpiresOn,
+    Value<DateTime?>? deletedAt,
+  }) {
+    return TeachersCompanion(
+      id: id ?? this.id,
+      employeeNo: employeeNo ?? this.employeeNo,
+      fullName: fullName ?? this.fullName,
+      fatherName: fatherName ?? this.fatherName,
+      gender: gender ?? this.gender,
+      phone: phone ?? this.phone,
+      email: email ?? this.email,
+      address: address ?? this.address,
+      photoPath: photoPath ?? this.photoPath,
+      qualification: qualification ?? this.qualification,
+      specialization: specialization ?? this.specialization,
+      hiredOn: hiredOn ?? this.hiredOn,
+      status: status ?? this.status,
+      monthlySalary: monthlySalary ?? this.monthlySalary,
+      qrSecret: qrSecret ?? this.qrSecret,
+      fingerprintId: fingerprintId ?? this.fingerprintId,
+      cardVersion: cardVersion ?? this.cardVersion,
+      cardExpiresOn: cardExpiresOn ?? this.cardExpiresOn,
+      deletedAt: deletedAt ?? this.deletedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (employeeNo.present) {
+      map['employee_no'] = Variable<String>(employeeNo.value);
+    }
+    if (fullName.present) {
+      map['full_name'] = Variable<String>(fullName.value);
+    }
+    if (fatherName.present) {
+      map['father_name'] = Variable<String>(fatherName.value);
+    }
+    if (gender.present) {
+      map['gender'] = Variable<String>(gender.value);
+    }
+    if (phone.present) {
+      map['phone'] = Variable<String>(phone.value);
+    }
+    if (email.present) {
+      map['email'] = Variable<String>(email.value);
+    }
+    if (address.present) {
+      map['address'] = Variable<String>(address.value);
+    }
+    if (photoPath.present) {
+      map['photo_path'] = Variable<String>(photoPath.value);
+    }
+    if (qualification.present) {
+      map['qualification'] = Variable<String>(qualification.value);
+    }
+    if (specialization.present) {
+      map['specialization'] = Variable<String>(specialization.value);
+    }
+    if (hiredOn.present) {
+      map['hired_on'] = Variable<DateTime>(hiredOn.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (monthlySalary.present) {
+      map['monthly_salary'] = Variable<int>(monthlySalary.value);
+    }
+    if (qrSecret.present) {
+      map['qr_secret'] = Variable<String>(qrSecret.value);
+    }
+    if (fingerprintId.present) {
+      map['fingerprint_id'] = Variable<String>(fingerprintId.value);
+    }
+    if (cardVersion.present) {
+      map['card_version'] = Variable<int>(cardVersion.value);
+    }
+    if (cardExpiresOn.present) {
+      map['card_expires_on'] = Variable<DateTime>(cardExpiresOn.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TeachersCompanion(')
+          ..write('id: $id, ')
+          ..write('employeeNo: $employeeNo, ')
+          ..write('fullName: $fullName, ')
+          ..write('fatherName: $fatherName, ')
+          ..write('gender: $gender, ')
+          ..write('phone: $phone, ')
+          ..write('email: $email, ')
+          ..write('address: $address, ')
+          ..write('photoPath: $photoPath, ')
+          ..write('qualification: $qualification, ')
+          ..write('specialization: $specialization, ')
+          ..write('hiredOn: $hiredOn, ')
+          ..write('status: $status, ')
+          ..write('monthlySalary: $monthlySalary, ')
+          ..write('qrSecret: $qrSecret, ')
+          ..write('fingerprintId: $fingerprintId, ')
+          ..write('cardVersion: $cardVersion, ')
+          ..write('cardExpiresOn: $cardExpiresOn, ')
+          ..write('deletedAt: $deletedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $SubjectsTable extends Subjects with TableInfo<$SubjectsTable, Subject> {
   @override
   final GeneratedDatabase attachedDatabase;
@@ -3321,6 +4412,29 @@ class $SubjectsTable extends Subjects with TableInfo<$SubjectsTable, Subject> {
     requiredDuringInsert: false,
     defaultValue: const Constant(40),
   );
+  static const VerificationMeta _teacherIdMeta = const VerificationMeta(
+    'teacherId',
+  );
+  @override
+  late final GeneratedColumn<int> teacherId = GeneratedColumn<int>(
+    'teacher_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES teachers (id)',
+    ),
+  );
+  static const VerificationMeta _pagesMeta = const VerificationMeta('pages');
+  @override
+  late final GeneratedColumn<int> pages = GeneratedColumn<int>(
+    'pages',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _isReligiousMeta = const VerificationMeta(
     'isReligious',
   );
@@ -3358,6 +4472,8 @@ class $SubjectsTable extends Subjects with TableInfo<$SubjectsTable, Subject> {
     difficulty,
     fullMark,
     passMark,
+    teacherId,
+    pages,
     isReligious,
     sortOrder,
   ];
@@ -3420,6 +4536,18 @@ class $SubjectsTable extends Subjects with TableInfo<$SubjectsTable, Subject> {
         passMark.isAcceptableOrUnknown(data['pass_mark']!, _passMarkMeta),
       );
     }
+    if (data.containsKey('teacher_id')) {
+      context.handle(
+        _teacherIdMeta,
+        teacherId.isAcceptableOrUnknown(data['teacher_id']!, _teacherIdMeta),
+      );
+    }
+    if (data.containsKey('pages')) {
+      context.handle(
+        _pagesMeta,
+        pages.isAcceptableOrUnknown(data['pages']!, _pagesMeta),
+      );
+    }
     if (data.containsKey('is_religious')) {
       context.handle(
         _isReligiousMeta,
@@ -3476,6 +4604,14 @@ class $SubjectsTable extends Subjects with TableInfo<$SubjectsTable, Subject> {
         DriftSqlType.int,
         data['${effectivePrefix}pass_mark'],
       )!,
+      teacherId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}teacher_id'],
+      ),
+      pages: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}pages'],
+      ),
       isReligious: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_religious'],
@@ -3511,6 +4647,16 @@ class Subject extends DataClass implements Insertable<Subject> {
   final int fullMark;
   final int passMark;
 
+  /// **هغه استاد چې دا کتاب تدریسوي** — اختیاري.
+  ///
+  /// دا د مهالویش له ټاکنې بېل دی: هلته یو ساعت یو استاد لري، دلته
+  /// **کتاب** یو استاد لري. یوه مدرسه معمولاً وايي «قدوري د مولوي
+  /// صاحب دی» — نه «د دوشنبې دریم ساعت».
+  final int? teacherId;
+
+  /// د کتاب د پاڼو شمېر — اختیاري، د نصاب د وېش لپاره.
+  final int? pages;
+
   /// دیني مضمون دی؟ — د مدرسې د رپوټونو لپاره.
   final bool isReligious;
   final int sortOrder;
@@ -3523,6 +4669,8 @@ class Subject extends DataClass implements Insertable<Subject> {
     required this.difficulty,
     required this.fullMark,
     required this.passMark,
+    this.teacherId,
+    this.pages,
     required this.isReligious,
     required this.sortOrder,
   });
@@ -3543,6 +4691,12 @@ class Subject extends DataClass implements Insertable<Subject> {
     map['difficulty'] = Variable<String>(difficulty);
     map['full_mark'] = Variable<int>(fullMark);
     map['pass_mark'] = Variable<int>(passMark);
+    if (!nullToAbsent || teacherId != null) {
+      map['teacher_id'] = Variable<int>(teacherId);
+    }
+    if (!nullToAbsent || pages != null) {
+      map['pages'] = Variable<int>(pages);
+    }
     map['is_religious'] = Variable<bool>(isReligious);
     map['sort_order'] = Variable<int>(sortOrder);
     return map;
@@ -3560,6 +4714,12 @@ class Subject extends DataClass implements Insertable<Subject> {
       difficulty: Value(difficulty),
       fullMark: Value(fullMark),
       passMark: Value(passMark),
+      teacherId: teacherId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(teacherId),
+      pages: pages == null && nullToAbsent
+          ? const Value.absent()
+          : Value(pages),
       isReligious: Value(isReligious),
       sortOrder: Value(sortOrder),
     );
@@ -3579,6 +4739,8 @@ class Subject extends DataClass implements Insertable<Subject> {
       difficulty: serializer.fromJson<String>(json['difficulty']),
       fullMark: serializer.fromJson<int>(json['fullMark']),
       passMark: serializer.fromJson<int>(json['passMark']),
+      teacherId: serializer.fromJson<int?>(json['teacherId']),
+      pages: serializer.fromJson<int?>(json['pages']),
       isReligious: serializer.fromJson<bool>(json['isReligious']),
       sortOrder: serializer.fromJson<int>(json['sortOrder']),
     );
@@ -3595,6 +4757,8 @@ class Subject extends DataClass implements Insertable<Subject> {
       'difficulty': serializer.toJson<String>(difficulty),
       'fullMark': serializer.toJson<int>(fullMark),
       'passMark': serializer.toJson<int>(passMark),
+      'teacherId': serializer.toJson<int?>(teacherId),
+      'pages': serializer.toJson<int?>(pages),
       'isReligious': serializer.toJson<bool>(isReligious),
       'sortOrder': serializer.toJson<int>(sortOrder),
     };
@@ -3609,6 +4773,8 @@ class Subject extends DataClass implements Insertable<Subject> {
     String? difficulty,
     int? fullMark,
     int? passMark,
+    Value<int?> teacherId = const Value.absent(),
+    Value<int?> pages = const Value.absent(),
     bool? isReligious,
     int? sortOrder,
   }) => Subject(
@@ -3620,6 +4786,8 @@ class Subject extends DataClass implements Insertable<Subject> {
     difficulty: difficulty ?? this.difficulty,
     fullMark: fullMark ?? this.fullMark,
     passMark: passMark ?? this.passMark,
+    teacherId: teacherId.present ? teacherId.value : this.teacherId,
+    pages: pages.present ? pages.value : this.pages,
     isReligious: isReligious ?? this.isReligious,
     sortOrder: sortOrder ?? this.sortOrder,
   );
@@ -3635,6 +4803,8 @@ class Subject extends DataClass implements Insertable<Subject> {
           : this.difficulty,
       fullMark: data.fullMark.present ? data.fullMark.value : this.fullMark,
       passMark: data.passMark.present ? data.passMark.value : this.passMark,
+      teacherId: data.teacherId.present ? data.teacherId.value : this.teacherId,
+      pages: data.pages.present ? data.pages.value : this.pages,
       isReligious: data.isReligious.present
           ? data.isReligious.value
           : this.isReligious,
@@ -3653,6 +4823,8 @@ class Subject extends DataClass implements Insertable<Subject> {
           ..write('difficulty: $difficulty, ')
           ..write('fullMark: $fullMark, ')
           ..write('passMark: $passMark, ')
+          ..write('teacherId: $teacherId, ')
+          ..write('pages: $pages, ')
           ..write('isReligious: $isReligious, ')
           ..write('sortOrder: $sortOrder')
           ..write(')'))
@@ -3669,6 +4841,8 @@ class Subject extends DataClass implements Insertable<Subject> {
     difficulty,
     fullMark,
     passMark,
+    teacherId,
+    pages,
     isReligious,
     sortOrder,
   );
@@ -3684,6 +4858,8 @@ class Subject extends DataClass implements Insertable<Subject> {
           other.difficulty == this.difficulty &&
           other.fullMark == this.fullMark &&
           other.passMark == this.passMark &&
+          other.teacherId == this.teacherId &&
+          other.pages == this.pages &&
           other.isReligious == this.isReligious &&
           other.sortOrder == this.sortOrder);
 }
@@ -3697,6 +4873,8 @@ class SubjectsCompanion extends UpdateCompanion<Subject> {
   final Value<String> difficulty;
   final Value<int> fullMark;
   final Value<int> passMark;
+  final Value<int?> teacherId;
+  final Value<int?> pages;
   final Value<bool> isReligious;
   final Value<int> sortOrder;
   const SubjectsCompanion({
@@ -3708,6 +4886,8 @@ class SubjectsCompanion extends UpdateCompanion<Subject> {
     this.difficulty = const Value.absent(),
     this.fullMark = const Value.absent(),
     this.passMark = const Value.absent(),
+    this.teacherId = const Value.absent(),
+    this.pages = const Value.absent(),
     this.isReligious = const Value.absent(),
     this.sortOrder = const Value.absent(),
   });
@@ -3720,6 +4900,8 @@ class SubjectsCompanion extends UpdateCompanion<Subject> {
     this.difficulty = const Value.absent(),
     this.fullMark = const Value.absent(),
     this.passMark = const Value.absent(),
+    this.teacherId = const Value.absent(),
+    this.pages = const Value.absent(),
     this.isReligious = const Value.absent(),
     this.sortOrder = const Value.absent(),
   }) : name = Value(name);
@@ -3732,6 +4914,8 @@ class SubjectsCompanion extends UpdateCompanion<Subject> {
     Expression<String>? difficulty,
     Expression<int>? fullMark,
     Expression<int>? passMark,
+    Expression<int>? teacherId,
+    Expression<int>? pages,
     Expression<bool>? isReligious,
     Expression<int>? sortOrder,
   }) {
@@ -3744,6 +4928,8 @@ class SubjectsCompanion extends UpdateCompanion<Subject> {
       if (difficulty != null) 'difficulty': difficulty,
       if (fullMark != null) 'full_mark': fullMark,
       if (passMark != null) 'pass_mark': passMark,
+      if (teacherId != null) 'teacher_id': teacherId,
+      if (pages != null) 'pages': pages,
       if (isReligious != null) 'is_religious': isReligious,
       if (sortOrder != null) 'sort_order': sortOrder,
     });
@@ -3758,6 +4944,8 @@ class SubjectsCompanion extends UpdateCompanion<Subject> {
     Value<String>? difficulty,
     Value<int>? fullMark,
     Value<int>? passMark,
+    Value<int?>? teacherId,
+    Value<int?>? pages,
     Value<bool>? isReligious,
     Value<int>? sortOrder,
   }) {
@@ -3770,6 +4958,8 @@ class SubjectsCompanion extends UpdateCompanion<Subject> {
       difficulty: difficulty ?? this.difficulty,
       fullMark: fullMark ?? this.fullMark,
       passMark: passMark ?? this.passMark,
+      teacherId: teacherId ?? this.teacherId,
+      pages: pages ?? this.pages,
       isReligious: isReligious ?? this.isReligious,
       sortOrder: sortOrder ?? this.sortOrder,
     );
@@ -3802,6 +4992,12 @@ class SubjectsCompanion extends UpdateCompanion<Subject> {
     if (passMark.present) {
       map['pass_mark'] = Variable<int>(passMark.value);
     }
+    if (teacherId.present) {
+      map['teacher_id'] = Variable<int>(teacherId.value);
+    }
+    if (pages.present) {
+      map['pages'] = Variable<int>(pages.value);
+    }
     if (isReligious.present) {
       map['is_religious'] = Variable<bool>(isReligious.value);
     }
@@ -3822,6 +5018,8 @@ class SubjectsCompanion extends UpdateCompanion<Subject> {
           ..write('difficulty: $difficulty, ')
           ..write('fullMark: $fullMark, ')
           ..write('passMark: $passMark, ')
+          ..write('teacherId: $teacherId, ')
+          ..write('pages: $pages, ')
           ..write('isReligious: $isReligious, ')
           ..write('sortOrder: $sortOrder')
           ..write(')'))
@@ -6306,1097 +7504,6 @@ class StudentGuardiansCompanion extends UpdateCompanion<StudentGuardian> {
           ..write('guardianId: $guardianId, ')
           ..write('isPrimary: $isPrimary, ')
           ..write('rowid: $rowid')
-          ..write(')'))
-        .toString();
-  }
-}
-
-class $TeachersTable extends Teachers with TableInfo<$TeachersTable, Teacher> {
-  @override
-  final GeneratedDatabase attachedDatabase;
-  final String? _alias;
-  $TeachersTable(this.attachedDatabase, [this._alias]);
-  static const VerificationMeta _idMeta = const VerificationMeta('id');
-  @override
-  late final GeneratedColumn<int> id = GeneratedColumn<int>(
-    'id',
-    aliasedName,
-    false,
-    hasAutoIncrement: true,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'PRIMARY KEY AUTOINCREMENT',
-    ),
-  );
-  static const VerificationMeta _employeeNoMeta = const VerificationMeta(
-    'employeeNo',
-  );
-  @override
-  late final GeneratedColumn<String> employeeNo = GeneratedColumn<String>(
-    'employee_no',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _fullNameMeta = const VerificationMeta(
-    'fullName',
-  );
-  @override
-  late final GeneratedColumn<String> fullName = GeneratedColumn<String>(
-    'full_name',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _fatherNameMeta = const VerificationMeta(
-    'fatherName',
-  );
-  @override
-  late final GeneratedColumn<String> fatherName = GeneratedColumn<String>(
-    'father_name',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _genderMeta = const VerificationMeta('gender');
-  @override
-  late final GeneratedColumn<String> gender = GeneratedColumn<String>(
-    'gender',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _phoneMeta = const VerificationMeta('phone');
-  @override
-  late final GeneratedColumn<String> phone = GeneratedColumn<String>(
-    'phone',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _emailMeta = const VerificationMeta('email');
-  @override
-  late final GeneratedColumn<String> email = GeneratedColumn<String>(
-    'email',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _addressMeta = const VerificationMeta(
-    'address',
-  );
-  @override
-  late final GeneratedColumn<String> address = GeneratedColumn<String>(
-    'address',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _photoPathMeta = const VerificationMeta(
-    'photoPath',
-  );
-  @override
-  late final GeneratedColumn<String> photoPath = GeneratedColumn<String>(
-    'photo_path',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _qualificationMeta = const VerificationMeta(
-    'qualification',
-  );
-  @override
-  late final GeneratedColumn<String> qualification = GeneratedColumn<String>(
-    'qualification',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _specializationMeta = const VerificationMeta(
-    'specialization',
-  );
-  @override
-  late final GeneratedColumn<String> specialization = GeneratedColumn<String>(
-    'specialization',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _hiredOnMeta = const VerificationMeta(
-    'hiredOn',
-  );
-  @override
-  late final GeneratedColumn<DateTime> hiredOn = GeneratedColumn<DateTime>(
-    'hired_on',
-    aliasedName,
-    true,
-    type: DriftSqlType.dateTime,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _statusMeta = const VerificationMeta('status');
-  @override
-  late final GeneratedColumn<String> status = GeneratedColumn<String>(
-    'status',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-    defaultValue: const Constant('active'),
-  );
-  static const VerificationMeta _monthlySalaryMeta = const VerificationMeta(
-    'monthlySalary',
-  );
-  @override
-  late final GeneratedColumn<int> monthlySalary = GeneratedColumn<int>(
-    'monthly_salary',
-    aliasedName,
-    true,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _qrSecretMeta = const VerificationMeta(
-    'qrSecret',
-  );
-  @override
-  late final GeneratedColumn<String> qrSecret = GeneratedColumn<String>(
-    'qr_secret',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _fingerprintIdMeta = const VerificationMeta(
-    'fingerprintId',
-  );
-  @override
-  late final GeneratedColumn<String> fingerprintId = GeneratedColumn<String>(
-    'fingerprint_id',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _cardVersionMeta = const VerificationMeta(
-    'cardVersion',
-  );
-  @override
-  late final GeneratedColumn<int> cardVersion = GeneratedColumn<int>(
-    'card_version',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-    defaultValue: const Constant(1),
-  );
-  static const VerificationMeta _cardExpiresOnMeta = const VerificationMeta(
-    'cardExpiresOn',
-  );
-  @override
-  late final GeneratedColumn<DateTime> cardExpiresOn =
-      GeneratedColumn<DateTime>(
-        'card_expires_on',
-        aliasedName,
-        true,
-        type: DriftSqlType.dateTime,
-        requiredDuringInsert: false,
-      );
-  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
-    'deletedAt',
-  );
-  @override
-  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
-    'deleted_at',
-    aliasedName,
-    true,
-    type: DriftSqlType.dateTime,
-    requiredDuringInsert: false,
-  );
-  @override
-  List<GeneratedColumn> get $columns => [
-    id,
-    employeeNo,
-    fullName,
-    fatherName,
-    gender,
-    phone,
-    email,
-    address,
-    photoPath,
-    qualification,
-    specialization,
-    hiredOn,
-    status,
-    monthlySalary,
-    qrSecret,
-    fingerprintId,
-    cardVersion,
-    cardExpiresOn,
-    deletedAt,
-  ];
-  @override
-  String get aliasedName => _alias ?? actualTableName;
-  @override
-  String get actualTableName => $name;
-  static const String $name = 'teachers';
-  @override
-  VerificationContext validateIntegrity(
-    Insertable<Teacher> instance, {
-    bool isInserting = false,
-  }) {
-    final context = VerificationContext();
-    final data = instance.toColumns(true);
-    if (data.containsKey('id')) {
-      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
-    }
-    if (data.containsKey('employee_no')) {
-      context.handle(
-        _employeeNoMeta,
-        employeeNo.isAcceptableOrUnknown(data['employee_no']!, _employeeNoMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_employeeNoMeta);
-    }
-    if (data.containsKey('full_name')) {
-      context.handle(
-        _fullNameMeta,
-        fullName.isAcceptableOrUnknown(data['full_name']!, _fullNameMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_fullNameMeta);
-    }
-    if (data.containsKey('father_name')) {
-      context.handle(
-        _fatherNameMeta,
-        fatherName.isAcceptableOrUnknown(data['father_name']!, _fatherNameMeta),
-      );
-    }
-    if (data.containsKey('gender')) {
-      context.handle(
-        _genderMeta,
-        gender.isAcceptableOrUnknown(data['gender']!, _genderMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_genderMeta);
-    }
-    if (data.containsKey('phone')) {
-      context.handle(
-        _phoneMeta,
-        phone.isAcceptableOrUnknown(data['phone']!, _phoneMeta),
-      );
-    }
-    if (data.containsKey('email')) {
-      context.handle(
-        _emailMeta,
-        email.isAcceptableOrUnknown(data['email']!, _emailMeta),
-      );
-    }
-    if (data.containsKey('address')) {
-      context.handle(
-        _addressMeta,
-        address.isAcceptableOrUnknown(data['address']!, _addressMeta),
-      );
-    }
-    if (data.containsKey('photo_path')) {
-      context.handle(
-        _photoPathMeta,
-        photoPath.isAcceptableOrUnknown(data['photo_path']!, _photoPathMeta),
-      );
-    }
-    if (data.containsKey('qualification')) {
-      context.handle(
-        _qualificationMeta,
-        qualification.isAcceptableOrUnknown(
-          data['qualification']!,
-          _qualificationMeta,
-        ),
-      );
-    }
-    if (data.containsKey('specialization')) {
-      context.handle(
-        _specializationMeta,
-        specialization.isAcceptableOrUnknown(
-          data['specialization']!,
-          _specializationMeta,
-        ),
-      );
-    }
-    if (data.containsKey('hired_on')) {
-      context.handle(
-        _hiredOnMeta,
-        hiredOn.isAcceptableOrUnknown(data['hired_on']!, _hiredOnMeta),
-      );
-    }
-    if (data.containsKey('status')) {
-      context.handle(
-        _statusMeta,
-        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
-      );
-    }
-    if (data.containsKey('monthly_salary')) {
-      context.handle(
-        _monthlySalaryMeta,
-        monthlySalary.isAcceptableOrUnknown(
-          data['monthly_salary']!,
-          _monthlySalaryMeta,
-        ),
-      );
-    }
-    if (data.containsKey('qr_secret')) {
-      context.handle(
-        _qrSecretMeta,
-        qrSecret.isAcceptableOrUnknown(data['qr_secret']!, _qrSecretMeta),
-      );
-    }
-    if (data.containsKey('fingerprint_id')) {
-      context.handle(
-        _fingerprintIdMeta,
-        fingerprintId.isAcceptableOrUnknown(
-          data['fingerprint_id']!,
-          _fingerprintIdMeta,
-        ),
-      );
-    }
-    if (data.containsKey('card_version')) {
-      context.handle(
-        _cardVersionMeta,
-        cardVersion.isAcceptableOrUnknown(
-          data['card_version']!,
-          _cardVersionMeta,
-        ),
-      );
-    }
-    if (data.containsKey('card_expires_on')) {
-      context.handle(
-        _cardExpiresOnMeta,
-        cardExpiresOn.isAcceptableOrUnknown(
-          data['card_expires_on']!,
-          _cardExpiresOnMeta,
-        ),
-      );
-    }
-    if (data.containsKey('deleted_at')) {
-      context.handle(
-        _deletedAtMeta,
-        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
-      );
-    }
-    return context;
-  }
-
-  @override
-  Set<GeneratedColumn> get $primaryKey => {id};
-  @override
-  List<Set<GeneratedColumn>> get uniqueKeys => [
-    {employeeNo},
-  ];
-  @override
-  Teacher map(Map<String, dynamic> data, {String? tablePrefix}) {
-    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return Teacher(
-      id: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}id'],
-      )!,
-      employeeNo: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}employee_no'],
-      )!,
-      fullName: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}full_name'],
-      )!,
-      fatherName: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}father_name'],
-      ),
-      gender: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}gender'],
-      )!,
-      phone: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}phone'],
-      ),
-      email: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}email'],
-      ),
-      address: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}address'],
-      ),
-      photoPath: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}photo_path'],
-      ),
-      qualification: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}qualification'],
-      ),
-      specialization: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}specialization'],
-      ),
-      hiredOn: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}hired_on'],
-      ),
-      status: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}status'],
-      )!,
-      monthlySalary: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}monthly_salary'],
-      ),
-      qrSecret: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}qr_secret'],
-      ),
-      fingerprintId: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}fingerprint_id'],
-      ),
-      cardVersion: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}card_version'],
-      )!,
-      cardExpiresOn: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}card_expires_on'],
-      ),
-      deletedAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}deleted_at'],
-      ),
-    );
-  }
-
-  @override
-  $TeachersTable createAlias(String alias) {
-    return $TeachersTable(attachedDatabase, alias);
-  }
-}
-
-class Teacher extends DataClass implements Insertable<Teacher> {
-  final int id;
-  final String employeeNo;
-  final String fullName;
-  final String? fatherName;
-  final String gender;
-  final String? phone;
-  final String? email;
-  final String? address;
-  final String? photoPath;
-  final String? qualification;
-  final String? specialization;
-  final DateTime? hiredOn;
-
-  /// `active` | `on_leave` | `resigned` | `terminated`
-  final String status;
-  final int? monthlySalary;
-  final String? qrSecret;
-
-  /// د ګوتې نښه — د استادانو د حاضرۍ لپاره، اختیاري.
-  final String? fingerprintId;
-  final int cardVersion;
-
-  /// **کارت کله باطلېږي.**
-  ///
-  /// یو آی‌ډي کارت د یوه درسي کال لپاره دی. که نېټه پرې نه وه،
-  /// یو پخوانی شاګرد به تر ابده د ښوونځي دروازه پرانیستله — او
-  /// د دروازې ساتونکی د کارت له مخې پرېکړه کوي، نه د ډیټابیس.
-  /// نو نېټه باید **پر کارت** وي، او ډیټابیس يې هم وپېژني چې
-  /// «کوم کارتونه سبا باطلېږي» ولوستل شي.
-  final DateTime? cardExpiresOn;
-  final DateTime? deletedAt;
-  const Teacher({
-    required this.id,
-    required this.employeeNo,
-    required this.fullName,
-    this.fatherName,
-    required this.gender,
-    this.phone,
-    this.email,
-    this.address,
-    this.photoPath,
-    this.qualification,
-    this.specialization,
-    this.hiredOn,
-    required this.status,
-    this.monthlySalary,
-    this.qrSecret,
-    this.fingerprintId,
-    required this.cardVersion,
-    this.cardExpiresOn,
-    this.deletedAt,
-  });
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    map['id'] = Variable<int>(id);
-    map['employee_no'] = Variable<String>(employeeNo);
-    map['full_name'] = Variable<String>(fullName);
-    if (!nullToAbsent || fatherName != null) {
-      map['father_name'] = Variable<String>(fatherName);
-    }
-    map['gender'] = Variable<String>(gender);
-    if (!nullToAbsent || phone != null) {
-      map['phone'] = Variable<String>(phone);
-    }
-    if (!nullToAbsent || email != null) {
-      map['email'] = Variable<String>(email);
-    }
-    if (!nullToAbsent || address != null) {
-      map['address'] = Variable<String>(address);
-    }
-    if (!nullToAbsent || photoPath != null) {
-      map['photo_path'] = Variable<String>(photoPath);
-    }
-    if (!nullToAbsent || qualification != null) {
-      map['qualification'] = Variable<String>(qualification);
-    }
-    if (!nullToAbsent || specialization != null) {
-      map['specialization'] = Variable<String>(specialization);
-    }
-    if (!nullToAbsent || hiredOn != null) {
-      map['hired_on'] = Variable<DateTime>(hiredOn);
-    }
-    map['status'] = Variable<String>(status);
-    if (!nullToAbsent || monthlySalary != null) {
-      map['monthly_salary'] = Variable<int>(monthlySalary);
-    }
-    if (!nullToAbsent || qrSecret != null) {
-      map['qr_secret'] = Variable<String>(qrSecret);
-    }
-    if (!nullToAbsent || fingerprintId != null) {
-      map['fingerprint_id'] = Variable<String>(fingerprintId);
-    }
-    map['card_version'] = Variable<int>(cardVersion);
-    if (!nullToAbsent || cardExpiresOn != null) {
-      map['card_expires_on'] = Variable<DateTime>(cardExpiresOn);
-    }
-    if (!nullToAbsent || deletedAt != null) {
-      map['deleted_at'] = Variable<DateTime>(deletedAt);
-    }
-    return map;
-  }
-
-  TeachersCompanion toCompanion(bool nullToAbsent) {
-    return TeachersCompanion(
-      id: Value(id),
-      employeeNo: Value(employeeNo),
-      fullName: Value(fullName),
-      fatherName: fatherName == null && nullToAbsent
-          ? const Value.absent()
-          : Value(fatherName),
-      gender: Value(gender),
-      phone: phone == null && nullToAbsent
-          ? const Value.absent()
-          : Value(phone),
-      email: email == null && nullToAbsent
-          ? const Value.absent()
-          : Value(email),
-      address: address == null && nullToAbsent
-          ? const Value.absent()
-          : Value(address),
-      photoPath: photoPath == null && nullToAbsent
-          ? const Value.absent()
-          : Value(photoPath),
-      qualification: qualification == null && nullToAbsent
-          ? const Value.absent()
-          : Value(qualification),
-      specialization: specialization == null && nullToAbsent
-          ? const Value.absent()
-          : Value(specialization),
-      hiredOn: hiredOn == null && nullToAbsent
-          ? const Value.absent()
-          : Value(hiredOn),
-      status: Value(status),
-      monthlySalary: monthlySalary == null && nullToAbsent
-          ? const Value.absent()
-          : Value(monthlySalary),
-      qrSecret: qrSecret == null && nullToAbsent
-          ? const Value.absent()
-          : Value(qrSecret),
-      fingerprintId: fingerprintId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(fingerprintId),
-      cardVersion: Value(cardVersion),
-      cardExpiresOn: cardExpiresOn == null && nullToAbsent
-          ? const Value.absent()
-          : Value(cardExpiresOn),
-      deletedAt: deletedAt == null && nullToAbsent
-          ? const Value.absent()
-          : Value(deletedAt),
-    );
-  }
-
-  factory Teacher.fromJson(
-    Map<String, dynamic> json, {
-    ValueSerializer? serializer,
-  }) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return Teacher(
-      id: serializer.fromJson<int>(json['id']),
-      employeeNo: serializer.fromJson<String>(json['employeeNo']),
-      fullName: serializer.fromJson<String>(json['fullName']),
-      fatherName: serializer.fromJson<String?>(json['fatherName']),
-      gender: serializer.fromJson<String>(json['gender']),
-      phone: serializer.fromJson<String?>(json['phone']),
-      email: serializer.fromJson<String?>(json['email']),
-      address: serializer.fromJson<String?>(json['address']),
-      photoPath: serializer.fromJson<String?>(json['photoPath']),
-      qualification: serializer.fromJson<String?>(json['qualification']),
-      specialization: serializer.fromJson<String?>(json['specialization']),
-      hiredOn: serializer.fromJson<DateTime?>(json['hiredOn']),
-      status: serializer.fromJson<String>(json['status']),
-      monthlySalary: serializer.fromJson<int?>(json['monthlySalary']),
-      qrSecret: serializer.fromJson<String?>(json['qrSecret']),
-      fingerprintId: serializer.fromJson<String?>(json['fingerprintId']),
-      cardVersion: serializer.fromJson<int>(json['cardVersion']),
-      cardExpiresOn: serializer.fromJson<DateTime?>(json['cardExpiresOn']),
-      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
-    );
-  }
-  @override
-  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return <String, dynamic>{
-      'id': serializer.toJson<int>(id),
-      'employeeNo': serializer.toJson<String>(employeeNo),
-      'fullName': serializer.toJson<String>(fullName),
-      'fatherName': serializer.toJson<String?>(fatherName),
-      'gender': serializer.toJson<String>(gender),
-      'phone': serializer.toJson<String?>(phone),
-      'email': serializer.toJson<String?>(email),
-      'address': serializer.toJson<String?>(address),
-      'photoPath': serializer.toJson<String?>(photoPath),
-      'qualification': serializer.toJson<String?>(qualification),
-      'specialization': serializer.toJson<String?>(specialization),
-      'hiredOn': serializer.toJson<DateTime?>(hiredOn),
-      'status': serializer.toJson<String>(status),
-      'monthlySalary': serializer.toJson<int?>(monthlySalary),
-      'qrSecret': serializer.toJson<String?>(qrSecret),
-      'fingerprintId': serializer.toJson<String?>(fingerprintId),
-      'cardVersion': serializer.toJson<int>(cardVersion),
-      'cardExpiresOn': serializer.toJson<DateTime?>(cardExpiresOn),
-      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
-    };
-  }
-
-  Teacher copyWith({
-    int? id,
-    String? employeeNo,
-    String? fullName,
-    Value<String?> fatherName = const Value.absent(),
-    String? gender,
-    Value<String?> phone = const Value.absent(),
-    Value<String?> email = const Value.absent(),
-    Value<String?> address = const Value.absent(),
-    Value<String?> photoPath = const Value.absent(),
-    Value<String?> qualification = const Value.absent(),
-    Value<String?> specialization = const Value.absent(),
-    Value<DateTime?> hiredOn = const Value.absent(),
-    String? status,
-    Value<int?> monthlySalary = const Value.absent(),
-    Value<String?> qrSecret = const Value.absent(),
-    Value<String?> fingerprintId = const Value.absent(),
-    int? cardVersion,
-    Value<DateTime?> cardExpiresOn = const Value.absent(),
-    Value<DateTime?> deletedAt = const Value.absent(),
-  }) => Teacher(
-    id: id ?? this.id,
-    employeeNo: employeeNo ?? this.employeeNo,
-    fullName: fullName ?? this.fullName,
-    fatherName: fatherName.present ? fatherName.value : this.fatherName,
-    gender: gender ?? this.gender,
-    phone: phone.present ? phone.value : this.phone,
-    email: email.present ? email.value : this.email,
-    address: address.present ? address.value : this.address,
-    photoPath: photoPath.present ? photoPath.value : this.photoPath,
-    qualification: qualification.present
-        ? qualification.value
-        : this.qualification,
-    specialization: specialization.present
-        ? specialization.value
-        : this.specialization,
-    hiredOn: hiredOn.present ? hiredOn.value : this.hiredOn,
-    status: status ?? this.status,
-    monthlySalary: monthlySalary.present
-        ? monthlySalary.value
-        : this.monthlySalary,
-    qrSecret: qrSecret.present ? qrSecret.value : this.qrSecret,
-    fingerprintId: fingerprintId.present
-        ? fingerprintId.value
-        : this.fingerprintId,
-    cardVersion: cardVersion ?? this.cardVersion,
-    cardExpiresOn: cardExpiresOn.present
-        ? cardExpiresOn.value
-        : this.cardExpiresOn,
-    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
-  );
-  Teacher copyWithCompanion(TeachersCompanion data) {
-    return Teacher(
-      id: data.id.present ? data.id.value : this.id,
-      employeeNo: data.employeeNo.present
-          ? data.employeeNo.value
-          : this.employeeNo,
-      fullName: data.fullName.present ? data.fullName.value : this.fullName,
-      fatherName: data.fatherName.present
-          ? data.fatherName.value
-          : this.fatherName,
-      gender: data.gender.present ? data.gender.value : this.gender,
-      phone: data.phone.present ? data.phone.value : this.phone,
-      email: data.email.present ? data.email.value : this.email,
-      address: data.address.present ? data.address.value : this.address,
-      photoPath: data.photoPath.present ? data.photoPath.value : this.photoPath,
-      qualification: data.qualification.present
-          ? data.qualification.value
-          : this.qualification,
-      specialization: data.specialization.present
-          ? data.specialization.value
-          : this.specialization,
-      hiredOn: data.hiredOn.present ? data.hiredOn.value : this.hiredOn,
-      status: data.status.present ? data.status.value : this.status,
-      monthlySalary: data.monthlySalary.present
-          ? data.monthlySalary.value
-          : this.monthlySalary,
-      qrSecret: data.qrSecret.present ? data.qrSecret.value : this.qrSecret,
-      fingerprintId: data.fingerprintId.present
-          ? data.fingerprintId.value
-          : this.fingerprintId,
-      cardVersion: data.cardVersion.present
-          ? data.cardVersion.value
-          : this.cardVersion,
-      cardExpiresOn: data.cardExpiresOn.present
-          ? data.cardExpiresOn.value
-          : this.cardExpiresOn,
-      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
-    );
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('Teacher(')
-          ..write('id: $id, ')
-          ..write('employeeNo: $employeeNo, ')
-          ..write('fullName: $fullName, ')
-          ..write('fatherName: $fatherName, ')
-          ..write('gender: $gender, ')
-          ..write('phone: $phone, ')
-          ..write('email: $email, ')
-          ..write('address: $address, ')
-          ..write('photoPath: $photoPath, ')
-          ..write('qualification: $qualification, ')
-          ..write('specialization: $specialization, ')
-          ..write('hiredOn: $hiredOn, ')
-          ..write('status: $status, ')
-          ..write('monthlySalary: $monthlySalary, ')
-          ..write('qrSecret: $qrSecret, ')
-          ..write('fingerprintId: $fingerprintId, ')
-          ..write('cardVersion: $cardVersion, ')
-          ..write('cardExpiresOn: $cardExpiresOn, ')
-          ..write('deletedAt: $deletedAt')
-          ..write(')'))
-        .toString();
-  }
-
-  @override
-  int get hashCode => Object.hash(
-    id,
-    employeeNo,
-    fullName,
-    fatherName,
-    gender,
-    phone,
-    email,
-    address,
-    photoPath,
-    qualification,
-    specialization,
-    hiredOn,
-    status,
-    monthlySalary,
-    qrSecret,
-    fingerprintId,
-    cardVersion,
-    cardExpiresOn,
-    deletedAt,
-  );
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      (other is Teacher &&
-          other.id == this.id &&
-          other.employeeNo == this.employeeNo &&
-          other.fullName == this.fullName &&
-          other.fatherName == this.fatherName &&
-          other.gender == this.gender &&
-          other.phone == this.phone &&
-          other.email == this.email &&
-          other.address == this.address &&
-          other.photoPath == this.photoPath &&
-          other.qualification == this.qualification &&
-          other.specialization == this.specialization &&
-          other.hiredOn == this.hiredOn &&
-          other.status == this.status &&
-          other.monthlySalary == this.monthlySalary &&
-          other.qrSecret == this.qrSecret &&
-          other.fingerprintId == this.fingerprintId &&
-          other.cardVersion == this.cardVersion &&
-          other.cardExpiresOn == this.cardExpiresOn &&
-          other.deletedAt == this.deletedAt);
-}
-
-class TeachersCompanion extends UpdateCompanion<Teacher> {
-  final Value<int> id;
-  final Value<String> employeeNo;
-  final Value<String> fullName;
-  final Value<String?> fatherName;
-  final Value<String> gender;
-  final Value<String?> phone;
-  final Value<String?> email;
-  final Value<String?> address;
-  final Value<String?> photoPath;
-  final Value<String?> qualification;
-  final Value<String?> specialization;
-  final Value<DateTime?> hiredOn;
-  final Value<String> status;
-  final Value<int?> monthlySalary;
-  final Value<String?> qrSecret;
-  final Value<String?> fingerprintId;
-  final Value<int> cardVersion;
-  final Value<DateTime?> cardExpiresOn;
-  final Value<DateTime?> deletedAt;
-  const TeachersCompanion({
-    this.id = const Value.absent(),
-    this.employeeNo = const Value.absent(),
-    this.fullName = const Value.absent(),
-    this.fatherName = const Value.absent(),
-    this.gender = const Value.absent(),
-    this.phone = const Value.absent(),
-    this.email = const Value.absent(),
-    this.address = const Value.absent(),
-    this.photoPath = const Value.absent(),
-    this.qualification = const Value.absent(),
-    this.specialization = const Value.absent(),
-    this.hiredOn = const Value.absent(),
-    this.status = const Value.absent(),
-    this.monthlySalary = const Value.absent(),
-    this.qrSecret = const Value.absent(),
-    this.fingerprintId = const Value.absent(),
-    this.cardVersion = const Value.absent(),
-    this.cardExpiresOn = const Value.absent(),
-    this.deletedAt = const Value.absent(),
-  });
-  TeachersCompanion.insert({
-    this.id = const Value.absent(),
-    required String employeeNo,
-    required String fullName,
-    this.fatherName = const Value.absent(),
-    required String gender,
-    this.phone = const Value.absent(),
-    this.email = const Value.absent(),
-    this.address = const Value.absent(),
-    this.photoPath = const Value.absent(),
-    this.qualification = const Value.absent(),
-    this.specialization = const Value.absent(),
-    this.hiredOn = const Value.absent(),
-    this.status = const Value.absent(),
-    this.monthlySalary = const Value.absent(),
-    this.qrSecret = const Value.absent(),
-    this.fingerprintId = const Value.absent(),
-    this.cardVersion = const Value.absent(),
-    this.cardExpiresOn = const Value.absent(),
-    this.deletedAt = const Value.absent(),
-  }) : employeeNo = Value(employeeNo),
-       fullName = Value(fullName),
-       gender = Value(gender);
-  static Insertable<Teacher> custom({
-    Expression<int>? id,
-    Expression<String>? employeeNo,
-    Expression<String>? fullName,
-    Expression<String>? fatherName,
-    Expression<String>? gender,
-    Expression<String>? phone,
-    Expression<String>? email,
-    Expression<String>? address,
-    Expression<String>? photoPath,
-    Expression<String>? qualification,
-    Expression<String>? specialization,
-    Expression<DateTime>? hiredOn,
-    Expression<String>? status,
-    Expression<int>? monthlySalary,
-    Expression<String>? qrSecret,
-    Expression<String>? fingerprintId,
-    Expression<int>? cardVersion,
-    Expression<DateTime>? cardExpiresOn,
-    Expression<DateTime>? deletedAt,
-  }) {
-    return RawValuesInsertable({
-      if (id != null) 'id': id,
-      if (employeeNo != null) 'employee_no': employeeNo,
-      if (fullName != null) 'full_name': fullName,
-      if (fatherName != null) 'father_name': fatherName,
-      if (gender != null) 'gender': gender,
-      if (phone != null) 'phone': phone,
-      if (email != null) 'email': email,
-      if (address != null) 'address': address,
-      if (photoPath != null) 'photo_path': photoPath,
-      if (qualification != null) 'qualification': qualification,
-      if (specialization != null) 'specialization': specialization,
-      if (hiredOn != null) 'hired_on': hiredOn,
-      if (status != null) 'status': status,
-      if (monthlySalary != null) 'monthly_salary': monthlySalary,
-      if (qrSecret != null) 'qr_secret': qrSecret,
-      if (fingerprintId != null) 'fingerprint_id': fingerprintId,
-      if (cardVersion != null) 'card_version': cardVersion,
-      if (cardExpiresOn != null) 'card_expires_on': cardExpiresOn,
-      if (deletedAt != null) 'deleted_at': deletedAt,
-    });
-  }
-
-  TeachersCompanion copyWith({
-    Value<int>? id,
-    Value<String>? employeeNo,
-    Value<String>? fullName,
-    Value<String?>? fatherName,
-    Value<String>? gender,
-    Value<String?>? phone,
-    Value<String?>? email,
-    Value<String?>? address,
-    Value<String?>? photoPath,
-    Value<String?>? qualification,
-    Value<String?>? specialization,
-    Value<DateTime?>? hiredOn,
-    Value<String>? status,
-    Value<int?>? monthlySalary,
-    Value<String?>? qrSecret,
-    Value<String?>? fingerprintId,
-    Value<int>? cardVersion,
-    Value<DateTime?>? cardExpiresOn,
-    Value<DateTime?>? deletedAt,
-  }) {
-    return TeachersCompanion(
-      id: id ?? this.id,
-      employeeNo: employeeNo ?? this.employeeNo,
-      fullName: fullName ?? this.fullName,
-      fatherName: fatherName ?? this.fatherName,
-      gender: gender ?? this.gender,
-      phone: phone ?? this.phone,
-      email: email ?? this.email,
-      address: address ?? this.address,
-      photoPath: photoPath ?? this.photoPath,
-      qualification: qualification ?? this.qualification,
-      specialization: specialization ?? this.specialization,
-      hiredOn: hiredOn ?? this.hiredOn,
-      status: status ?? this.status,
-      monthlySalary: monthlySalary ?? this.monthlySalary,
-      qrSecret: qrSecret ?? this.qrSecret,
-      fingerprintId: fingerprintId ?? this.fingerprintId,
-      cardVersion: cardVersion ?? this.cardVersion,
-      cardExpiresOn: cardExpiresOn ?? this.cardExpiresOn,
-      deletedAt: deletedAt ?? this.deletedAt,
-    );
-  }
-
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    if (id.present) {
-      map['id'] = Variable<int>(id.value);
-    }
-    if (employeeNo.present) {
-      map['employee_no'] = Variable<String>(employeeNo.value);
-    }
-    if (fullName.present) {
-      map['full_name'] = Variable<String>(fullName.value);
-    }
-    if (fatherName.present) {
-      map['father_name'] = Variable<String>(fatherName.value);
-    }
-    if (gender.present) {
-      map['gender'] = Variable<String>(gender.value);
-    }
-    if (phone.present) {
-      map['phone'] = Variable<String>(phone.value);
-    }
-    if (email.present) {
-      map['email'] = Variable<String>(email.value);
-    }
-    if (address.present) {
-      map['address'] = Variable<String>(address.value);
-    }
-    if (photoPath.present) {
-      map['photo_path'] = Variable<String>(photoPath.value);
-    }
-    if (qualification.present) {
-      map['qualification'] = Variable<String>(qualification.value);
-    }
-    if (specialization.present) {
-      map['specialization'] = Variable<String>(specialization.value);
-    }
-    if (hiredOn.present) {
-      map['hired_on'] = Variable<DateTime>(hiredOn.value);
-    }
-    if (status.present) {
-      map['status'] = Variable<String>(status.value);
-    }
-    if (monthlySalary.present) {
-      map['monthly_salary'] = Variable<int>(monthlySalary.value);
-    }
-    if (qrSecret.present) {
-      map['qr_secret'] = Variable<String>(qrSecret.value);
-    }
-    if (fingerprintId.present) {
-      map['fingerprint_id'] = Variable<String>(fingerprintId.value);
-    }
-    if (cardVersion.present) {
-      map['card_version'] = Variable<int>(cardVersion.value);
-    }
-    if (cardExpiresOn.present) {
-      map['card_expires_on'] = Variable<DateTime>(cardExpiresOn.value);
-    }
-    if (deletedAt.present) {
-      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
-    }
-    return map;
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('TeachersCompanion(')
-          ..write('id: $id, ')
-          ..write('employeeNo: $employeeNo, ')
-          ..write('fullName: $fullName, ')
-          ..write('fatherName: $fatherName, ')
-          ..write('gender: $gender, ')
-          ..write('phone: $phone, ')
-          ..write('email: $email, ')
-          ..write('address: $address, ')
-          ..write('photoPath: $photoPath, ')
-          ..write('qualification: $qualification, ')
-          ..write('specialization: $specialization, ')
-          ..write('hiredOn: $hiredOn, ')
-          ..write('status: $status, ')
-          ..write('monthlySalary: $monthlySalary, ')
-          ..write('qrSecret: $qrSecret, ')
-          ..write('fingerprintId: $fingerprintId, ')
-          ..write('cardVersion: $cardVersion, ')
-          ..write('cardExpiresOn: $cardExpiresOn, ')
-          ..write('deletedAt: $deletedAt')
           ..write(')'))
         .toString();
   }
@@ -22552,13 +22659,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $AcademicYearsTable academicYears = $AcademicYearsTable(this);
   late final $GradesTable grades = $GradesTable(this);
   late final $SectionsTable sections = $SectionsTable(this);
+  late final $TeachersTable teachers = $TeachersTable(this);
   late final $SubjectsTable subjects = $SubjectsTable(this);
   late final $StudentsTable students = $StudentsTable(this);
   late final $GuardiansTable guardians = $GuardiansTable(this);
   late final $StudentGuardiansTable studentGuardians = $StudentGuardiansTable(
     this,
   );
-  late final $TeachersTable teachers = $TeachersTable(this);
   late final $StaffMembersTable staffMembers = $StaffMembersTable(this);
   late final $EnrollmentsTable enrollments = $EnrollmentsTable(this);
   late final $AttendancesTable attendances = $AttendancesTable(this);
@@ -22601,11 +22708,11 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     academicYears,
     grades,
     sections,
+    teachers,
     subjects,
     students,
     guardians,
     studentGuardians,
-    teachers,
     staffMembers,
     enrollments,
     attendances,
@@ -25653,6 +25760,684 @@ typedef $$SectionsTableProcessedTableManager =
         bool attendanceSessionsRefs,
       })
     >;
+typedef $$TeachersTableCreateCompanionBuilder =
+    TeachersCompanion Function({
+      Value<int> id,
+      required String employeeNo,
+      required String fullName,
+      Value<String?> fatherName,
+      required String gender,
+      Value<String?> phone,
+      Value<String?> email,
+      Value<String?> address,
+      Value<String?> photoPath,
+      Value<String?> qualification,
+      Value<String?> specialization,
+      Value<DateTime?> hiredOn,
+      Value<String> status,
+      Value<int?> monthlySalary,
+      Value<String?> qrSecret,
+      Value<String?> fingerprintId,
+      Value<int> cardVersion,
+      Value<DateTime?> cardExpiresOn,
+      Value<DateTime?> deletedAt,
+    });
+typedef $$TeachersTableUpdateCompanionBuilder =
+    TeachersCompanion Function({
+      Value<int> id,
+      Value<String> employeeNo,
+      Value<String> fullName,
+      Value<String?> fatherName,
+      Value<String> gender,
+      Value<String?> phone,
+      Value<String?> email,
+      Value<String?> address,
+      Value<String?> photoPath,
+      Value<String?> qualification,
+      Value<String?> specialization,
+      Value<DateTime?> hiredOn,
+      Value<String> status,
+      Value<int?> monthlySalary,
+      Value<String?> qrSecret,
+      Value<String?> fingerprintId,
+      Value<int> cardVersion,
+      Value<DateTime?> cardExpiresOn,
+      Value<DateTime?> deletedAt,
+    });
+
+final class $$TeachersTableReferences
+    extends BaseReferences<_$AppDatabase, $TeachersTable, Teacher> {
+  $$TeachersTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$SubjectsTable, List<Subject>> _subjectsRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.subjects,
+    aliasName: $_aliasNameGenerator(db.teachers.id, db.subjects.teacherId),
+  );
+
+  $$SubjectsTableProcessedTableManager get subjectsRefs {
+    final manager = $$SubjectsTableTableManager(
+      $_db,
+      $_db.subjects,
+    ).filter((f) => f.teacherId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_subjectsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$TimetableEntriesTable, List<TimetableEntry>>
+  _timetableEntriesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.timetableEntries,
+    aliasName: $_aliasNameGenerator(
+      db.teachers.id,
+      db.timetableEntries.teacherId,
+    ),
+  );
+
+  $$TimetableEntriesTableProcessedTableManager get timetableEntriesRefs {
+    final manager = $$TimetableEntriesTableTableManager(
+      $_db,
+      $_db.timetableEntries,
+    ).filter((f) => f.teacherId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _timetableEntriesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$TeachersTableFilterComposer
+    extends Composer<_$AppDatabase, $TeachersTable> {
+  $$TeachersTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get employeeNo => $composableBuilder(
+    column: $table.employeeNo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get fullName => $composableBuilder(
+    column: $table.fullName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get fatherName => $composableBuilder(
+    column: $table.fatherName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get gender => $composableBuilder(
+    column: $table.gender,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get phone => $composableBuilder(
+    column: $table.phone,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get email => $composableBuilder(
+    column: $table.email,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get address => $composableBuilder(
+    column: $table.address,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get photoPath => $composableBuilder(
+    column: $table.photoPath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get qualification => $composableBuilder(
+    column: $table.qualification,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get specialization => $composableBuilder(
+    column: $table.specialization,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get hiredOn => $composableBuilder(
+    column: $table.hiredOn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get monthlySalary => $composableBuilder(
+    column: $table.monthlySalary,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get qrSecret => $composableBuilder(
+    column: $table.qrSecret,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get fingerprintId => $composableBuilder(
+    column: $table.fingerprintId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get cardVersion => $composableBuilder(
+    column: $table.cardVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get cardExpiresOn => $composableBuilder(
+    column: $table.cardExpiresOn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> subjectsRefs(
+    Expression<bool> Function($$SubjectsTableFilterComposer f) f,
+  ) {
+    final $$SubjectsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.subjects,
+      getReferencedColumn: (t) => t.teacherId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SubjectsTableFilterComposer(
+            $db: $db,
+            $table: $db.subjects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> timetableEntriesRefs(
+    Expression<bool> Function($$TimetableEntriesTableFilterComposer f) f,
+  ) {
+    final $$TimetableEntriesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.timetableEntries,
+      getReferencedColumn: (t) => t.teacherId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TimetableEntriesTableFilterComposer(
+            $db: $db,
+            $table: $db.timetableEntries,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$TeachersTableOrderingComposer
+    extends Composer<_$AppDatabase, $TeachersTable> {
+  $$TeachersTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get employeeNo => $composableBuilder(
+    column: $table.employeeNo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get fullName => $composableBuilder(
+    column: $table.fullName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get fatherName => $composableBuilder(
+    column: $table.fatherName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get gender => $composableBuilder(
+    column: $table.gender,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get phone => $composableBuilder(
+    column: $table.phone,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get email => $composableBuilder(
+    column: $table.email,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get address => $composableBuilder(
+    column: $table.address,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get photoPath => $composableBuilder(
+    column: $table.photoPath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get qualification => $composableBuilder(
+    column: $table.qualification,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get specialization => $composableBuilder(
+    column: $table.specialization,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get hiredOn => $composableBuilder(
+    column: $table.hiredOn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get monthlySalary => $composableBuilder(
+    column: $table.monthlySalary,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get qrSecret => $composableBuilder(
+    column: $table.qrSecret,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get fingerprintId => $composableBuilder(
+    column: $table.fingerprintId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get cardVersion => $composableBuilder(
+    column: $table.cardVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get cardExpiresOn => $composableBuilder(
+    column: $table.cardExpiresOn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$TeachersTableAnnotationComposer
+    extends Composer<_$AppDatabase, $TeachersTable> {
+  $$TeachersTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get employeeNo => $composableBuilder(
+    column: $table.employeeNo,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get fullName =>
+      $composableBuilder(column: $table.fullName, builder: (column) => column);
+
+  GeneratedColumn<String> get fatherName => $composableBuilder(
+    column: $table.fatherName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get gender =>
+      $composableBuilder(column: $table.gender, builder: (column) => column);
+
+  GeneratedColumn<String> get phone =>
+      $composableBuilder(column: $table.phone, builder: (column) => column);
+
+  GeneratedColumn<String> get email =>
+      $composableBuilder(column: $table.email, builder: (column) => column);
+
+  GeneratedColumn<String> get address =>
+      $composableBuilder(column: $table.address, builder: (column) => column);
+
+  GeneratedColumn<String> get photoPath =>
+      $composableBuilder(column: $table.photoPath, builder: (column) => column);
+
+  GeneratedColumn<String> get qualification => $composableBuilder(
+    column: $table.qualification,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get specialization => $composableBuilder(
+    column: $table.specialization,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get hiredOn =>
+      $composableBuilder(column: $table.hiredOn, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<int> get monthlySalary => $composableBuilder(
+    column: $table.monthlySalary,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get qrSecret =>
+      $composableBuilder(column: $table.qrSecret, builder: (column) => column);
+
+  GeneratedColumn<String> get fingerprintId => $composableBuilder(
+    column: $table.fingerprintId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get cardVersion => $composableBuilder(
+    column: $table.cardVersion,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get cardExpiresOn => $composableBuilder(
+    column: $table.cardExpiresOn,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  Expression<T> subjectsRefs<T extends Object>(
+    Expression<T> Function($$SubjectsTableAnnotationComposer a) f,
+  ) {
+    final $$SubjectsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.subjects,
+      getReferencedColumn: (t) => t.teacherId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SubjectsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.subjects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> timetableEntriesRefs<T extends Object>(
+    Expression<T> Function($$TimetableEntriesTableAnnotationComposer a) f,
+  ) {
+    final $$TimetableEntriesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.timetableEntries,
+      getReferencedColumn: (t) => t.teacherId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TimetableEntriesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.timetableEntries,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$TeachersTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $TeachersTable,
+          Teacher,
+          $$TeachersTableFilterComposer,
+          $$TeachersTableOrderingComposer,
+          $$TeachersTableAnnotationComposer,
+          $$TeachersTableCreateCompanionBuilder,
+          $$TeachersTableUpdateCompanionBuilder,
+          (Teacher, $$TeachersTableReferences),
+          Teacher,
+          PrefetchHooks Function({bool subjectsRefs, bool timetableEntriesRefs})
+        > {
+  $$TeachersTableTableManager(_$AppDatabase db, $TeachersTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$TeachersTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$TeachersTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$TeachersTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> employeeNo = const Value.absent(),
+                Value<String> fullName = const Value.absent(),
+                Value<String?> fatherName = const Value.absent(),
+                Value<String> gender = const Value.absent(),
+                Value<String?> phone = const Value.absent(),
+                Value<String?> email = const Value.absent(),
+                Value<String?> address = const Value.absent(),
+                Value<String?> photoPath = const Value.absent(),
+                Value<String?> qualification = const Value.absent(),
+                Value<String?> specialization = const Value.absent(),
+                Value<DateTime?> hiredOn = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<int?> monthlySalary = const Value.absent(),
+                Value<String?> qrSecret = const Value.absent(),
+                Value<String?> fingerprintId = const Value.absent(),
+                Value<int> cardVersion = const Value.absent(),
+                Value<DateTime?> cardExpiresOn = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+              }) => TeachersCompanion(
+                id: id,
+                employeeNo: employeeNo,
+                fullName: fullName,
+                fatherName: fatherName,
+                gender: gender,
+                phone: phone,
+                email: email,
+                address: address,
+                photoPath: photoPath,
+                qualification: qualification,
+                specialization: specialization,
+                hiredOn: hiredOn,
+                status: status,
+                monthlySalary: monthlySalary,
+                qrSecret: qrSecret,
+                fingerprintId: fingerprintId,
+                cardVersion: cardVersion,
+                cardExpiresOn: cardExpiresOn,
+                deletedAt: deletedAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String employeeNo,
+                required String fullName,
+                Value<String?> fatherName = const Value.absent(),
+                required String gender,
+                Value<String?> phone = const Value.absent(),
+                Value<String?> email = const Value.absent(),
+                Value<String?> address = const Value.absent(),
+                Value<String?> photoPath = const Value.absent(),
+                Value<String?> qualification = const Value.absent(),
+                Value<String?> specialization = const Value.absent(),
+                Value<DateTime?> hiredOn = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<int?> monthlySalary = const Value.absent(),
+                Value<String?> qrSecret = const Value.absent(),
+                Value<String?> fingerprintId = const Value.absent(),
+                Value<int> cardVersion = const Value.absent(),
+                Value<DateTime?> cardExpiresOn = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+              }) => TeachersCompanion.insert(
+                id: id,
+                employeeNo: employeeNo,
+                fullName: fullName,
+                fatherName: fatherName,
+                gender: gender,
+                phone: phone,
+                email: email,
+                address: address,
+                photoPath: photoPath,
+                qualification: qualification,
+                specialization: specialization,
+                hiredOn: hiredOn,
+                status: status,
+                monthlySalary: monthlySalary,
+                qrSecret: qrSecret,
+                fingerprintId: fingerprintId,
+                cardVersion: cardVersion,
+                cardExpiresOn: cardExpiresOn,
+                deletedAt: deletedAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$TeachersTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({subjectsRefs = false, timetableEntriesRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (subjectsRefs) db.subjects,
+                    if (timetableEntriesRefs) db.timetableEntries,
+                  ],
+                  addJoins: null,
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (subjectsRefs)
+                        await $_getPrefetchedData<
+                          Teacher,
+                          $TeachersTable,
+                          Subject
+                        >(
+                          currentTable: table,
+                          referencedTable: $$TeachersTableReferences
+                              ._subjectsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$TeachersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).subjectsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.teacherId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (timetableEntriesRefs)
+                        await $_getPrefetchedData<
+                          Teacher,
+                          $TeachersTable,
+                          TimetableEntry
+                        >(
+                          currentTable: table,
+                          referencedTable: $$TeachersTableReferences
+                              ._timetableEntriesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$TeachersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).timetableEntriesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.teacherId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$TeachersTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $TeachersTable,
+      Teacher,
+      $$TeachersTableFilterComposer,
+      $$TeachersTableOrderingComposer,
+      $$TeachersTableAnnotationComposer,
+      $$TeachersTableCreateCompanionBuilder,
+      $$TeachersTableUpdateCompanionBuilder,
+      (Teacher, $$TeachersTableReferences),
+      Teacher,
+      PrefetchHooks Function({bool subjectsRefs, bool timetableEntriesRefs})
+    >;
 typedef $$SubjectsTableCreateCompanionBuilder =
     SubjectsCompanion Function({
       Value<int> id,
@@ -25663,6 +26448,8 @@ typedef $$SubjectsTableCreateCompanionBuilder =
       Value<String> difficulty,
       Value<int> fullMark,
       Value<int> passMark,
+      Value<int?> teacherId,
+      Value<int?> pages,
       Value<bool> isReligious,
       Value<int> sortOrder,
     });
@@ -25676,6 +26463,8 @@ typedef $$SubjectsTableUpdateCompanionBuilder =
       Value<String> difficulty,
       Value<int> fullMark,
       Value<int> passMark,
+      Value<int?> teacherId,
+      Value<int?> pages,
       Value<bool> isReligious,
       Value<int> sortOrder,
     });
@@ -25696,6 +26485,23 @@ final class $$SubjectsTableReferences
       $_db.grades,
     ).filter((f) => f.id.sqlEquals($_column));
     final item = $_typedResult.readTableOrNull(_gradeIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $TeachersTable _teacherIdTable(_$AppDatabase db) => db.teachers
+      .createAlias($_aliasNameGenerator(db.subjects.teacherId, db.teachers.id));
+
+  $$TeachersTableProcessedTableManager? get teacherId {
+    final $_column = $_itemColumn<int>('teacher_id');
+    if ($_column == null) return null;
+    final manager = $$TeachersTableTableManager(
+      $_db,
+      $_db.teachers,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_teacherIdTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: [item]),
@@ -25788,6 +26594,11 @@ class $$SubjectsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<int> get pages => $composableBuilder(
+    column: $table.pages,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<bool> get isReligious => $composableBuilder(
     column: $table.isReligious,
     builder: (column) => ColumnFilters(column),
@@ -25812,6 +26623,29 @@ class $$SubjectsTableFilterComposer
           }) => $$GradesTableFilterComposer(
             $db: $db,
             $table: $db.grades,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$TeachersTableFilterComposer get teacherId {
+    final $$TeachersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.teacherId,
+      referencedTable: $db.teachers,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TeachersTableFilterComposer(
+            $db: $db,
+            $table: $db.teachers,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -25916,6 +26750,11 @@ class $$SubjectsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get pages => $composableBuilder(
+    column: $table.pages,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get isReligious => $composableBuilder(
     column: $table.isReligious,
     builder: (column) => ColumnOrderings(column),
@@ -25940,6 +26779,29 @@ class $$SubjectsTableOrderingComposer
           }) => $$GradesTableOrderingComposer(
             $db: $db,
             $table: $db.grades,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$TeachersTableOrderingComposer get teacherId {
+    final $$TeachersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.teacherId,
+      referencedTable: $db.teachers,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TeachersTableOrderingComposer(
+            $db: $db,
+            $table: $db.teachers,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -25982,6 +26844,9 @@ class $$SubjectsTableAnnotationComposer
   GeneratedColumn<int> get passMark =>
       $composableBuilder(column: $table.passMark, builder: (column) => column);
 
+  GeneratedColumn<int> get pages =>
+      $composableBuilder(column: $table.pages, builder: (column) => column);
+
   GeneratedColumn<bool> get isReligious => $composableBuilder(
     column: $table.isReligious,
     builder: (column) => column,
@@ -26004,6 +26869,29 @@ class $$SubjectsTableAnnotationComposer
           }) => $$GradesTableAnnotationComposer(
             $db: $db,
             $table: $db.grades,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$TeachersTableAnnotationComposer get teacherId {
+    final $$TeachersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.teacherId,
+      referencedTable: $db.teachers,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TeachersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.teachers,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -26079,6 +26967,7 @@ class $$SubjectsTableTableManager
           Subject,
           PrefetchHooks Function({
             bool gradeId,
+            bool teacherId,
             bool timetableEntriesRefs,
             bool examSubjectsRefs,
           })
@@ -26104,6 +26993,8 @@ class $$SubjectsTableTableManager
                 Value<String> difficulty = const Value.absent(),
                 Value<int> fullMark = const Value.absent(),
                 Value<int> passMark = const Value.absent(),
+                Value<int?> teacherId = const Value.absent(),
+                Value<int?> pages = const Value.absent(),
                 Value<bool> isReligious = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
               }) => SubjectsCompanion(
@@ -26115,6 +27006,8 @@ class $$SubjectsTableTableManager
                 difficulty: difficulty,
                 fullMark: fullMark,
                 passMark: passMark,
+                teacherId: teacherId,
+                pages: pages,
                 isReligious: isReligious,
                 sortOrder: sortOrder,
               ),
@@ -26128,6 +27021,8 @@ class $$SubjectsTableTableManager
                 Value<String> difficulty = const Value.absent(),
                 Value<int> fullMark = const Value.absent(),
                 Value<int> passMark = const Value.absent(),
+                Value<int?> teacherId = const Value.absent(),
+                Value<int?> pages = const Value.absent(),
                 Value<bool> isReligious = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
               }) => SubjectsCompanion.insert(
@@ -26139,6 +27034,8 @@ class $$SubjectsTableTableManager
                 difficulty: difficulty,
                 fullMark: fullMark,
                 passMark: passMark,
+                teacherId: teacherId,
+                pages: pages,
                 isReligious: isReligious,
                 sortOrder: sortOrder,
               ),
@@ -26153,6 +27050,7 @@ class $$SubjectsTableTableManager
           prefetchHooksCallback:
               ({
                 gradeId = false,
+                teacherId = false,
                 timetableEntriesRefs = false,
                 examSubjectsRefs = false,
               }) {
@@ -26187,6 +27085,19 @@ class $$SubjectsTableTableManager
                                         ._gradeIdTable(db),
                                     referencedColumn: $$SubjectsTableReferences
                                         ._gradeIdTable(db)
+                                        .id,
+                                  )
+                                  as T;
+                        }
+                        if (teacherId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.teacherId,
+                                    referencedTable: $$SubjectsTableReferences
+                                        ._teacherIdTable(db),
+                                    referencedColumn: $$SubjectsTableReferences
+                                        ._teacherIdTable(db)
                                         .id,
                                   )
                                   as T;
@@ -26260,6 +27171,7 @@ typedef $$SubjectsTableProcessedTableManager =
       Subject,
       PrefetchHooks Function({
         bool gradeId,
+        bool teacherId,
         bool timetableEntriesRefs,
         bool examSubjectsRefs,
       })
@@ -28788,589 +29700,6 @@ typedef $$StudentGuardiansTableProcessedTableManager =
       (StudentGuardian, $$StudentGuardiansTableReferences),
       StudentGuardian,
       PrefetchHooks Function({bool studentId, bool guardianId})
-    >;
-typedef $$TeachersTableCreateCompanionBuilder =
-    TeachersCompanion Function({
-      Value<int> id,
-      required String employeeNo,
-      required String fullName,
-      Value<String?> fatherName,
-      required String gender,
-      Value<String?> phone,
-      Value<String?> email,
-      Value<String?> address,
-      Value<String?> photoPath,
-      Value<String?> qualification,
-      Value<String?> specialization,
-      Value<DateTime?> hiredOn,
-      Value<String> status,
-      Value<int?> monthlySalary,
-      Value<String?> qrSecret,
-      Value<String?> fingerprintId,
-      Value<int> cardVersion,
-      Value<DateTime?> cardExpiresOn,
-      Value<DateTime?> deletedAt,
-    });
-typedef $$TeachersTableUpdateCompanionBuilder =
-    TeachersCompanion Function({
-      Value<int> id,
-      Value<String> employeeNo,
-      Value<String> fullName,
-      Value<String?> fatherName,
-      Value<String> gender,
-      Value<String?> phone,
-      Value<String?> email,
-      Value<String?> address,
-      Value<String?> photoPath,
-      Value<String?> qualification,
-      Value<String?> specialization,
-      Value<DateTime?> hiredOn,
-      Value<String> status,
-      Value<int?> monthlySalary,
-      Value<String?> qrSecret,
-      Value<String?> fingerprintId,
-      Value<int> cardVersion,
-      Value<DateTime?> cardExpiresOn,
-      Value<DateTime?> deletedAt,
-    });
-
-final class $$TeachersTableReferences
-    extends BaseReferences<_$AppDatabase, $TeachersTable, Teacher> {
-  $$TeachersTableReferences(super.$_db, super.$_table, super.$_typedResult);
-
-  static MultiTypedResultKey<$TimetableEntriesTable, List<TimetableEntry>>
-  _timetableEntriesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
-    db.timetableEntries,
-    aliasName: $_aliasNameGenerator(
-      db.teachers.id,
-      db.timetableEntries.teacherId,
-    ),
-  );
-
-  $$TimetableEntriesTableProcessedTableManager get timetableEntriesRefs {
-    final manager = $$TimetableEntriesTableTableManager(
-      $_db,
-      $_db.timetableEntries,
-    ).filter((f) => f.teacherId.id.sqlEquals($_itemColumn<int>('id')!));
-
-    final cache = $_typedResult.readTableOrNull(
-      _timetableEntriesRefsTable($_db),
-    );
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: cache),
-    );
-  }
-}
-
-class $$TeachersTableFilterComposer
-    extends Composer<_$AppDatabase, $TeachersTable> {
-  $$TeachersTableFilterComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnFilters<int> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get employeeNo => $composableBuilder(
-    column: $table.employeeNo,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get fullName => $composableBuilder(
-    column: $table.fullName,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get fatherName => $composableBuilder(
-    column: $table.fatherName,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get gender => $composableBuilder(
-    column: $table.gender,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get phone => $composableBuilder(
-    column: $table.phone,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get email => $composableBuilder(
-    column: $table.email,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get address => $composableBuilder(
-    column: $table.address,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get photoPath => $composableBuilder(
-    column: $table.photoPath,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get qualification => $composableBuilder(
-    column: $table.qualification,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get specialization => $composableBuilder(
-    column: $table.specialization,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<DateTime> get hiredOn => $composableBuilder(
-    column: $table.hiredOn,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get status => $composableBuilder(
-    column: $table.status,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<int> get monthlySalary => $composableBuilder(
-    column: $table.monthlySalary,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get qrSecret => $composableBuilder(
-    column: $table.qrSecret,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get fingerprintId => $composableBuilder(
-    column: $table.fingerprintId,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<int> get cardVersion => $composableBuilder(
-    column: $table.cardVersion,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<DateTime> get cardExpiresOn => $composableBuilder(
-    column: $table.cardExpiresOn,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
-    column: $table.deletedAt,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  Expression<bool> timetableEntriesRefs(
-    Expression<bool> Function($$TimetableEntriesTableFilterComposer f) f,
-  ) {
-    final $$TimetableEntriesTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.timetableEntries,
-      getReferencedColumn: (t) => t.teacherId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$TimetableEntriesTableFilterComposer(
-            $db: $db,
-            $table: $db.timetableEntries,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return f(composer);
-  }
-}
-
-class $$TeachersTableOrderingComposer
-    extends Composer<_$AppDatabase, $TeachersTable> {
-  $$TeachersTableOrderingComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnOrderings<int> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get employeeNo => $composableBuilder(
-    column: $table.employeeNo,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get fullName => $composableBuilder(
-    column: $table.fullName,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get fatherName => $composableBuilder(
-    column: $table.fatherName,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get gender => $composableBuilder(
-    column: $table.gender,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get phone => $composableBuilder(
-    column: $table.phone,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get email => $composableBuilder(
-    column: $table.email,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get address => $composableBuilder(
-    column: $table.address,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get photoPath => $composableBuilder(
-    column: $table.photoPath,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get qualification => $composableBuilder(
-    column: $table.qualification,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get specialization => $composableBuilder(
-    column: $table.specialization,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<DateTime> get hiredOn => $composableBuilder(
-    column: $table.hiredOn,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get status => $composableBuilder(
-    column: $table.status,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<int> get monthlySalary => $composableBuilder(
-    column: $table.monthlySalary,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get qrSecret => $composableBuilder(
-    column: $table.qrSecret,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get fingerprintId => $composableBuilder(
-    column: $table.fingerprintId,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<int> get cardVersion => $composableBuilder(
-    column: $table.cardVersion,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<DateTime> get cardExpiresOn => $composableBuilder(
-    column: $table.cardExpiresOn,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
-    column: $table.deletedAt,
-    builder: (column) => ColumnOrderings(column),
-  );
-}
-
-class $$TeachersTableAnnotationComposer
-    extends Composer<_$AppDatabase, $TeachersTable> {
-  $$TeachersTableAnnotationComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  GeneratedColumn<int> get id =>
-      $composableBuilder(column: $table.id, builder: (column) => column);
-
-  GeneratedColumn<String> get employeeNo => $composableBuilder(
-    column: $table.employeeNo,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<String> get fullName =>
-      $composableBuilder(column: $table.fullName, builder: (column) => column);
-
-  GeneratedColumn<String> get fatherName => $composableBuilder(
-    column: $table.fatherName,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<String> get gender =>
-      $composableBuilder(column: $table.gender, builder: (column) => column);
-
-  GeneratedColumn<String> get phone =>
-      $composableBuilder(column: $table.phone, builder: (column) => column);
-
-  GeneratedColumn<String> get email =>
-      $composableBuilder(column: $table.email, builder: (column) => column);
-
-  GeneratedColumn<String> get address =>
-      $composableBuilder(column: $table.address, builder: (column) => column);
-
-  GeneratedColumn<String> get photoPath =>
-      $composableBuilder(column: $table.photoPath, builder: (column) => column);
-
-  GeneratedColumn<String> get qualification => $composableBuilder(
-    column: $table.qualification,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<String> get specialization => $composableBuilder(
-    column: $table.specialization,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<DateTime> get hiredOn =>
-      $composableBuilder(column: $table.hiredOn, builder: (column) => column);
-
-  GeneratedColumn<String> get status =>
-      $composableBuilder(column: $table.status, builder: (column) => column);
-
-  GeneratedColumn<int> get monthlySalary => $composableBuilder(
-    column: $table.monthlySalary,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<String> get qrSecret =>
-      $composableBuilder(column: $table.qrSecret, builder: (column) => column);
-
-  GeneratedColumn<String> get fingerprintId => $composableBuilder(
-    column: $table.fingerprintId,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<int> get cardVersion => $composableBuilder(
-    column: $table.cardVersion,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<DateTime> get cardExpiresOn => $composableBuilder(
-    column: $table.cardExpiresOn,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<DateTime> get deletedAt =>
-      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
-
-  Expression<T> timetableEntriesRefs<T extends Object>(
-    Expression<T> Function($$TimetableEntriesTableAnnotationComposer a) f,
-  ) {
-    final $$TimetableEntriesTableAnnotationComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.timetableEntries,
-      getReferencedColumn: (t) => t.teacherId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$TimetableEntriesTableAnnotationComposer(
-            $db: $db,
-            $table: $db.timetableEntries,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return f(composer);
-  }
-}
-
-class $$TeachersTableTableManager
-    extends
-        RootTableManager<
-          _$AppDatabase,
-          $TeachersTable,
-          Teacher,
-          $$TeachersTableFilterComposer,
-          $$TeachersTableOrderingComposer,
-          $$TeachersTableAnnotationComposer,
-          $$TeachersTableCreateCompanionBuilder,
-          $$TeachersTableUpdateCompanionBuilder,
-          (Teacher, $$TeachersTableReferences),
-          Teacher,
-          PrefetchHooks Function({bool timetableEntriesRefs})
-        > {
-  $$TeachersTableTableManager(_$AppDatabase db, $TeachersTable table)
-    : super(
-        TableManagerState(
-          db: db,
-          table: table,
-          createFilteringComposer: () =>
-              $$TeachersTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () =>
-              $$TeachersTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () =>
-              $$TeachersTableAnnotationComposer($db: db, $table: table),
-          updateCompanionCallback:
-              ({
-                Value<int> id = const Value.absent(),
-                Value<String> employeeNo = const Value.absent(),
-                Value<String> fullName = const Value.absent(),
-                Value<String?> fatherName = const Value.absent(),
-                Value<String> gender = const Value.absent(),
-                Value<String?> phone = const Value.absent(),
-                Value<String?> email = const Value.absent(),
-                Value<String?> address = const Value.absent(),
-                Value<String?> photoPath = const Value.absent(),
-                Value<String?> qualification = const Value.absent(),
-                Value<String?> specialization = const Value.absent(),
-                Value<DateTime?> hiredOn = const Value.absent(),
-                Value<String> status = const Value.absent(),
-                Value<int?> monthlySalary = const Value.absent(),
-                Value<String?> qrSecret = const Value.absent(),
-                Value<String?> fingerprintId = const Value.absent(),
-                Value<int> cardVersion = const Value.absent(),
-                Value<DateTime?> cardExpiresOn = const Value.absent(),
-                Value<DateTime?> deletedAt = const Value.absent(),
-              }) => TeachersCompanion(
-                id: id,
-                employeeNo: employeeNo,
-                fullName: fullName,
-                fatherName: fatherName,
-                gender: gender,
-                phone: phone,
-                email: email,
-                address: address,
-                photoPath: photoPath,
-                qualification: qualification,
-                specialization: specialization,
-                hiredOn: hiredOn,
-                status: status,
-                monthlySalary: monthlySalary,
-                qrSecret: qrSecret,
-                fingerprintId: fingerprintId,
-                cardVersion: cardVersion,
-                cardExpiresOn: cardExpiresOn,
-                deletedAt: deletedAt,
-              ),
-          createCompanionCallback:
-              ({
-                Value<int> id = const Value.absent(),
-                required String employeeNo,
-                required String fullName,
-                Value<String?> fatherName = const Value.absent(),
-                required String gender,
-                Value<String?> phone = const Value.absent(),
-                Value<String?> email = const Value.absent(),
-                Value<String?> address = const Value.absent(),
-                Value<String?> photoPath = const Value.absent(),
-                Value<String?> qualification = const Value.absent(),
-                Value<String?> specialization = const Value.absent(),
-                Value<DateTime?> hiredOn = const Value.absent(),
-                Value<String> status = const Value.absent(),
-                Value<int?> monthlySalary = const Value.absent(),
-                Value<String?> qrSecret = const Value.absent(),
-                Value<String?> fingerprintId = const Value.absent(),
-                Value<int> cardVersion = const Value.absent(),
-                Value<DateTime?> cardExpiresOn = const Value.absent(),
-                Value<DateTime?> deletedAt = const Value.absent(),
-              }) => TeachersCompanion.insert(
-                id: id,
-                employeeNo: employeeNo,
-                fullName: fullName,
-                fatherName: fatherName,
-                gender: gender,
-                phone: phone,
-                email: email,
-                address: address,
-                photoPath: photoPath,
-                qualification: qualification,
-                specialization: specialization,
-                hiredOn: hiredOn,
-                status: status,
-                monthlySalary: monthlySalary,
-                qrSecret: qrSecret,
-                fingerprintId: fingerprintId,
-                cardVersion: cardVersion,
-                cardExpiresOn: cardExpiresOn,
-                deletedAt: deletedAt,
-              ),
-          withReferenceMapper: (p0) => p0
-              .map(
-                (e) => (
-                  e.readTable(table),
-                  $$TeachersTableReferences(db, table, e),
-                ),
-              )
-              .toList(),
-          prefetchHooksCallback: ({timetableEntriesRefs = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [
-                if (timetableEntriesRefs) db.timetableEntries,
-              ],
-              addJoins: null,
-              getPrefetchedDataCallback: (items) async {
-                return [
-                  if (timetableEntriesRefs)
-                    await $_getPrefetchedData<
-                      Teacher,
-                      $TeachersTable,
-                      TimetableEntry
-                    >(
-                      currentTable: table,
-                      referencedTable: $$TeachersTableReferences
-                          ._timetableEntriesRefsTable(db),
-                      managerFromTypedResult: (p0) => $$TeachersTableReferences(
-                        db,
-                        table,
-                        p0,
-                      ).timetableEntriesRefs,
-                      referencedItemsForCurrentItem: (item, referencedItems) =>
-                          referencedItems.where((e) => e.teacherId == item.id),
-                      typedResults: items,
-                    ),
-                ];
-              },
-            );
-          },
-        ),
-      );
-}
-
-typedef $$TeachersTableProcessedTableManager =
-    ProcessedTableManager<
-      _$AppDatabase,
-      $TeachersTable,
-      Teacher,
-      $$TeachersTableFilterComposer,
-      $$TeachersTableOrderingComposer,
-      $$TeachersTableAnnotationComposer,
-      $$TeachersTableCreateCompanionBuilder,
-      $$TeachersTableUpdateCompanionBuilder,
-      (Teacher, $$TeachersTableReferences),
-      Teacher,
-      PrefetchHooks Function({bool timetableEntriesRefs})
     >;
 typedef $$StaffMembersTableCreateCompanionBuilder =
     StaffMembersCompanion Function({
@@ -40263,6 +40592,8 @@ class $AppDatabaseManager {
       $$GradesTableTableManager(_db, _db.grades);
   $$SectionsTableTableManager get sections =>
       $$SectionsTableTableManager(_db, _db.sections);
+  $$TeachersTableTableManager get teachers =>
+      $$TeachersTableTableManager(_db, _db.teachers);
   $$SubjectsTableTableManager get subjects =>
       $$SubjectsTableTableManager(_db, _db.subjects);
   $$StudentsTableTableManager get students =>
@@ -40271,8 +40602,6 @@ class $AppDatabaseManager {
       $$GuardiansTableTableManager(_db, _db.guardians);
   $$StudentGuardiansTableTableManager get studentGuardians =>
       $$StudentGuardiansTableTableManager(_db, _db.studentGuardians);
-  $$TeachersTableTableManager get teachers =>
-      $$TeachersTableTableManager(_db, _db.teachers);
   $$StaffMembersTableTableManager get staffMembers =>
       $$StaffMembersTableTableManager(_db, _db.staffMembers);
   $$EnrollmentsTableTableManager get enrollments =>

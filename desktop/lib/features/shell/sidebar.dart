@@ -211,11 +211,21 @@ class _NavBranchState extends State<_NavBranch> {
   bool get _showChildren =>
       widget.expanded && widget.item.hasChildren && (_open || _ownsRoute);
 
+  /// **ټول شوي حالت کې فرعي توکي د کاشۍ دننه راځي.**
+  ///
+  /// دلته یوازې «په لاس پرانیستل» حساب دی، نه د لارې مالکیت — ځکه
+  /// چې د یوې تنګې پټې دننه یو خودکار پرانیستی لیست به هره ورځ
+  /// ځای نیوه او کارن به يې نه پوهېده چې څنګه يې بند کړي.
+  bool get _showCollapsedChildren =>
+      !widget.expanded && widget.item.hasChildren && _open;
+
   @override
   void didUpdateWidget(_NavBranch old) {
     super.didUpdateWidget(old);
     // بله څانګه چې فعاله شي، دا پخپله بندېږي — چې سایډبار اوږد نه شي.
     if (!_ownsRoute && _open) _open = false;
+    // سایډبار چې پرانیستل/ټول شي، پخوانی حالت معنا نه لري.
+    if (old.expanded != widget.expanded) _open = false;
   }
 
   @override
@@ -228,16 +238,29 @@ class _NavBranchState extends State<_NavBranch> {
       expanded: widget.expanded,
       showChevron: widget.item.hasChildren && widget.expanded,
       chevronOpen: _showChildren,
+      // **ټول شوی + فرعي توکي = کاشۍ پخپله ښکته اوږدېږي.**
+      //
+      // مخکې مې دلته یوه منو راوستله. منو یو بل ځای دی — راځي،
+      // پر پاڼه ولاړېږي، بیا ورکېږي. دا يې د سایډبار برخه نه ښودله.
+      // اوس هماغه نیمه‌شفافه کاشۍ چې نښان پکې دی، ښکته غځېږي او
+      // فرعي نښانونه هماغه دننه کېني — نو سترګه پوهېږي چې دا د
+      // همدې توکي دي، نه د پاڼې کوم بل شی.
+      below: !widget.item.hasChildren || widget.expanded
+          ? null
+          : _CollapsedSubList(
+              items: children,
+              open: _showCollapsedChildren,
+              color: widget.item.color,
+              currentRoute: widget.currentRoute,
+              onNavigate: widget.onNavigate,
+            ),
+      // پرانیستې کاشۍ باندې tooltip نه ښایي — پر فرعي نښانونو به
+      // ولاړ و او د هغوی خپل نومونه به يې پټ کړل.
+      showTooltip: !_showCollapsedChildren,
+      tinted: _showCollapsedChildren,
       onTap: () {
-        // ټول شوی + فرعي توکي = منو. پر مور لار تګ دلته نه کوو،
-        // ځکه چې منو کې لومړی توکی همغه مور پاڼه ده.
         if (widget.item.hasChildren && !widget.expanded) {
-          _showCollapsedMenu(
-            context,
-            item: widget.item,
-            currentRoute: widget.currentRoute,
-            onNavigate: widget.onNavigate,
-          );
+          setState(() => _open = !_open);
           return;
         }
         if (widget.item.hasChildren && widget.expanded) {
@@ -274,98 +297,124 @@ class _NavBranchState extends State<_NavBranch> {
   }
 }
 
-/// **د ټول شوي سایډبار فرعي منو.**
+/// **ټول شوي حالت کې د فرعي توکو لیست** — د کاشۍ دننه.
 ///
-/// کله چې سایډبار یوازې نښانونه ښیي، فرعي توکي هلته ځای نه لري —
-/// خو پټېدل يې هم سم نه دي: هغه چې سایډبار يې د ځای د سپمولو لپاره
-/// ټول کړی و، د ازموینو تنظیماتو یا د کارت ډیزاینر ته يې لار نه
-/// لرله. اوس پر نښان یو کلیک دا منو راولي.
-///
-/// **ولې `showMenu` نه `PopupMenuButton`؟** ځکه چې د توکي کاشۍ خپله
-/// یو `GestureDetector` لري. که يې یو `PopupMenuButton` راتاو کړی
-/// وای، کلیک به تل کاشۍ اخیسته او منو به هېڅکله نه وه راغلې.
-Future<void> _showCollapsedMenu(
-  BuildContext context, {
-  required NavItem item,
-  required String currentRoute,
-  required ValueChanged<String> onNavigate,
-}) async {
-  final s = S.of(context);
-  final p = context.palette;
-  final c = item.color;
+/// یوازې نښانونه، ځکه چې پلنوالی يې نشته. هر یو خپل نوم په
+/// tooltip کې لري، او فعال يې د ماډل رنګ اخلي.
+class _CollapsedSubList extends StatelessWidget {
+  final List<NavSubItem> items;
+  final bool open;
+  final Color color;
+  final String currentRoute;
+  final ValueChanged<String> onNavigate;
 
-  final box = context.findRenderObject() as RenderBox?;
-  final overlay =
-      Navigator.of(context).overlay?.context.findRenderObject() as RenderBox?;
-  if (box == null || overlay == null) return;
+  const _CollapsedSubList({
+    required this.items,
+    required this.open,
+    required this.color,
+    required this.currentRoute,
+    required this.onNavigate,
+  });
 
-  // منو د کاشۍ څنګ ته راځي، نه پر سر — نو نښان لا هم ښکاري او کارن
-  // پوهېږي چې دا د کوم توکي فرعي لیست دی.
-  final origin = box.localToGlobal(Offset.zero, ancestor: overlay);
-  final rect = RelativeRect.fromLTRB(
-    origin.dx + box.size.width,
-    origin.dy,
-    overlay.size.width - origin.dx - box.size.width,
-    0,
-  );
+  @override
+  Widget build(BuildContext context) {
+    final s = S.of(context);
+    final p = context.palette;
 
-  final picked = await showMenu<String>(
-    context: context,
-    position: rect,
-    // د اپ خپل سطح او څنډه — نه د متریال تلواله، چې منو د پاڼې
-    // له پاتې برخې سره یو ډول ښکاره شي.
-    color: p.surface,
-    surfaceTintColor: Colors.transparent,
-    shadowColor: Colors.black.withValues(alpha: 0.16),
-    elevation: 10,
-    constraints: const BoxConstraints(minWidth: 178, maxWidth: 260),
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(14),
-      side: BorderSide(color: p.line),
-    ),
-    items: [
-      PopupMenuItem<String>(
-        enabled: false,
-        height: 32,
-        child: Text(
-          item.label(s),
-          style: TextStyle(
-            fontSize: 11.5,
-            fontWeight: FontWeight.w800,
-            color: p.faint,
+    return AnimatedSize(
+      duration: AppMotion.normal,
+      curve: AppMotion.standard,
+      alignment: Alignment.topCenter,
+      child: !open
+          ? const SizedBox(width: double.infinity)
+          : Padding(
+              padding: const EdgeInsets.only(top: 7),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // یوه نرمه بېلونکې کرښه — چې نښانونه د مور له
+                  // نښانه بېل ښکاره شي، نه یوه اوږده ستنه.
+                  Container(
+                    height: 1,
+                    margin: const EdgeInsets.only(bottom: 5),
+                    color: color.withValues(alpha: 0.22),
+                  ),
+                  for (final sub in items)
+                    _CollapsedSubTile(
+                      item: sub,
+                      color: color,
+                      active: currentRoute == sub.route,
+                      label: sub.label(s),
+                      muted: p.muted,
+                      onTap: () => onNavigate(sub.route),
+                    ),
+                ],
+              ),
+            ),
+    );
+  }
+}
+
+class _CollapsedSubTile extends StatefulWidget {
+  final NavSubItem item;
+  final Color color;
+  final bool active;
+  final String label;
+  final Color muted;
+  final VoidCallback onTap;
+
+  const _CollapsedSubTile({
+    required this.item,
+    required this.color,
+    required this.active,
+    required this.label,
+    required this.muted,
+    required this.onTap,
+  });
+
+  @override
+  State<_CollapsedSubTile> createState() => _CollapsedSubTileState();
+}
+
+class _CollapsedSubTileState extends State<_CollapsedSubTile> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: widget.label,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        onEnter: (_) => setState(() => _hover = true),
+        onExit: (_) => setState(() => _hover = false),
+        child: GestureDetector(
+          onTap: widget.onTap,
+          behavior: HitTestBehavior.opaque,
+          child: AnimatedContainer(
+            duration: AppMotion.fast,
+            margin: const EdgeInsets.symmetric(vertical: 1.5),
+            width: 25,
+            height: 25,
+            decoration: BoxDecoration(
+              color: widget.active
+                  ? widget.color
+                  : (_hover
+                        ? widget.color.withValues(alpha: 0.16)
+                        : Colors.transparent),
+              borderRadius: BorderRadius.circular(7),
+            ),
+            child: Icon(
+              widget.item.icon,
+              size: 14,
+              color: widget.active
+                  ? Colors.white
+                  : (_hover ? widget.color : widget.muted),
+            ),
           ),
         ),
       ),
-      const PopupMenuDivider(),
-      for (final sub in item.children)
-        PopupMenuItem<String>(
-          value: sub.route,
-          height: 38,
-          child: Row(
-            children: [
-              Icon(
-                sub.icon,
-                size: 15,
-                color: currentRoute == sub.route ? c : p.muted,
-              ),
-              const SizedBox(width: 10),
-              Text(
-                sub.label(s),
-                style: TextStyle(
-                  fontSize: 12.5,
-                  fontWeight: currentRoute == sub.route
-                      ? FontWeight.w700
-                      : FontWeight.w500,
-                  color: currentRoute == sub.route ? c : p.inkSoft,
-                ),
-              ),
-            ],
-          ),
-        ),
-    ],
-  );
-
-  if (picked != null) onNavigate(picked);
+    );
+  }
 }
 
 /// **د فرعي توکو لیست** — یوه ریل او پرې یو ښویېدونکی نښان.
@@ -558,9 +607,7 @@ class _SubTileState extends State<_SubTile> {
                             fontWeight: active
                                 ? FontWeight.w700
                                 : FontWeight.w500,
-                            color: active
-                                ? c
-                                : (_hover ? p.inkSoft : p.muted),
+                            color: active ? c : (_hover ? p.inkSoft : p.muted),
                           ),
                         ),
                       ],
@@ -584,6 +631,19 @@ class _NavTile extends StatefulWidget {
   final bool showChevron;
   final bool chevronOpen;
 
+  /// د کاشۍ **دننه**، د نښان له کرښې لاندې. ټول شوی سایډبار د خپلو
+  /// فرعي نښانونو لپاره ترې کار اخلي — نو کاشۍ پخپله اوږدېږي.
+  final Widget? below;
+
+  /// ټول شوي حالت کې نوم په tooltip کې ښکاري — مګر چې کاشۍ
+  /// پرانیستې وي.
+  final bool showTooltip;
+
+  /// کاشۍ خپل نیمه‌شفاف رنګ واخلي، که څه هم فعاله نه وي. ټول شوی
+  /// سایډبار يې د پرانیستې کاشۍ لپاره کاروي — هغه رنګ هغه څه دی
+  /// چې فرعي نښانونه د خپلې مور سره یو ځای ښیي.
+  final bool tinted;
+
   const _NavTile({
     required this.item,
     required this.active,
@@ -591,6 +651,9 @@ class _NavTile extends StatefulWidget {
     required this.onTap,
     this.showChevron = false,
     this.chevronOpen = false,
+    this.below,
+    this.showTooltip = true,
+    this.tinted = false,
   });
 
   @override
@@ -623,78 +686,88 @@ class _NavTileState extends State<_NavTile> {
             // فعال توکی د خپل ماډل په رنګ کې نرم شالید اخلي.
             color: active
                 ? c.withValues(alpha: 0.12)
+                : widget.tinted
+                ? c.withValues(alpha: 0.09)
                 : _hover
                 ? p.surfaceAlt
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(10),
           ),
-          child: Row(
-            mainAxisAlignment: widget.expanded
-                ? MainAxisAlignment.start
-                : MainAxisAlignment.center,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              // رنګینه نښه — دا هغه څه دي چې ډاشبورډ ژوندی ښکاري.
-              AnimatedContainer(
-                duration: AppMotion.fast,
-                width: 27,
-                height: 27,
-                decoration: BoxDecoration(
-                  color: active ? c : c.withValues(alpha: 0.13),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  widget.item.icon,
-                  size: 17,
-                  color: active ? Colors.white : c,
-                ),
-              ),
-              if (widget.expanded) ...[
-                const SizedBox(width: 11),
-                Expanded(
-                  child: Text(
-                    widget.item.label(s),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 13.5,
-                      fontWeight: active ? FontWeight.w700 : FontWeight.w500,
-                      color: active ? c : p.inkSoft,
+              Row(
+                mainAxisAlignment: widget.expanded
+                    ? MainAxisAlignment.start
+                    : MainAxisAlignment.center,
+                children: [
+                  // رنګینه نښه — دا هغه څه دي چې ډاشبورډ ژوندی ښکاري.
+                  AnimatedContainer(
+                    duration: AppMotion.fast,
+                    width: 27,
+                    height: 27,
+                    decoration: BoxDecoration(
+                      color: active ? c : c.withValues(alpha: 0.13),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      widget.item.icon,
+                      size: 17,
+                      color: active ? Colors.white : c,
                     ),
                   ),
-                ),
-                if (widget.showChevron)
-                  AnimatedRotation(
-                    duration: AppMotion.normal,
-                    curve: AppMotion.standard,
-                    // پرانیستی = ښکته، بند = د متن د پیل خوا ته.
-                    // `AnimatedRotation` د RTL سره پخپله نه اوړي، نو
-                    // د لوري له مخې يې خپله ټاکو.
-                    turns: widget.chevronOpen
-                        ? 0
-                        : (Directionality.of(context) == TextDirection.rtl
-                              ? 0.25
-                              : -0.25),
-                    child: Icon(
-                      Icons.expand_more_rounded,
-                      size: 16,
-                      color: active ? c : p.faint,
-                    ),
-                  )
-                else
-                  // د فعال توکي وړه نښه په څنډه کې.
-                  AnimatedOpacity(
-                    duration: AppMotion.fast,
-                    opacity: active ? 1 : 0,
-                    child: Container(
-                      width: 3,
-                      height: 18,
-                      decoration: BoxDecoration(
-                        color: c,
-                        borderRadius: BorderRadius.circular(2),
+                  if (widget.expanded) ...[
+                    const SizedBox(width: 11),
+                    Expanded(
+                      child: Text(
+                        widget.item.label(s),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: active
+                              ? FontWeight.w700
+                              : FontWeight.w500,
+                          color: active ? c : p.inkSoft,
+                        ),
                       ),
                     ),
-                  ),
-              ],
+                    if (widget.showChevron)
+                      AnimatedRotation(
+                        duration: AppMotion.normal,
+                        curve: AppMotion.standard,
+                        // پرانیستی = ښکته، بند = د متن د پیل خوا ته.
+                        // `AnimatedRotation` د RTL سره پخپله نه اوړي، نو
+                        // د لوري له مخې يې خپله ټاکو.
+                        turns: widget.chevronOpen
+                            ? 0
+                            : (Directionality.of(context) == TextDirection.rtl
+                                  ? 0.25
+                                  : -0.25),
+                        child: Icon(
+                          Icons.expand_more_rounded,
+                          size: 16,
+                          color: active ? c : p.faint,
+                        ),
+                      )
+                    else
+                      // د فعال توکي وړه نښه په څنډه کې.
+                      AnimatedOpacity(
+                        duration: AppMotion.fast,
+                        opacity: active ? 1 : 0,
+                        child: Container(
+                          width: 3,
+                          height: 18,
+                          decoration: BoxDecoration(
+                            color: c,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                      ),
+                  ],
+                ],
+              ),
+              if (widget.below != null) widget.below!,
             ],
           ),
         ),
@@ -702,7 +775,7 @@ class _NavTileState extends State<_NavTile> {
     );
 
     // ټول شوي حالت کې نوم یوازې په tooltip کې ښکاري.
-    return widget.expanded
+    return widget.expanded || !widget.showTooltip
         ? tile
         : Tooltip(message: widget.item.label(s), child: tile);
   }

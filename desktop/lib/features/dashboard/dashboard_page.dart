@@ -47,16 +47,44 @@ class DashboardStats {
   );
 }
 
+/// **د ډاشبورډ یو کلیک — چېرته ځي.**
+///
+/// ډاشبورډ یوازې د شمېرو یوه تخته نه ده؛ د پاڼو یوه دروازه ده. کله
+/// چې مدیر «نن غیرحاضر ۴۷» ویني، بله پوښتنه يې تل یوه ده: **کوم
+/// څلوېښت اووه؟** که کلیک کار ونه کړي، هغه بیا سایډبار، بیا ناسته،
+/// بیا فلټر — درې ګامه چې ځواب يې مخې ته پروت و.
+class DashboardLink {
+  final String route;
+
+  /// د حاضرۍ لیست کوم حالت ښکاره کړي — `present` | `absent` |
+  /// `late` | `leave`.
+  final String? status;
+
+  /// مستقیم یو شاګرد پرانیزي — د «پاملرنې لیست» کرښې يې کاروي.
+  final int? studentId;
+
+  const DashboardLink(this.route, {this.status, this.studentId});
+}
+
 class AttentionItem {
   final String text;
   final Color color;
   final IconData icon;
-  const AttentionItem(this.text, this.color, this.icon);
+
+  /// پر دې کرښه کلیک چېرته بیایي. `null` = یوازې د لوستلو لپاره.
+  final DashboardLink? link;
+
+  const AttentionItem(this.text, this.color, this.icon, {this.link});
 }
 
 class DashboardPage extends StatelessWidget {
   final DashboardStats stats;
-  const DashboardPage({super.key, required this.stats});
+
+  /// **هر توکی تعاملي دی.** که `null` وي، ډاشبورډ یوازې لوستل کېږي
+  /// (د عکسونو او ازموینو لپاره).
+  final ValueChanged<DashboardLink>? onOpen;
+
+  const DashboardPage({super.key, required this.stats, this.onOpen});
 
   @override
   Widget build(BuildContext context) {
@@ -72,7 +100,7 @@ class DashboardPage extends StatelessWidget {
           // شوې وه او د اړتیا پر وخت به يې نه لیده.
           const _LiveStrip(),
           FadeSlideIn(
-            child: _KpiRow(stats: stats, s: s),
+            child: _KpiRow(stats: stats, s: s, onOpen: onOpen),
           ),
           const SizedBox(height: 16),
           LayoutBuilder(
@@ -80,11 +108,11 @@ class DashboardPage extends StatelessWidget {
               final narrow = c.maxWidth < 900;
               final chart = FadeSlideIn(
                 delay: AppMotion.staggerFor(4),
-                child: _ChartCard(stats: stats, s: s),
+                child: _ChartCard(stats: stats, s: s, onOpen: onOpen),
               );
               final list = FadeSlideIn(
                 delay: AppMotion.staggerFor(5),
-                child: _AttentionCard(stats: stats, s: s),
+                child: _AttentionCard(stats: stats, s: s, onOpen: onOpen),
               );
               if (narrow) {
                 return Column(
@@ -109,7 +137,7 @@ class DashboardPage extends StatelessWidget {
           const SizedBox(height: 16),
           FadeSlideIn(
             delay: AppMotion.staggerFor(6),
-            child: _QuickActions(s: s),
+            child: _QuickActions(s: s, onOpen: onOpen),
           ),
         ],
       ),
@@ -179,15 +207,36 @@ class _LiveStrip extends StatelessWidget {
 
 class _QuickActions extends StatelessWidget {
   final S s;
-  const _QuickActions({required this.s});
+  final ValueChanged<DashboardLink>? onOpen;
+  const _QuickActions({required this.s, this.onOpen});
 
   @override
   Widget build(BuildContext context) {
-    final actions = <(String, IconData, Color)>[
-      (s.takeAttendance, Icons.fact_check_rounded, AppColors.modAttendance),
-      (s.addStudent, Icons.person_add_rounded, AppColors.modStudents),
-      (s.notifyParents, Icons.campaign_rounded, AppColors.modMessages),
-      (s.idCards, Icons.qr_code_2_rounded, AppColors.modIdCards),
+    final actions = <(String, IconData, Color, DashboardLink)>[
+      (
+        s.takeAttendance,
+        Icons.fact_check_rounded,
+        AppColors.modAttendance,
+        const DashboardLink('/attendance'),
+      ),
+      (
+        s.addStudent,
+        Icons.person_add_rounded,
+        AppColors.modStudents,
+        const DashboardLink('/students/enroll'),
+      ),
+      (
+        s.notifyParents,
+        Icons.campaign_rounded,
+        AppColors.modMessages,
+        const DashboardLink('/messages'),
+      ),
+      (
+        s.idCards,
+        Icons.qr_code_2_rounded,
+        AppColors.modIdCards,
+        const DashboardLink('/id-cards'),
+      ),
     ];
 
     return _Panel(
@@ -201,10 +250,15 @@ class _QuickActions extends StatelessWidget {
             spacing: gap,
             runSpacing: gap,
             children: [
-              for (final (label, icon, color) in actions)
+              for (final (label, icon, color, link) in actions)
                 SizedBox(
                   width: w,
-                  child: _ActionTile(label: label, icon: icon, color: color),
+                  child: _ActionTile(
+                    label: label,
+                    icon: icon,
+                    color: color,
+                    onTap: onOpen == null ? null : () => onOpen!(link),
+                  ),
                 ),
             ],
           );
@@ -218,11 +272,13 @@ class _ActionTile extends StatefulWidget {
   final String label;
   final IconData icon;
   final Color color;
+  final VoidCallback? onTap;
 
   const _ActionTile({
     required this.label,
     required this.icon,
     required this.color,
+    this.onTap,
   });
 
   @override
@@ -239,7 +295,10 @@ class _ActionTileState extends State<_ActionTile> {
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _hover = true),
       onExit: (_) => setState(() => _hover = false),
-      child: AnimatedContainer(
+      child: GestureDetector(
+        onTap: widget.onTap,
+        behavior: HitTestBehavior.opaque,
+        child: AnimatedContainer(
         duration: AppMotion.fast,
         curve: AppMotion.standard,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
@@ -277,6 +336,7 @@ class _ActionTileState extends State<_ActionTile> {
           ],
         ),
       ),
+      ),
     );
   }
 }
@@ -288,7 +348,8 @@ class _ActionTileState extends State<_ActionTile> {
 class _KpiRow extends StatelessWidget {
   final DashboardStats stats;
   final S s;
-  const _KpiRow({required this.stats, required this.s});
+  final ValueChanged<DashboardLink>? onOpen;
+  const _KpiRow({required this.stats, required this.s, this.onOpen});
 
   @override
   Widget build(BuildContext context) {
@@ -301,6 +362,10 @@ class _KpiRow extends StatelessWidget {
         icon: Icons.school_rounded,
         gradient: AppColors.gradIndigo,
         index: 0,
+        // ټول شاګردان → د شاګردانو لیست.
+        onTap: onOpen == null
+            ? null
+            : () => onOpen!(const DashboardLink('/students')),
       ),
       _KpiCard(
         label: s.presentToday,
@@ -312,6 +377,12 @@ class _KpiRow extends StatelessWidget {
         icon: Icons.check_circle_rounded,
         gradient: AppColors.gradEmerald,
         index: 1,
+        // نن حاضر → د نننۍ حاضرۍ لیست، پر «حاضر» فلټر شوی.
+        onTap: onOpen == null
+            ? null
+            : () => onOpen!(
+                const DashboardLink('/attendance/today', status: 'present'),
+              ),
       ),
       _KpiCard(
         label: s.absentToday,
@@ -320,6 +391,11 @@ class _KpiRow extends StatelessWidget {
         icon: Icons.cancel_rounded,
         gradient: AppColors.gradRose,
         index: 2,
+        onTap: onOpen == null
+            ? null
+            : () => onOpen!(
+                const DashboardLink('/attendance/today', status: 'absent'),
+              ),
       ),
       _KpiCard(
         label: s.feesCollected,
@@ -329,6 +405,9 @@ class _KpiRow extends StatelessWidget {
         icon: Icons.payments_rounded,
         gradient: AppColors.gradAmber,
         index: 3,
+        onTap: onOpen == null
+            ? null
+            : () => onOpen!(const DashboardLink('/fees')),
       ),
     ];
 
@@ -355,6 +434,7 @@ class _KpiCard extends StatefulWidget {
   final List<Color> gradient;
   final int index;
   final AppLocale locale;
+  final VoidCallback? onTap;
 
   const _KpiCard({
     required this.label,
@@ -364,6 +444,7 @@ class _KpiCard extends StatefulWidget {
     required this.index,
     required this.locale,
     this.suffix = '',
+    this.onTap,
   });
 
   @override
@@ -376,9 +457,15 @@ class _KpiCardState extends State<_KpiCard> {
   @override
   Widget build(BuildContext context) {
     return MouseRegion(
+      cursor: widget.onTap == null
+          ? MouseCursor.defer
+          : SystemMouseCursors.click,
       onEnter: (_) => setState(() => _hover = true),
       onExit: (_) => setState(() => _hover = false),
-      child: AnimatedContainer(
+      child: GestureDetector(
+        onTap: widget.onTap,
+        behavior: HitTestBehavior.opaque,
+        child: AnimatedContainer(
         duration: AppMotion.fast,
         curve: AppMotion.standard,
         transform: Matrix4.translationValues(0, _hover ? -3 : 0, 0),
@@ -415,6 +502,21 @@ class _KpiCardState extends State<_KpiCard> {
                   child: Icon(widget.icon, color: Colors.white, size: 18),
                 ),
                 const Spacer(),
+                // **د کلیک وړتیا باید ښکاره وي.** یوه غشۍ چې د موس
+                // پر راتګ روښانه شي، ټول کارت یوه تڼۍ ښیي — پرته له
+                // دې، کارن هېڅکله نه ازمویي چې پرې کېکاږي.
+                if (widget.onTap != null)
+                  AnimatedOpacity(
+                    duration: AppMotion.fast,
+                    opacity: _hover ? 1 : 0.45,
+                    child: Icon(
+                      Directionality.of(context) == TextDirection.rtl
+                          ? Icons.arrow_back_rounded
+                          : Icons.arrow_forward_rounded,
+                      size: 16,
+                      color: Colors.white,
+                    ),
+                  ),
               ],
             ),
             const SizedBox(height: 14),
@@ -444,6 +546,7 @@ class _KpiCardState extends State<_KpiCard> {
           ],
         ),
       ),
+      ),
     );
   }
 }
@@ -455,7 +558,8 @@ class _KpiCardState extends State<_KpiCard> {
 class _ChartCard extends StatelessWidget {
   final DashboardStats stats;
   final S s;
-  const _ChartCard({required this.stats, required this.s});
+  final ValueChanged<DashboardLink>? onOpen;
+  const _ChartCard({required this.stats, required this.s, this.onOpen});
 
   @override
   Widget build(BuildContext context) {
@@ -464,6 +568,11 @@ class _ChartCard extends StatelessWidget {
 
     return _Panel(
       title: s.weeklyAttendance,
+      // د اونۍ کرښه یوه پوښتنه پیدا کوي — «کومه ورځ ولې ښکته وه؟»
+      // — او ځواب يې د حاضرۍ رپوټ کې دی.
+      onOpen: onOpen == null
+          ? null
+          : () => onOpen!(const DashboardLink('/reports')),
       child: SizedBox(
         height: 240,
         child: hasData
@@ -563,16 +672,94 @@ class _ChartCard extends StatelessWidget {
 //  د پاملرنې لیست
 // ═══════════════════════════════════════════════════════════
 
-class _AttentionCard extends StatelessWidget {
-  final DashboardStats stats;
-  final S s;
-  const _AttentionCard({required this.stats, required this.s});
+/// د پاملرنې یوه کرښه — پر کلیک هماغه شاګرد پرانیزي.
+class _AttentionRow extends StatefulWidget {
+  final AttentionItem item;
+  final VoidCallback? onTap;
+  const _AttentionRow({required this.item, this.onTap});
+
+  @override
+  State<_AttentionRow> createState() => _AttentionRowState();
+}
+
+class _AttentionRowState extends State<_AttentionRow> {
+  bool _hover = false;
 
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
+    final tappable = widget.onTap != null;
+
+    return MouseRegion(
+      cursor: tappable ? SystemMouseCursors.click : MouseCursor.defer,
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        behavior: HitTestBehavior.opaque,
+        child: AnimatedContainer(
+          duration: AppMotion.fast,
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
+          margin: const EdgeInsets.symmetric(vertical: 1),
+          decoration: BoxDecoration(
+            color: _hover && tappable ? p.surfaceAlt : Colors.transparent,
+            borderRadius: BorderRadius.circular(9),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 30,
+                height: 30,
+                decoration: BoxDecoration(
+                  color: widget.item.color.withValues(alpha: 0.13),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  widget.item.icon,
+                  size: 15,
+                  color: widget.item.color,
+                ),
+              ),
+              const SizedBox(width: 11),
+              Expanded(
+                child: Text(
+                  widget.item.text,
+                  style: TextStyle(fontSize: 12.8, color: p.inkSoft),
+                ),
+              ),
+              if (tappable)
+                AnimatedOpacity(
+                  duration: AppMotion.fast,
+                  opacity: _hover ? 1 : 0,
+                  child: Icon(
+                    Directionality.of(context) == TextDirection.rtl
+                        ? Icons.chevron_left_rounded
+                        : Icons.chevron_right_rounded,
+                    size: 17,
+                    color: p.muted,
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AttentionCard extends StatelessWidget {
+  final DashboardStats stats;
+  final S s;
+  final ValueChanged<DashboardLink>? onOpen;
+  const _AttentionCard({required this.stats, required this.s, this.onOpen});
+
+  @override
+  Widget build(BuildContext context) {
     return _Panel(
       title: s.needsAttention,
+      onOpen: onOpen == null
+          ? null
+          : () => onOpen!(const DashboardLink('/reports')),
       child: stats.attention.isEmpty
           ? const SizedBox(
               height: 240,
@@ -587,37 +774,12 @@ class _AttentionCard extends StatelessWidget {
                   FadeSlideIn.staggered(
                     index: i,
                     offsetY: 6,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 7),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 30,
-                            height: 30,
-                            decoration: BoxDecoration(
-                              color: stats.attention[i].color.withValues(
-                                alpha: 0.13,
-                              ),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Icon(
-                              stats.attention[i].icon,
-                              size: 15,
-                              color: stats.attention[i].color,
-                            ),
-                          ),
-                          const SizedBox(width: 11),
-                          Expanded(
-                            child: Text(
-                              stats.attention[i].text,
-                              style: TextStyle(
-                                fontSize: 12.8,
-                                color: p.inkSoft,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+                    child: _AttentionRow(
+                      item: stats.attention[i],
+                      onTap:
+                          onOpen == null || stats.attention[i].link == null
+                          ? null
+                          : () => onOpen!(stats.attention[i].link!),
                     ),
                   ),
               ],
@@ -633,7 +795,11 @@ class _AttentionCard extends StatelessWidget {
 class _Panel extends StatelessWidget {
   final String title;
   final Widget child;
-  const _Panel({required this.title, required this.child});
+
+  /// د پینل سرلیک پخپله یوه لار شي — د «ټول وګوره» تڼۍ يې ښیي.
+  final VoidCallback? onOpen;
+
+  const _Panel({required this.title, required this.child, this.onOpen});
 
   @override
   Widget build(BuildContext context) {
@@ -649,13 +815,31 @@ class _Panel extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: p.ink,
-            ),
+          Row(
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: p.ink,
+                ),
+              ),
+              const Spacer(),
+              if (onOpen != null)
+                TextButton.icon(
+                  onPressed: onOpen,
+                  style: TextButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(horizontal: 9),
+                  ),
+                  icon: const Icon(Icons.open_in_new_rounded, size: 14),
+                  label: const Text(
+                    'ټول وګوره',
+                    style: TextStyle(fontSize: 12),
+                  ),
+                ),
+            ],
           ),
           const SizedBox(height: 16),
           child,

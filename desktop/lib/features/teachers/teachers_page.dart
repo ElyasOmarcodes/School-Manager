@@ -16,6 +16,7 @@ import '../../data/repositories/student_repository.dart' show Paged;
 import '../../data/repositories/teacher_repository.dart';
 import '../../data/repositories/user_repository.dart' show Perm;
 import '../../widgets/data_table_view.dart';
+import '../../widgets/filter_bar.dart';
 import '../auth/auth_service.dart';
 import 'teacher_profile_page.dart' show teacherStatusColor, teacherStatusLabel;
 
@@ -247,73 +248,36 @@ class _TeachersPageState extends State<TeachersPage> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           FadeSlideIn(
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 320,
-                  child: TextField(
-                    controller: _search,
-                    onChanged: _onSearch,
-                    decoration: const InputDecoration(
-                      hintText: 'نوم، نمبر، تلیفون یا تخصص…',
-                      prefixIcon: Icon(Icons.search_rounded, size: 19),
-                      isDense: true,
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 13,
-                      ),
+            child: FilterBar(
+              searchController: _search,
+              onSearchChanged: _onSearch,
+              searchHint: 'نوم، نمبر، تلیفون یا تخصص…',
+              searchWidth: 320,
+              primary: [
+                if (_specializations.isNotEmpty)
+                  QuickFilter<String>(
+                    label: 'ټول تخصصونه',
+                    icon: Icons.psychology_rounded,
+                    value: _filter.specialization,
+                    options: [
+                      for (final x in _specializations)
+                        (value: x, label: x),
+                    ],
+                    onChanged: (v) => _setFilter(
+                      v == null
+                          ? _filter.copyWith(clearSpecialization: true)
+                          : _filter.copyWith(specialization: v),
                     ),
                   ),
-                ),
-                const SizedBox(width: 10),
-                FilterChipMenu(
-                  label: 'ټول جنس',
-                  options: const {'male': 'نارینه', 'female': 'ښځینه'},
-                  value: _filter.gender,
-                  onChanged: (v) => _setFilter(
-                    v == null
-                        ? _filter.copyWith(clearGender: true)
-                        : _filter.copyWith(gender: v),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                FilterChipMenu(
-                  label: 'ټول حالتونه',
-                  options: const {
-                    'active': 'فعال',
-                    'on_leave': 'په رخصتۍ',
-                    'resigned': 'استعفا',
-                    'terminated': 'ګوښه شوی',
-                  },
-                  // «فعال» تلواله ده، خو بیا هم په چیپ کې ښکاري — نو
-                  // کارن پوهېږي چې ولې استعفا کړي نه ښکاري.
-                  value: _filter.status,
-                  onChanged: (v) => _setFilter(
-                    v == null
-                        ? _filter.copyWith(clearStatus: true)
-                        : _filter.copyWith(status: v),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                _FilterToggle(
-                  open: _showFilters,
-                  count: _filter.activeCount,
-                  onTap: () => setState(() => _showFilters = !_showFilters),
-                ),
-                const Spacer(),
-                Text(
-                  '${locale.grouped(_page.total)} ${s.teachers}',
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    color: context.palette.muted,
-                  ),
-                ),
-                const SizedBox(width: 14),
+              ],
+              activeCount: _filter.advancedCount,
+              open: _showFilters,
+              onToggle: () => setState(() => _showFilters = !_showFilters),
+              countLabel: '${locale.grouped(_page.total)} ${s.teachers}',
+              actions: [
                 FilledButton.icon(
-                  onPressed: widget.session.permissions.can(
-                        'teachers',
-                        Perm.create,
-                      )
+                  onPressed:
+                      widget.session.permissions.can('teachers', Perm.create)
                       ? _addTeacher
                       : null,
                   style: FilledButton.styleFrom(
@@ -328,23 +292,131 @@ class _TeachersPageState extends State<TeachersPage> {
               ],
             ),
           ),
-
-          AnimatedSize(
-            duration: AppMotion.normal,
-            curve: AppMotion.standard,
-            alignment: Alignment.topCenter,
-            child: _showFilters
-                ? Padding(
-                    padding: const EdgeInsets.only(top: 12),
-                    child: _FilterPanel(
-                      filter: _filter,
-                      specializations: _specializations,
-                      qualifications: _qualifications,
-                      subjects: _subjects,
-                      onChanged: _setFilter,
+          FilterSheet(
+            open: _showFilters,
+            activeCount: _filter.advancedCount,
+            onClear: () => _setFilter(
+              TeacherFilter(
+                query: _filter.query,
+                sort: _filter.sort,
+                specialization: _filter.specialization,
+              ),
+            ),
+            children: [
+              FilterDropdown<String>(
+                label: 'جنس',
+                allLabel: 'ټول جنس',
+                value: _filter.gender,
+                options: const [
+                  (value: 'male', label: 'نارینه'),
+                  (value: 'female', label: 'ښځینه'),
+                ],
+                onChanged: (v) => _setFilter(
+                  v == null
+                      ? _filter.copyWith(clearGender: true)
+                      : _filter.copyWith(gender: v),
+                ),
+              ),
+              FilterDropdown<String>(
+                label: 'حالت',
+                allLabel: 'ټول حالتونه',
+                value: _filter.status,
+                options: const [
+                  (value: 'active', label: 'فعال'),
+                  (value: 'on_leave', label: 'په رخصتۍ'),
+                  (value: 'resigned', label: 'استعفا'),
+                  (value: 'terminated', label: 'ګوښه شوی'),
+                ],
+                onChanged: (v) => _setFilter(
+                  v == null
+                      ? _filter.copyWith(clearStatus: true)
+                      : _filter.copyWith(status: v),
+                ),
+              ),
+              FilterField(
+                label: 'تحصیل',
+                child: TypeAheadField(
+                  label: 'تحصیل',
+                  icon: Icons.school_rounded,
+                  value: _filter.qualification,
+                  options: _qualifications,
+                  onChanged: (v) => _setFilter(
+                    v == null
+                        ? _filter.copyWith(clearQualification: true)
+                        : _filter.copyWith(qualification: v),
+                  ),
+                ),
+              ),
+              if (_subjects.isNotEmpty)
+                FilterDropdown<int>(
+                  label: 'مضمون ورکوي',
+                  value: _filter.subjectId,
+                  options: [
+                    for (final sub in _subjects)
+                      (value: sub.id, label: sub.name),
+                  ],
+                  onChanged: (v) => _setFilter(
+                    v == null
+                        ? _filter.copyWith(clearSubject: true)
+                        : _filter.copyWith(subjectId: v),
+                  ),
+                ),
+              FilterField(
+                label: 'مشري',
+                width: 250,
+                child: SegmentedChoice<bool?>(
+                  value: _filter.homeroom,
+                  options: [
+                    (value: null, label: s.all, icon: null),
+                    (
+                      value: true,
+                      label: 'مشر استاد',
+                      icon: Icons.meeting_room_rounded,
                     ),
-                  )
-                : const SizedBox(width: double.infinity),
+                    (value: false, label: 'بې‌مشرۍ', icon: null),
+                  ],
+                  onChanged: (v) => _setFilter(
+                    v == null
+                        ? _filter.copyWith(clearHomeroom: true)
+                        : _filter.copyWith(homeroom: v),
+                  ),
+                ),
+              ),
+              FilterField(
+                label: 'ترتیب',
+                width: 300,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: SegmentedChoice<String>(
+                        value: _filter.sort,
+                        color: AppColors.modTeachers,
+                        options: const [
+                          (value: 'name', label: 'په نوم', icon: null),
+                          (value: 'salary', label: 'په معاش', icon: null),
+                          (value: 'hired', label: 'د دندې پیل', icon: null),
+                        ],
+                        onChanged: (v) => _setFilter(_filter.copyWith(sort: v)),
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: _filter.descending
+                          ? 'له لوړ ښکته'
+                          : 'له ټیټ پورته',
+                      onPressed: () => _setFilter(
+                        _filter.copyWith(descending: !_filter.descending),
+                      ),
+                      icon: Icon(
+                        _filter.descending
+                            ? Icons.arrow_downward_rounded
+                            : Icons.arrow_upward_rounded,
+                        size: 18,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
 
@@ -573,228 +645,6 @@ class _MiniButton extends StatelessWidget {
 //  د فلټرونو تخته
 // ═══════════════════════════════════════════════════════════
 
-class _FilterPanel extends StatelessWidget {
-  final TeacherFilter filter;
-  final List<String> specializations;
-  final List<String> qualifications;
-  final List<Subject> subjects;
-  final ValueChanged<TeacherFilter> onChanged;
-
-  const _FilterPanel({
-    required this.filter,
-    required this.specializations,
-    required this.qualifications,
-    required this.subjects,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final s = S.of(context);
-    final p = context.palette;
-
-    return Panel(
-      padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              SizedBox(
-                width: 190,
-                child: TypeAheadField(
-                  label: 'تخصص',
-                  icon: Icons.psychology_rounded,
-                  value: filter.specialization,
-                  options: specializations,
-                  onChanged: (v) => onChanged(
-                    v == null
-                        ? filter.copyWith(clearSpecialization: true)
-                        : filter.copyWith(specialization: v),
-                  ),
-                ),
-              ),
-              SizedBox(
-                width: 190,
-                child: TypeAheadField(
-                  label: 'تحصیل',
-                  icon: Icons.school_rounded,
-                  value: filter.qualification,
-                  options: qualifications,
-                  onChanged: (v) => onChanged(
-                    v == null
-                        ? filter.copyWith(clearQualification: true)
-                        : filter.copyWith(qualification: v),
-                  ),
-                ),
-              ),
-              if (subjects.isNotEmpty)
-                SizedBox(
-                  width: 190,
-                  child: DropdownButtonFormField<int?>(
-                    initialValue: filter.subjectId,
-                    isDense: true,
-                    isExpanded: true,
-                    decoration: const InputDecoration(
-                      labelText: 'مضمون ورکوي',
-                      isDense: true,
-                    ),
-                    items: [
-                      DropdownMenuItem(value: null, child: Text(s.all)),
-                      for (final sub in subjects)
-                        DropdownMenuItem(value: sub.id, child: Text(sub.name)),
-                    ],
-                    onChanged: (v) => onChanged(
-                      v == null
-                          ? filter.copyWith(clearSubject: true)
-                          : filter.copyWith(subjectId: v),
-                    ),
-                  ),
-                ),
-              SegmentedChoice<bool?>(
-                value: filter.homeroom,
-                options: [
-                  (value: null, label: s.all, icon: null),
-                  (
-                    value: true,
-                    label: 'مشر استاد',
-                    icon: Icons.meeting_room_rounded,
-                  ),
-                  (value: false, label: 'بې‌مشرۍ', icon: null),
-                ],
-                onChanged: (v) => onChanged(
-                  v == null
-                      ? filter.copyWith(clearHomeroom: true)
-                      : filter.copyWith(homeroom: v),
-                ),
-              ),
-              SegmentedChoice<String>(
-                value: filter.sort,
-                color: AppColors.modTeachers,
-                options: const [
-                  (value: 'name', label: 'په نوم', icon: null),
-                  (value: 'salary', label: 'په معاش', icon: null),
-                  (value: 'hired', label: 'د دندې پیل', icon: null),
-                ],
-                onChanged: (v) => onChanged(filter.copyWith(sort: v)),
-              ),
-              IconButton(
-                tooltip: filter.descending ? 'له لوړ ښکته' : 'له ټیټ پورته',
-                onPressed: () =>
-                    onChanged(filter.copyWith(descending: !filter.descending)),
-                icon: Icon(
-                  filter.descending
-                      ? Icons.arrow_downward_rounded
-                      : Icons.arrow_upward_rounded,
-                  size: 18,
-                ),
-              ),
-            ],
-          ),
-          if (filter.activeCount > 0) ...[
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                Text(
-                  '${s.locale.num(filter.activeCount)} فلټرونه فعال دي',
-                  style: TextStyle(fontSize: 12, color: p.muted),
-                ),
-                const Spacer(),
-                TextButton.icon(
-                  onPressed: () => onChanged(
-                    TeacherFilter(query: filter.query, sort: filter.sort),
-                  ),
-                  icon: const Icon(Icons.clear_all_rounded, size: 16),
-                  label: Text(s.clearFilters),
-                ),
-              ],
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _FilterToggle extends StatelessWidget {
-  final bool open;
-  final int count;
-  final VoidCallback onTap;
-
-  const _FilterToggle({
-    required this.open,
-    required this.count,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final s = S.of(context);
-    final p = context.palette;
-    final active = count > 0;
-
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: AppMotion.fast,
-        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
-        decoration: BoxDecoration(
-          color: active || open
-              ? AppColors.primary.withValues(alpha: 0.09)
-              : p.surface,
-          borderRadius: BorderRadius.circular(AppTheme.radiusSm),
-          border: Border.all(
-            color: active || open
-                ? AppColors.primary.withValues(alpha: 0.4)
-                : p.line,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.tune_rounded,
-              size: 16,
-              color: active || open ? AppColors.primary : p.muted,
-            ),
-            const SizedBox(width: 6),
-            Text(
-              s.filters,
-              style: TextStyle(
-                fontSize: 12.5,
-                fontWeight: active ? FontWeight.w700 : FontWeight.w500,
-                color: active || open ? AppColors.primary : p.inkSoft,
-              ),
-            ),
-            if (active) ...[
-              const SizedBox(width: 6),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                decoration: BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius: BorderRadius.circular(9),
-                ),
-                child: Text(
-                  s.locale.num(count),
-                  style: const TextStyle(
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// د یوه فلټر چیپ چې منو پرانیزي — د شاګردانو له پاڼې سره یو شان.
 class FilterChipMenu extends StatelessWidget {
   final String label;
   final Map<String, String> options;

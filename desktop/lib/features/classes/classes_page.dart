@@ -97,16 +97,35 @@ class _ClassesPageState extends State<ClassesPage> {
   }
 
   Future<void> _addGrade() async {
-    final name = await _promptText(
-      context,
-      title: _madrasa ? 'نوې درجه' : 'نوی ټولګی',
-      label: 'نوم',
+    final r = await showDialog<_GradeDraft>(
+      context: context,
+      builder: (_) => _GradeDialog(
+        madrasa: _madrasa,
+        initialCapacity: _defaultCapacity,
+      ),
     );
-    if (name == null || name.trim().isEmpty) return;
-    final gradeId = await widget.academic.addGrade(name: name.trim());
-    // یو ټولګی پرته له بخشه بې‌ګټې دی — هېڅ شاګرد پکې نه ثبتېږي.
-    // نو لومړی بخش پخپله جوړېږي.
-    await widget.academic.addSection(gradeId: gradeId, name: 'الف');
+    if (r == null) return;
+
+    final gradeId = await widget.academic.addGrade(name: r.name);
+
+    // **یو ټولګی پرته له بخشه بې‌ګټې دی** — هېڅ شاګرد پکې نه
+    // ثبتېږي. نو لږ تر لږه یو جوړېږي؛ که کارن اجزا نه وي غوښتي،
+    // هغه یو **بې‌نومه** دی، یعنې «ټوله درجه».
+    if (r.parts.isEmpty) {
+      await widget.academic.addSection(
+        gradeId: gradeId,
+        name: '',
+        capacity: r.capacity,
+      );
+    } else {
+      for (final part in r.parts) {
+        await widget.academic.addSection(
+          gradeId: gradeId,
+          name: part,
+          capacity: r.capacity,
+        );
+      }
+    }
     await _load();
   }
 
@@ -142,7 +161,12 @@ class _ClassesPageState extends State<ClassesPage> {
   Future<void> _addSection(GradeWithSections g) async {
     // راتلونکی نوم پخپله وړاندیزېږي — الف، ب، ج…
     const alphabet = ['الف', 'ب', 'ج', 'د', 'هـ', 'و', 'ز'];
-    final used = g.sections.map((s) => s.sectionName).toSet();
+
+    // د بې‌نومه جز نومول پخپله په ذخیره کې کېږي — دلته يې یوازې
+    // د نوم د وړاندیز لپاره حساب کوو.
+    final used = {
+      for (final x in g.sections) x.isWhole ? 'الف' : x.sectionName,
+    };
     final next = alphabet.firstWhere(
       (a) => !used.contains(a),
       orElse: () => '${g.sections.length + 1}',
@@ -151,7 +175,7 @@ class _ClassesPageState extends State<ClassesPage> {
     final result = await showDialog<({String name, int capacity})>(
       context: context,
       builder: (_) => _SectionDialog(
-        title: 'نوی بخش — ${g.grade.name}',
+        title: 'نوی جز — ${g.grade.name}',
         initialName: next,
         initialCapacity: _defaultCapacity,
       ),
@@ -169,7 +193,7 @@ class _ClassesPageState extends State<ClassesPage> {
     final result = await showDialog<({String name, int capacity})>(
       context: context,
       builder: (_) => _SectionDialog(
-        title: 'د بخش سمون — ${s.label}',
+        title: 'د جز سمون — ${s.label}',
         initialName: s.sectionName,
         initialCapacity: s.capacity,
         minCapacity: s.enrolledCount,
@@ -198,22 +222,6 @@ class _ClassesPageState extends State<ClassesPage> {
       return;
     }
     await _load();
-  }
-
-  Future<void> _editDefaultCapacity() async {
-    final v = await _promptText(
-      context,
-      title: 'تلواله ظرفیت',
-      label: 'د نوي بخش ظرفیت',
-      initial: '$_defaultCapacity',
-      helper: _madrasa
-          ? 'مدرسې لوی ټولګي لري — تلواله ${AcademicRepository.madrasaDefaultCapacity} ده.'
-          : null,
-    );
-    final n = int.tryParse(Numerals.toLatin(v ?? ''));
-    if (n == null || n <= 0) return;
-    await widget.academic.setDefaultCapacity(n);
-    setState(() => _defaultCapacity = n);
   }
 
   @override
@@ -280,12 +288,9 @@ class _ClassesPageState extends State<ClassesPage> {
               ),
               if (widget.canEdit) ...[
                 const SizedBox(width: 10),
-                IconButton(
-                  tooltip: 'تلواله ظرفیت — ${locale.num(_defaultCapacity)}',
-                  onPressed: _editDefaultCapacity,
-                  icon: const Icon(Icons.tune_rounded, size: 18),
-                ),
-                const SizedBox(width: 4),
+                // **«تلواله ظرفیت» تڼۍ لرې شوه.** ظرفیت هغه ځای
+                // ټاکل کېږي چې ټولګی پکې جوړېږي — یو پټ عمومي
+                // تنظیم چې بل ځای اغېز کوي، تل حیرانوونکی و.
                 FilledButton.icon(
                   onPressed: _addGrade,
                   icon: const Icon(Icons.add_rounded, size: 17),
@@ -624,7 +629,7 @@ class _GradeTileState extends State<_GradeTile> {
                 for (final sec in d.sections)
                   Tooltip(
                     message:
-                        '${sec.sectionName} — '
+                        '${sec.partLabel} — '
                         '${widget.locale.num(sec.enrolledCount)}/'
                         '${widget.locale.num(sec.capacity)}',
                     child: GestureDetector(
@@ -643,7 +648,7 @@ class _GradeTileState extends State<_GradeTile> {
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
-                          sec.sectionName,
+                          sec.partLabel,
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
@@ -837,7 +842,7 @@ class _SectionCardState extends State<_SectionCard> {
                   ),
                   alignment: Alignment.center,
                   child: Text(
-                    option.sectionName,
+                    option.partLabel,
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w800,
@@ -956,6 +961,228 @@ class _SectionCardState extends State<_SectionCard> {
 //  ډیالوګونه
 // ═══════════════════════════════════════════════════════════
 
+/// د یوه نوي ټولګي/درجې مسوده.
+class _GradeDraft {
+  final String name;
+  final int capacity;
+
+  /// تش = یو بې‌نومه جز، یعنې ټوله درجه یوه ده.
+  final List<String> parts;
+
+  const _GradeDraft({
+    required this.name,
+    required this.capacity,
+    required this.parts,
+  });
+}
+
+/// **د نوي ټولګي/درجې ډیالوګ — نوم، ظرفیت او اجزا، ټول یو ځای.**
+///
+/// مخکې يې یوازې نوم غوښت او بیا يې پخپله یو «الف» بخش جوړاوه. دا
+/// دوه ستونزې لرلې: مدرسې «الف» نه غواړي، او ظرفیت به يې له یوه پټ
+/// عمومي تنظیمه اخیست چې کارن يې نه لیده. اوس درې واړه پرېکړې
+/// همدلته دي، چېرې چې جوړېږي.
+class _GradeDialog extends StatefulWidget {
+  final bool madrasa;
+  final int initialCapacity;
+
+  const _GradeDialog({required this.madrasa, required this.initialCapacity});
+
+  @override
+  State<_GradeDialog> createState() => _GradeDialogState();
+}
+
+class _GradeDialogState extends State<_GradeDialog> {
+  static const _alphabet = ['الف', 'ب', 'ج', 'د', 'هـ', 'و'];
+
+  final _name = TextEditingController();
+  late final _cap = TextEditingController(text: '${widget.initialCapacity}');
+  bool _split = false;
+  int _partCount = 2;
+  String? _error;
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _cap.dispose();
+    super.dispose();
+  }
+
+  List<String> get _parts =>
+      _split ? _alphabet.take(_partCount).toList() : const [];
+
+  void _submit() {
+    final name = _name.text.trim();
+    final cap = int.tryParse(Numerals.toLatin(_cap.text)) ?? 0;
+    if (name.isEmpty) {
+      setState(() => _error = 'نوم اړین دی.');
+      return;
+    }
+    if (cap <= 0) {
+      setState(() => _error = 'ظرفیت باید له صفره لوړ وي.');
+      return;
+    }
+    Navigator.pop(
+      context,
+      _GradeDraft(name: name, capacity: cap, parts: _parts),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = S.of(context);
+    final locale = s.locale;
+    final p = context.palette;
+    final unit = widget.madrasa ? 'درجه' : 'ټولګی';
+
+    return AlertDialog(
+      title: Text(
+        widget.madrasa ? 'نوې درجه' : 'نوی ټولګی',
+        style: const TextStyle(fontSize: 15.5, fontWeight: FontWeight.w700),
+      ),
+      content: SizedBox(
+        width: 420,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            TextField(
+              controller: _name,
+              autofocus: true,
+              decoration: InputDecoration(
+                labelText: 'د $unit نوم',
+                hintText: widget.madrasa ? 'درجه اولی' : 'اووم',
+                isDense: true,
+              ),
+            ),
+            const SizedBox(height: 14),
+            TextField(
+              controller: _cap,
+              decoration: InputDecoration(
+                labelText: '${s.capacity} (د هر جز)',
+                isDense: true,
+                errorText: _error,
+              ),
+              onSubmitted: (_) => _submit(),
+            ),
+            const SizedBox(height: 18),
+            Text(
+              'اجزا',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: p.muted,
+              ),
+            ),
+            const SizedBox(height: 7),
+            SegmentedChoice<bool>(
+              value: _split,
+              color: AppColors.modClasses,
+              options: [
+                (
+                  value: false,
+                  label: 'یو $unit',
+                  icon: Icons.crop_square_rounded,
+                ),
+                (
+                  value: true,
+                  label: 'په اجزاوو ووېشه',
+                  icon: Icons.grid_view_rounded,
+                ),
+              ],
+              onChanged: (v) => setState(() => _split = v),
+            ),
+            AnimatedSize(
+              duration: AppMotion.normal,
+              curve: AppMotion.standard,
+              alignment: Alignment.topCenter,
+              child: !_split
+                  ? const SizedBox(width: double.infinity)
+                  : Padding(
+                      padding: const EdgeInsets.only(top: 12),
+                      child: Row(
+                        children: [
+                          Text(
+                            'څو اجزا؟',
+                            style: TextStyle(fontSize: 12.5, color: p.inkSoft),
+                          ),
+                          const SizedBox(width: 12),
+                          for (var n = 2; n <= 6; n++) ...[
+                            _PartChip(
+                              label: locale.num(n),
+                              selected: _partCount == n,
+                              onTap: () => setState(() => _partCount = n),
+                            ),
+                            const SizedBox(width: 6),
+                          ],
+                        ],
+                      ),
+                    ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              _parts.isEmpty
+                  ? 'یوه بشپړه $unit — بې اجزاوو.'
+                  : 'جوړېږي: ${_parts.join('، ')}',
+              style: TextStyle(fontSize: 11.5, color: p.muted),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(s.cancel),
+        ),
+        FilledButton(onPressed: _submit, child: Text(s.save)),
+      ],
+    );
+  }
+}
+
+class _PartChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _PartChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: AppMotion.fast,
+        width: 34,
+        height: 32,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: selected
+              ? AppColors.modClasses
+              : p.surfaceAlt,
+          borderRadius: BorderRadius.circular(9),
+          border: Border.all(color: selected ? AppColors.modClasses : p.line),
+        ),
+        child: Text(
+          label,
+          style: AppTheme.tabular(
+            TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: selected ? Colors.white : p.inkSoft,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _SectionDialog extends StatefulWidget {
   final String title;
   final String initialName;
@@ -1021,7 +1248,7 @@ class _SectionDialogState extends State<_SectionDialog> {
               controller: _name,
               autofocus: true,
               decoration: const InputDecoration(
-                labelText: 'د بخش نوم',
+                labelText: 'د جز نوم',
                 isDense: true,
               ),
             ),

@@ -57,6 +57,7 @@ void main() {
     await _users(db);
     final yearId = await _structure(db);
     final teachers = await _teachers(db);
+    await _assignBooks(db, teachers);
     final staff = await _staff(db);
     final students = await _students(db);
     await _timetable(db, teachers);
@@ -183,13 +184,28 @@ Future<int> _structure(AppDatabase db) async {
     capacity: 35,
   );
 
-  // دوه لوړې درجې دوه بخشه لري — چې د بخشونو فلټر ډیټا ولري.
+  // درې لومړۍ درجې دوه اجزا لري — چې د اجزاوو فلټر ډیټا ولري.
+  // پاتې يې بې‌نومه (یوه بشپړه درجه) پاتې کېږي، لکه یوه ریښتینې
+  // مدرسه.
   final grades = await academic.grades();
   final year = (await academic.currentYear())!;
   for (final g in grades.take(3)) {
     await academic.addSection(gradeId: g.id, name: 'ب', capacity: 35);
   }
   return year.id;
+}
+
+/// هر کتاب خپل مدرس او خپلې پاڼې واخلي — چې نوي ساحې تشې نه وي.
+Future<void> _assignBooks(AppDatabase db, List<int> teachers) async {
+  final academic = AcademicRepository(db);
+  final subjects = await academic.subjects();
+  for (var i = 0; i < subjects.length; i++) {
+    await academic.updateSubject(
+      id: subjects[i].id,
+      teacherId: teachers[i % teachers.length],
+      pages: 60 + (i * 17) % 260,
+    );
+  }
 }
 
 // ═══════════════════════════════════════════════════════════

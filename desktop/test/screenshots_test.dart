@@ -1803,6 +1803,127 @@ void main() {
     );
   });
 
+  testWidgets('67 — نوې درجه (نوم، ظرفیت، اجزا)', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await _seedMadrasa(db);
+
+    await _shoot(
+      tester,
+      name: '67-new-grade-dialog',
+      settle: const Duration(milliseconds: 600),
+      child: Scaffold(
+        body: ClassesPage(
+          academic: AcademicRepository(db),
+          teachers: TeacherRepository(db),
+        ),
+      ),
+      after: (tester) async {
+        await tester.tap(find.text('نوې درجه'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('په اجزاوو ووېشه'));
+        await tester.pumpAndSettle();
+      },
+    );
+  });
+
+  testWidgets('68 — د کتابونو پرمختللي فلټرونه', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await _seedMadrasa(db);
+
+    await _shoot(
+      tester,
+      name: '68-subjects-filters',
+      settle: const Duration(milliseconds: 600),
+      child: Scaffold(
+        body: SubjectsPage(
+          academic: AcademicRepository(db),
+          teachers: TeacherRepository(db),
+        ),
+      ),
+      after: (tester) async {
+        await tester.tap(find.text('پرمختللي فلټرونه'));
+        await tester.pumpAndSettle();
+      },
+    );
+  });
+
+  testWidgets('69 — نوی کتاب (ټول فیلډونه)', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await _seedMadrasa(db);
+    await _seedTeachers(db);
+
+    await _shoot(
+      tester,
+      name: '69-new-subject-dialog',
+      settle: const Duration(milliseconds: 700),
+      child: Scaffold(
+        body: SubjectsPage(
+          academic: AcademicRepository(db),
+          teachers: TeacherRepository(db),
+        ),
+      ),
+      after: (tester) async {
+        await tester.tap(find.text('زیاتول').first);
+        await tester.pumpAndSettle();
+      },
+    );
+  });
+
+  testWidgets('70 — د مهالویش ټکر (چشمک او خبرداری)', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await _seedMadrasa(db);
+    await _seedTeachers(db);
+
+    final timetable = TimetableRepository(db);
+    await timetable.seedDefaultSlots();
+    final academic = AcademicRepository(db);
+    final sections = await academic.sections();
+    final slots = (await timetable.slots()).where((s) => !s.isBreak).toList();
+    final teacher = (await TeacherRepository(db).activeTeachers()).first;
+
+    // **یو استاد، دوه درجې، یو ساعت** — دا هغه ټکر دی چې باید
+    // چشمک ووهي.
+    //
+    // مستقیم ننوتل کارېږي، ځکه چې `setEntry` پخپله ټکر ردوي. دا
+    // حالت له «ځیرک ترتیب» یا له زړې ډیټا څخه راځي — نو ازموینه
+    // يې هماغسې جوړوي.
+    for (final sec in sections.take(2)) {
+      final subs = await academic.subjects(gradeId: sec.gradeId);
+      final own = subs.where((x) => x.gradeId == sec.gradeId).toList();
+      for (var i = 0; i < slots.length && i < own.length; i++) {
+        await db
+            .into(db.timetableEntries)
+            .insert(
+              TimetableEntriesCompanion.insert(
+                sectionId: sec.sectionId,
+                dayOfWeek: everyDay,
+                slotId: slots[i].id,
+                subjectId: own[i].id,
+                teacherId: Value(teacher.id),
+              ),
+            );
+      }
+    }
+
+    await _shoot(
+      tester,
+      name: '70-timetable-conflict',
+      settle: const Duration(milliseconds: 700),
+      infiniteAnimation: true,
+      child: Scaffold(
+        body: TimetablePage(
+          timetable: timetable,
+          academic: academic,
+          teachers: TeacherRepository(db),
+        ),
+      ),
+    );
+  });
+
   testWidgets('65 — ټول شوی سایډبار: فرعي منو', (tester) async {
     await _shoot(
       tester,

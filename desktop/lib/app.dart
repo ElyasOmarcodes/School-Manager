@@ -284,6 +284,8 @@ class _SchoolManagerAppState extends State<SchoolManagerApp> {
                 'دې میاشت کې ${a.monthlyAbsences} ورځې غیرحاضر',
             a.monthlyAbsences >= 5 ? AppColors.danger : AppColors.warning,
             Icons.event_busy_rounded,
+            // پر کرښه کلیک هماغه شاګرد پرانیزي — نه یو عمومي لیست.
+            link: DashboardLink('/students', studentId: a.student.id),
           ),
       ],
     );

@@ -235,8 +235,24 @@ class _AppShellState extends State<AppShell> {
     return null;
   }
 
-  void _go(String route) {
+  /// له ډاشبورډه راغلی د حاضرۍ فلټر — یو ځل کارېږي، بیا پاکېږي.
+  String? _rosterStatus;
+
+  /// **د ډاشبورډ یو کلیک.**
+  ///
+  /// ډاشبورډ پخپله نه پوهېږي چې پاڼې څنګه جوړېږي — یوازې وايي
+  /// «دا لیست، دا فلټر». پرېکړه دلته کېږي، چې د لارو پوهه یو ځای
+  /// پاتې شي.
+  void _openLink(DashboardLink link) {
+    _go(link.route, status: link.status);
+    if (link.studentId != null) {
+      setState(() => _openStudentId = link.studentId);
+    }
+  }
+
+  void _go(String route, {String? status}) {
     setState(() {
+      _rosterStatus = status;
       _route = route;
       _openStudentId = null;
       _openTeacherId = null;
@@ -429,7 +445,7 @@ class _AppShellState extends State<AppShell> {
 
   Widget _buildPage() {
     if (_route == '/dashboard') {
-      return DashboardPage(stats: widget.stats);
+      return DashboardPage(stats: widget.stats, onOpen: _openLink);
     }
     final academic = widget.academicRepo;
     final teachers = widget.teacherRepo;
@@ -485,6 +501,7 @@ class _AppShellState extends State<AppShell> {
     if (_route == '/subjects' && academic != null) {
       return SubjectsPage(
         academic: academic,
+        teachers: teachers,
         canEdit: widget.session.permissions.can('classes', Perm.edit),
       );
     }
@@ -534,6 +551,26 @@ class _AppShellState extends State<AppShell> {
     // ── حاضري ───────────────────────────────────────────
     final attendance = widget.attendanceRepo;
     final sessions = widget.sessionRepo;
+
+    // **له ډاشبورډه مستقیم د نننۍ حاضرۍ لیست ته.**
+    //
+    // د ناستو لیست دلته پرېښودل کېږي: هغه چا چې «نن غیرحاضر ۴۷»
+    // وهلی، ناسته نه لټوي — هغه څلوېښت اووه نومونه غواړي.
+    if (_route == '/attendance/today' &&
+        attendance != null &&
+        academic != null) {
+      return AttendancePage(
+        key: ValueKey('today-$_rosterStatus'),
+        attendance: attendance,
+        academic: academic,
+        session: widget.session,
+        sessions: sessions,
+        staff: widget.staffAttendanceRepo,
+        initialTab: 'list',
+        initialRosterStatus: _rosterStatus,
+        onBack: () => _go('/attendance'),
+      );
+    }
 
     if (_route == '/attendance' && attendance != null && academic != null) {
       // د ناستو لیست لومړی — بیا سکینر. که ناستې شتون ونه لري

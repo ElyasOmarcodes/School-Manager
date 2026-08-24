@@ -46,6 +46,12 @@ class AttendancePage extends StatefulWidget {
   /// د ازموینې لپاره — چې «نن» ثابته وي.
   final DateTime Function() clock;
 
+  /// له ډاشبورډه مستقیم لیست ته — `scan` | `camera` | `list`.
+  final String initialTab;
+
+  /// لیست له کوم حالت سره پیل شي — `present` | `absent` | `late`.
+  final String? initialRosterStatus;
+
   const AttendancePage({
     super.key,
     required this.attendance,
@@ -56,6 +62,8 @@ class AttendancePage extends StatefulWidget {
     this.staff,
     this.onBack,
     this.clock = DateTime.now,
+    this.initialTab = 'scan',
+    this.initialRosterStatus,
   });
 
   @override
@@ -79,7 +87,7 @@ class _AttendancePageState extends State<AttendancePage> {
   /// شاګرد کارت هېر کړی، بل ناروغ دی. هره لار یو ریښتینی حالت حل
   /// کوي — او د ګوتې نښه څلورمه نه ده، ځکه چې لوستونکی يې هم
   /// کیبورډ ښیي، نو هماغې خانې ته ځي.
-  String _tab = 'scan';
+  late String _tab = widget.initialTab;
 
   /// **د تلوالې ناستې حاضري د صفر لاندې ثبتېږي** — نه د هغې د
   /// کرښې id لاندې. `storageId` همدا پرېکړه یو ځای ساتي.
@@ -388,6 +396,7 @@ class _AttendancePageState extends State<AttendancePage> {
                       user: widget.session,
                       clock: widget.clock,
                       onChanged: _refresh,
+                      initialStatus: widget.initialRosterStatus,
                     ),
             )
           else if (_tab == 'camera')

@@ -159,6 +159,16 @@ class Subjects extends Table {
   IntColumn get fullMark => integer().withDefault(const Constant(100))();
   IntColumn get passMark => integer().withDefault(const Constant(40))();
 
+  /// **هغه استاد چې دا کتاب تدریسوي** — اختیاري.
+  ///
+  /// دا د مهالویش له ټاکنې بېل دی: هلته یو ساعت یو استاد لري، دلته
+  /// **کتاب** یو استاد لري. یوه مدرسه معمولاً وايي «قدوري د مولوي
+  /// صاحب دی» — نه «د دوشنبې دریم ساعت».
+  IntColumn get teacherId => integer().nullable().references(Teachers, #id)();
+
+  /// د کتاب د پاڼو شمېر — اختیاري، د نصاب د وېش لپاره.
+  IntColumn get pages => integer().nullable()();
+
   /// دیني مضمون دی؟ — د مدرسې د رپوټونو لپاره.
   BoolColumn get isReligious => boolean().withDefault(const Constant(false))();
   IntColumn get sortOrder => integer().withDefault(const Constant(0))();

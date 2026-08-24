@@ -11,6 +11,7 @@ import '../../data/db/database.dart';
 import '../../data/repositories/staff_repository.dart';
 import '../../data/repositories/student_repository.dart' show Paged;
 import '../../widgets/data_table_view.dart';
+import '../../widgets/filter_bar.dart';
 import '../auth/auth_service.dart';
 
 /// د کارمندانو پاڼه — هغه چې استادان نه دي.
@@ -33,6 +34,7 @@ class _StaffPageState extends State<StaffPage> {
   static const int _pageSize = 50;
 
   StaffFilter _filter = const StaffFilter();
+  bool _showFilters = false;
   int _offset = 0;
   bool _loading = true;
   Paged<StaffRow> _page = const Paged([], 0);
@@ -111,30 +113,25 @@ class _StaffPageState extends State<StaffPage> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           FadeSlideIn(
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 300,
-                  child: TextField(
-                    controller: _search,
-                    onChanged: (v) {
-                      setState(() {
-                        _filter = _filter.copyWith(query: v);
-                        _offset = 0;
-                      });
-                      _load();
-                    },
-                    decoration: const InputDecoration(
-                      hintText: 'نوم، نمبر یا دنده…',
-                      prefixIcon: Icon(Icons.search_rounded, size: 19),
-                      isDense: true,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                _DeptFilter(
-                  selected: _filter.department,
-                  onPicked: (d) {
+            child: FilterBar(
+              searchController: _search,
+              onSearchChanged: (v) {
+                setState(() {
+                  _filter = _filter.copyWith(query: v);
+                  _offset = 0;
+                });
+                _load();
+              },
+              searchHint: 'نوم، نمبر یا دنده…',
+              primary: [
+                QuickFilter<String>(
+                  label: 'ټولې څانګې',
+                  icon: Icons.apartment_rounded,
+                  value: _filter.department,
+                  options: [
+                    for (final d in staffDepartments) (value: d, label: d),
+                  ],
+                  onChanged: (d) {
                     setState(() {
                       _filter = d == null
                           ? _filter.copyWith(clearDepartment: true)
@@ -144,40 +141,16 @@ class _StaffPageState extends State<StaffPage> {
                     _load();
                   },
                 ),
-                const Spacer(),
-                if (_wages != null)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.modPayroll.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(9),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.account_balance_wallet_rounded,
-                          size: 16,
-                          color: AppColors.modPayroll,
-                        ),
-                        const SizedBox(width: 9),
-                        Text(
-                          'میاشتنی معاش: '
-                          '${locale.grouped(_wages!.staffTotal + _wages!.teacherTotal)} '
-                          'افغانۍ',
-                          style: const TextStyle(
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.modPayroll,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                const SizedBox(width: 12),
+              ],
+              activeCount: _filter.advancedCount,
+              open: _showFilters,
+              onToggle: () => setState(() => _showFilters = !_showFilters),
+              countLabel: _wages == null
+                  ? null
+                  : 'میاشتنی معاش: '
+                        '${locale.grouped(_wages!.staffTotal + _wages!.teacherTotal)}'
+                        ' افغانۍ',
+              actions: [
                 FilledButton.icon(
                   onPressed: _add,
                   icon: const Icon(Icons.person_add_rounded, size: 18),
@@ -195,6 +168,60 @@ class _StaffPageState extends State<StaffPage> {
                 ),
               ],
             ),
+          ),
+          FilterSheet(
+            open: _showFilters,
+            activeCount: _filter.advancedCount,
+            onClear: () {
+              setState(() {
+                _filter = StaffFilter(
+                  query: _filter.query,
+                  department: _filter.department,
+                );
+                _offset = 0;
+              });
+              _load();
+            },
+            children: [
+              FilterDropdown<String>(
+                label: 'حالت',
+                allLabel: 'ټول حالتونه',
+                value: _filter.status,
+                options: const [
+                  (value: 'active', label: 'فعال'),
+                  (value: 'leave', label: 'په رخصتۍ'),
+                  (value: 'resigned', label: 'استعفا'),
+                  (value: 'terminated', label: 'ګوښه شوی'),
+                ],
+                onChanged: (v) {
+                  setState(() {
+                    _filter = v == null
+                        ? _filter.copyWith(clearStatus: true)
+                        : _filter.copyWith(status: v);
+                    _offset = 0;
+                  });
+                  _load();
+                },
+              ),
+              FilterDropdown<String>(
+                label: 'جنس',
+                allLabel: 'ټول جنس',
+                value: _filter.gender,
+                options: const [
+                  (value: 'male', label: 'نارینه'),
+                  (value: 'female', label: 'ښځینه'),
+                ],
+                onChanged: (v) {
+                  setState(() {
+                    _filter = v == null
+                        ? _filter.copyWith(clearGender: true)
+                        : _filter.copyWith(gender: v);
+                    _offset = 0;
+                  });
+                  _load();
+                },
+              ),
+            ],
           ),
           const SizedBox(height: 18),
           Expanded(
@@ -500,60 +527,6 @@ class _WageRow extends StatelessWidget {
     );
   }
 }
-
-class _DeptFilter extends StatelessWidget {
-  final String? selected;
-  final ValueChanged<String?> onPicked;
-
-  const _DeptFilter({required this.selected, required this.onPicked});
-
-  @override
-  Widget build(BuildContext context) {
-    final p = context.palette;
-
-    return PopupMenuButton<String?>(
-      tooltip: '',
-      onSelected: onPicked,
-      itemBuilder: (_) => [
-        const PopupMenuItem(
-          value: null,
-          child: Text('ټولې څانګې', style: TextStyle(fontSize: 13)),
-        ),
-        for (final d in staffDepartments)
-          PopupMenuItem(
-            value: d,
-            child: Text(d, style: const TextStyle(fontSize: 13)),
-          ),
-      ],
-      child: Container(
-        height: 42,
-        padding: const EdgeInsets.symmetric(horizontal: 15),
-        decoration: BoxDecoration(
-          color: p.surface,
-          borderRadius: BorderRadius.circular(AppTheme.radiusSm),
-          border: Border.all(color: p.line),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.filter_list_rounded, size: 16, color: p.muted),
-            const SizedBox(width: 9),
-            Text(
-              selected ?? 'ټولې څانګې',
-              style: TextStyle(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w600,
-                color: p.inkSoft,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════
 
 class _AddStaffDialog extends StatefulWidget {
   final String employeeNo;

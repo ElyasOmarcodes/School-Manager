@@ -31,6 +31,10 @@ class ManualRoster extends StatefulWidget {
   final DateTime Function() clock;
   final VoidCallback? onChanged;
 
+  /// له ډاشبورډه راغلی فلټر — «نن غیرحاضر» چې وهل شي، لیست باید
+  /// همدلته پر غیرحاضرو ولاړ وي، نه چې کارن يې بیا ولټوي.
+  final String? initialStatus;
+
   const ManualRoster({
     super.key,
     required this.sessions,
@@ -40,6 +44,7 @@ class ManualRoster extends StatefulWidget {
     required this.user,
     required this.clock,
     this.onChanged,
+    this.initialStatus,
   });
 
   @override
@@ -47,7 +52,7 @@ class ManualRoster extends StatefulWidget {
 }
 
 class _ManualRosterState extends State<ManualRoster> {
-  RosterFilter _filter = const RosterFilter();
+  late RosterFilter _filter = RosterFilter(status: widget.initialStatus);
   List<SessionRosterEntry> _rows = const [];
   List<Grade> _grades = const [];
   bool _loading = true;
