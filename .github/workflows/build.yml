@@ -1,0 +1,301 @@
+name: Build School Manager
+
+on:
+  push:
+    branches: ["**"]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+# د Flutter کانال `stable` دی — **نسخه نه ده تړل شوې**.
+#
+# لومړی ځل مې ۳.۲۹.۰ وتړله چې د API بدلونونه کوډ مات نه کړي. هغه
+# پرېکړه سمدستي ناکامه شوه، او دلیل يې دا و:
+#
+#   د ویندوز رنر اوس **Visual Studio 2026 (v18)** لري. Flutter ۳.۲۹
+#   يې *ویني* (`flutter doctor` ✓ ښیي)، خو د CMake د generator په
+#   جدول کې يې v18 نشته، نو `Visual Studio 16 2019` ته راګرځي — چې
+#   نصب نه دی. پایله:
+#     CMake Error: Generator "Visual Studio 16 2019"
+#     could not find any instance of Visual Studio.
+#
+# د ډیسکټاپ build د رنر پر toolchain تکیه کوي، او رنر پرمخ ځي. نو
+# Flutter باید ورسره پرمخ ولاړ شي. د API د بدلون خطر په دوو لارو
+# کنټرولېږي: (۱) د ناکارېدونکو تنظیماتو نه ساتل — مثلاً `cardTheme`
+# لرې شو ځکه چې پروژه `Card` نه کاروي؛ (۲) `--no-fatal-infos` چې د
+# ناسپارل شویو (deprecated) APIs خبرداری build ونه دروي، خو ریښتینې
+# تېروتنې او خبرتیاوې لا هم دروي.
+env:
+  DESKTOP_DIR: desktop
+  MOBILE_DIR: mobile
+
+# د لاسلیک مواد له Secrets څخه لوستل کېږي — هېڅکله په ګټ کې نه ساتل کېږي.
+#   GitHub → Settings → Secrets and variables → Actions
+#     WINDOWS_PFX_BASE64  – د .pfx فایل base64
+#     WINDOWS_PFX_PASS    – د هغه پاسورډ
+#     ANDROID_KEYSTORE_BASE64 / ANDROID_STORE_PASS – د اندروید لپاره
+# که کوم secret نه وي، هغه پلیټ‌فارم **بې‌لاسلیکه** جوړېږي (بیا هم کار کوي).
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # ازموینې — د هر build دروازه
+  # ---------------------------------------------------------------------------
+  test:
+    runs-on: ubuntu-latest
+    outputs:
+      has_mobile: ${{ steps.probe.outputs.has_mobile }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+
+      # د pub کېش. `flutter-action` یوازې د SDK کېش کوي، نه پیکجونه —
+      # هغه هر ځل له سره راښکل کېږي (~۱۵ ثانیې). دلته يې د
+      # `pubspec.lock` پر بنسټ کېشوو.
+      - uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: pub-${{ runner.os }}-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: pub-${{ runner.os }}-
+
+      - name: Check whether the mobile app exists yet
+        id: probe
+        run: |
+          if [ -f "$MOBILE_DIR/pubspec.yaml" ]; then
+            echo "has_mobile=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_mobile=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::د موبایل اپ (mobile/) لا نه دی جوړ شوی — د APK دنده پرېښودل کېږي."
+          fi
+
+      - run: flutter pub get
+        working-directory: ${{ env.DESKTOP_DIR }}
+
+      # د drift کوډ له سره تولیدېږي — د ګټ نسخه یوازې د IDE د اسانتیا
+      # لپاره ده.
+      #
+      # لومړی مې دلته د بایټ-په-بایټ پرتله ایښې وه («تولید شوی کوډ له
+      # سکیما سره سم دی؟»). هغه غلطه وه: `drift_dev` د Dart د نسخې له
+      # مخې بېل کوډ تولیدوي — د ۳.۲۹ او ۳.۴۷ ترمنځ ۸,۶۶۹ کرښې توپیر و،
+      # سره له دې چې سکیما هماغه وه. له `stable` کانال سره به هغه پرتله
+      # هر ځل بې‌ځایه سره شوې وای. اوس یوازې تولیدوو.
+      # د `build_runner` د تولید کېش. پرته له دې هر ران ~۵۰ ثانیې
+      # د سکیما پر تحلیل لګوي، سره له دې چې سکیما نه وي بدله شوې.
+      # کلید د جدولونو له تعریفه راځي — چې د سکیما په بدلون سره
+      # کېش پخپله باطل شي.
+      - uses: actions/cache@v4
+        with:
+          path: ${{ env.DESKTOP_DIR }}/.dart_tool/build
+          key: >-
+            buildrunner-${{ runner.os }}-${{
+            hashFiles('desktop/lib/data/db/**/*.dart', 'desktop/pubspec.lock') }}
+          restore-keys: buildrunner-${{ runner.os }}-
+
+      - name: Generate database code
+        working-directory: ${{ env.DESKTOP_DIR }}
+        run: dart run build_runner build
+
+      - name: Analyze
+        working-directory: ${{ env.DESKTOP_DIR }}
+        run: flutter analyze --no-fatal-infos
+
+      # د عکسونو ازموینه پرېښودل کېږي — د گولډن عکس پرتله د ماشین د
+      # فونټ رینډر پورې اړه لري، نو په بل ماشین کې بې‌ځایه سره کېږي.
+      - name: Test
+        working-directory: ${{ env.DESKTOP_DIR }}
+        run: flutter test --exclude-tags screenshots
+
+  # ---------------------------------------------------------------------------
+  # ویندوز — .exe، لاسلیک شوی، zip شوی
+  # ---------------------------------------------------------------------------
+  windows:
+    needs: test
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      # `flutter create` دلته نه ځغلي: د `windows/` پوښۍ په ګټ کې ده او
+      # زموږ خپلې سمونې پکې دي. که وځغلي، هغه به بېرته پر تلواله راولي.
+      - name: Diagnose toolchain
+        working-directory: ${{ env.DESKTOP_DIR }}
+        run: flutter doctor -v
+
+      - run: flutter pub get
+        working-directory: ${{ env.DESKTOP_DIR }}
+
+      # د ازموینې دندې په څېر له سره تولیدوو، چې دواړه پر یوه کوډ ولاړې
+      # وي — نه چې ازموینې پر تازه او build پر کهنه کوډ وځغلي.
+      - name: Generate database code
+        working-directory: ${{ env.DESKTOP_DIR }}
+        run: dart run build_runner build
+
+      - name: Build Windows (release)
+        working-directory: ${{ env.DESKTOP_DIR }}
+        run: flutter build windows --release
+
+      - name: Sign the executable (if the certificate secret is present)
+        shell: pwsh
+        working-directory: ${{ env.DESKTOP_DIR }}
+        env:
+          PFX_B64: ${{ secrets.WINDOWS_PFX_BASE64 }}
+          PFX_PASS: ${{ secrets.WINDOWS_PFX_PASS }}
+        run: |
+          $exe = "build/windows/x64/runner/Release/school_manager.exe"
+          if (-not (Test-Path $exe)) { throw "Executable not found: $exe" }
+          if ([string]::IsNullOrEmpty($env:PFX_B64) -or [string]::IsNullOrEmpty($env:PFX_PASS)) {
+            Write-Host "::warning::No WINDOWS_PFX_BASE64 secret - the build is unsigned. Windows SmartScreen will warn on first run."
+          } else {
+            [IO.File]::WriteAllBytes("win.pfx", [Convert]::FromBase64String($env:PFX_B64))
+            $pw = ConvertTo-SecureString -String $env:PFX_PASS -Force -AsPlainText
+            $cert = Get-PfxCertificate -FilePath "win.pfx" -Password $pw
+            Set-AuthenticodeSignature -FilePath $exe -Certificate $cert `
+              -HashAlgorithm SHA256 -TimestampServer "http://timestamp.digicert.com"
+            Get-AuthenticodeSignature $exe | Format-List
+            Remove-Item "win.pfx" -Force
+          }
+
+      # ټوله پوښۍ بسته کېږي، نه یوازې .exe — Flutter د DLL فایلونو او
+      # د `data/` پوښۍ سره ځغلي. یوازې .exe به ونه چلېږي.
+      - name: Zip the Windows build
+        shell: pwsh
+        working-directory: ${{ env.DESKTOP_DIR }}
+        run: |
+          Compress-Archive -Path build/windows/x64/runner/Release/* `
+            -DestinationPath ../SchoolManager-Windows.zip -Force
+          Get-Item ../SchoolManager-Windows.zip | Select-Object Name, Length
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: school-manager-windows
+          path: SchoolManager-Windows.zip
+          if-no-files-found: error
+
+  # ---------------------------------------------------------------------------
+  # اندروید — د مدیر او والدینو اپ
+  #
+  # `if` شرط ساتل کېږي: که څوک د `mobile/` پوښۍ لرې کړي، دنده پخپله
+  # پرېښودل کېږي نه چې سره شي.
+  # ---------------------------------------------------------------------------
+  android:
+    needs: test
+    if: needs.test.outputs.has_mobile == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # `cache: gradle` د Gradle کېش پخپله اداره کوي. **دا هغه یو
+      # تنظیم دی چې د اندروید د build وخت ټاکي:** د Gradle لومړی
+      # ران ~۵۰۰MB انحصارات راښکي (۴–۶ دقیقې). له کېش سره، دویم
+      # ران يې له کېشه اخلي — څو ثانیې.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+          cache-dependency-path: |
+            mobile/android/*.gradle*
+            mobile/android/**/gradle-wrapper.properties
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: pub-${{ runner.os }}-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: pub-${{ runner.os }}-
+
+      # د Flutter د اندروید build ټوټې (اکثره د Gradle له لارې).
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.android/cache
+            ${{ env.MOBILE_DIR }}/.dart_tool
+          key: >-
+            android-${{ runner.os }}-${{
+            hashFiles('mobile/pubspec.lock', 'mobile/android/**') }}
+          restore-keys: android-${{ runner.os }}-
+
+      - run: flutter pub get
+        working-directory: ${{ env.MOBILE_DIR }}
+
+      - run: flutter analyze --no-fatal-infos
+        working-directory: ${{ env.MOBILE_DIR }}
+
+      # سکرین‌شاټونه پرېږدو — هغه د پرمختیا په ماشین کې جوړ شوي او
+      # د CI د فونټ توپیر يې بې‌ځایه ماتوي. ډیسکټاپ هم همدا کوي.
+      - run: flutter test --exclude-tags screenshots
+        working-directory: ${{ env.MOBILE_DIR }}
+
+      # یوازې arm64 — تر یونیورسل APK ډېر کوچنی دی او له ~۲۰۱۹ راهیسې
+      # ټول فونونه پوښي.
+      - name: Build compact APK (arm64)
+        working-directory: ${{ env.MOBILE_DIR }}
+        run: |
+          flutter build apk --release \
+            --target-platform android-arm64 \
+            --obfuscate --split-debug-info=build/symbols
+
+      - name: Sign the APK (falls back to the Flutter build if no keystore)
+        working-directory: ${{ env.MOBILE_DIR }}
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          STORE_PASS: ${{ secrets.ANDROID_STORE_PASS }}
+        run: |
+          set -e
+          mkdir -p ../out
+          APK=build/app/outputs/flutter-apk/app-release.apk
+          if [ -n "$KEYSTORE_B64" ] && [ -n "$STORE_PASS" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > release.p12
+            SDK="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
+            BT="$(ls -d "$SDK"/build-tools/*/ | sort -V | tail -1)"
+            "${BT}apksigner" sign \
+              --ks release.p12 --ks-type PKCS12 \
+              --ks-pass "pass:${STORE_PASS}" --key-pass "pass:${STORE_PASS}" \
+              --out ../out/SchoolManager.apk "$APK"
+            "${BT}apksigner" verify --print-certs ../out/SchoolManager.apk
+            rm -f release.p12
+          else
+            echo "::warning::No ANDROID_KEYSTORE_BASE64 secret - shipping the default-signed APK."
+            cp "$APK" ../out/SchoolManager.apk
+          fi
+          ls -lh ../out/SchoolManager.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: school-manager-android
+          path: out/SchoolManager.apk
+          if-no-files-found: error
+
+  # ---------------------------------------------------------------------------
+  # د نسخې په ټګ (vX.Y.Z) کې د ډاونلوډ وړ فایلونه خپروي
+  # ---------------------------------------------------------------------------
+  release:
+    needs: [windows, android]
+    # `always()` ځکه پکار ده چې د اندروید دنده پرېښودل کېږي، او پرته له
+    # دې به بشپړ release هم پرېښودل شوی وګڼل شي.
+    if: always() && startsWith(github.ref, 'refs/tags/v') && needs.windows.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/**/*
+          generate_release_notes: true

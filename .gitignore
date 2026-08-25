@@ -1,0 +1,32 @@
+# Flutter / Dart — د هرې پروژې لپاره
+**/build/
+**/.dart_tool/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/*.iml
+.packages
+
+# Gradle / Android محلي
+**/.gradle/
+**/local.properties
+**/*.keystore
+**/*.jks
+**/key.properties
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# د ډیټابیس فایلونه — هېڅکله ګټ ته نه ځي
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+
+# د گولډن ازموینې د ناکامۍ عکسونه — موقت دي، نه ساتل کېږي.
+**/test/failures/
