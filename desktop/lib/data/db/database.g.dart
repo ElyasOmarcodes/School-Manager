@@ -257,6 +257,18 @@ class $SchoolsTable extends Schools with TableInfo<$SchoolsTable, School> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _timetableColorByMeta = const VerificationMeta(
+    'timetableColorBy',
+  );
+  @override
+  late final GeneratedColumn<String> timetableColorBy = GeneratedColumn<String>(
+    'timetable_color_by',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('difficulty'),
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -293,6 +305,7 @@ class $SchoolsTable extends Schools with TableInfo<$SchoolsTable, School> {
     breakMinutes,
     breaksPerDay,
     periodMinutesCsv,
+    timetableColorBy,
     createdAt,
   ];
   @override
@@ -474,6 +487,15 @@ class $SchoolsTable extends Schools with TableInfo<$SchoolsTable, School> {
         ),
       );
     }
+    if (data.containsKey('timetable_color_by')) {
+      context.handle(
+        _timetableColorByMeta,
+        timetableColorBy.isAcceptableOrUnknown(
+          data['timetable_color_by']!,
+          _timetableColorByMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -577,6 +599,10 @@ class $SchoolsTable extends Schools with TableInfo<$SchoolsTable, School> {
         DriftSqlType.string,
         data['${effectivePrefix}period_minutes_csv'],
       ),
+      timetableColorBy: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}timetable_color_by'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -642,6 +668,13 @@ class School extends DataClass implements Insertable<School> {
   /// قرآن لومړی ساعت اوږد غواړي، دلته يې لیکي — پرته له دې به يې
   /// یوازې دوه لارې لرلې: یا ټول اوږد، یا ټول لنډ.
   final String? periodMinutesCsv;
+
+  /// **د مهالویش د خانو رنګ څه ښیي** —
+  /// `difficulty` | `fan` | `kind` | `teacher`.
+  ///
+  /// دا یو **تنظیم** دی، نه د پاڼې یوه شېبه‌یي ټاکنه: مدیر يې یو
+  /// ځل ټاکي او هر ځل چې مهالویش پرانیزي، هماغه ویني.
+  final String timetableColorBy;
   final DateTime createdAt;
   const School({
     required this.id,
@@ -666,6 +699,7 @@ class School extends DataClass implements Insertable<School> {
     required this.breakMinutes,
     required this.breaksPerDay,
     this.periodMinutesCsv,
+    required this.timetableColorBy,
     required this.createdAt,
   });
   @override
@@ -705,6 +739,7 @@ class School extends DataClass implements Insertable<School> {
     if (!nullToAbsent || periodMinutesCsv != null) {
       map['period_minutes_csv'] = Variable<String>(periodMinutesCsv);
     }
+    map['timetable_color_by'] = Variable<String>(timetableColorBy);
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
   }
@@ -745,6 +780,7 @@ class School extends DataClass implements Insertable<School> {
       periodMinutesCsv: periodMinutesCsv == null && nullToAbsent
           ? const Value.absent()
           : Value(periodMinutesCsv),
+      timetableColorBy: Value(timetableColorBy),
       createdAt: Value(createdAt),
     );
   }
@@ -777,6 +813,7 @@ class School extends DataClass implements Insertable<School> {
       breakMinutes: serializer.fromJson<int>(json['breakMinutes']),
       breaksPerDay: serializer.fromJson<int>(json['breaksPerDay']),
       periodMinutesCsv: serializer.fromJson<String?>(json['periodMinutesCsv']),
+      timetableColorBy: serializer.fromJson<String>(json['timetableColorBy']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
   }
@@ -806,6 +843,7 @@ class School extends DataClass implements Insertable<School> {
       'breakMinutes': serializer.toJson<int>(breakMinutes),
       'breaksPerDay': serializer.toJson<int>(breaksPerDay),
       'periodMinutesCsv': serializer.toJson<String?>(periodMinutesCsv),
+      'timetableColorBy': serializer.toJson<String>(timetableColorBy),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
   }
@@ -833,6 +871,7 @@ class School extends DataClass implements Insertable<School> {
     int? breakMinutes,
     int? breaksPerDay,
     Value<String?> periodMinutesCsv = const Value.absent(),
+    String? timetableColorBy,
     DateTime? createdAt,
   }) => School(
     id: id ?? this.id,
@@ -859,6 +898,7 @@ class School extends DataClass implements Insertable<School> {
     periodMinutesCsv: periodMinutesCsv.present
         ? periodMinutesCsv.value
         : this.periodMinutesCsv,
+    timetableColorBy: timetableColorBy ?? this.timetableColorBy,
     createdAt: createdAt ?? this.createdAt,
   );
   School copyWithCompanion(SchoolsCompanion data) {
@@ -909,6 +949,9 @@ class School extends DataClass implements Insertable<School> {
       periodMinutesCsv: data.periodMinutesCsv.present
           ? data.periodMinutesCsv.value
           : this.periodMinutesCsv,
+      timetableColorBy: data.timetableColorBy.present
+          ? data.timetableColorBy.value
+          : this.timetableColorBy,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
   }
@@ -938,6 +981,7 @@ class School extends DataClass implements Insertable<School> {
           ..write('breakMinutes: $breakMinutes, ')
           ..write('breaksPerDay: $breaksPerDay, ')
           ..write('periodMinutesCsv: $periodMinutesCsv, ')
+          ..write('timetableColorBy: $timetableColorBy, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -967,6 +1011,7 @@ class School extends DataClass implements Insertable<School> {
     breakMinutes,
     breaksPerDay,
     periodMinutesCsv,
+    timetableColorBy,
     createdAt,
   ]);
   @override
@@ -995,6 +1040,7 @@ class School extends DataClass implements Insertable<School> {
           other.breakMinutes == this.breakMinutes &&
           other.breaksPerDay == this.breaksPerDay &&
           other.periodMinutesCsv == this.periodMinutesCsv &&
+          other.timetableColorBy == this.timetableColorBy &&
           other.createdAt == this.createdAt);
 }
 
@@ -1021,6 +1067,7 @@ class SchoolsCompanion extends UpdateCompanion<School> {
   final Value<int> breakMinutes;
   final Value<int> breaksPerDay;
   final Value<String?> periodMinutesCsv;
+  final Value<String> timetableColorBy;
   final Value<DateTime> createdAt;
   const SchoolsCompanion({
     this.id = const Value.absent(),
@@ -1045,6 +1092,7 @@ class SchoolsCompanion extends UpdateCompanion<School> {
     this.breakMinutes = const Value.absent(),
     this.breaksPerDay = const Value.absent(),
     this.periodMinutesCsv = const Value.absent(),
+    this.timetableColorBy = const Value.absent(),
     this.createdAt = const Value.absent(),
   });
   SchoolsCompanion.insert({
@@ -1070,6 +1118,7 @@ class SchoolsCompanion extends UpdateCompanion<School> {
     this.breakMinutes = const Value.absent(),
     this.breaksPerDay = const Value.absent(),
     this.periodMinutesCsv = const Value.absent(),
+    this.timetableColorBy = const Value.absent(),
     this.createdAt = const Value.absent(),
   }) : name = Value(name);
   static Insertable<School> custom({
@@ -1095,6 +1144,7 @@ class SchoolsCompanion extends UpdateCompanion<School> {
     Expression<int>? breakMinutes,
     Expression<int>? breaksPerDay,
     Expression<String>? periodMinutesCsv,
+    Expression<String>? timetableColorBy,
     Expression<DateTime>? createdAt,
   }) {
     return RawValuesInsertable({
@@ -1121,6 +1171,7 @@ class SchoolsCompanion extends UpdateCompanion<School> {
       if (breakMinutes != null) 'break_minutes': breakMinutes,
       if (breaksPerDay != null) 'breaks_per_day': breaksPerDay,
       if (periodMinutesCsv != null) 'period_minutes_csv': periodMinutesCsv,
+      if (timetableColorBy != null) 'timetable_color_by': timetableColorBy,
       if (createdAt != null) 'created_at': createdAt,
     });
   }
@@ -1148,6 +1199,7 @@ class SchoolsCompanion extends UpdateCompanion<School> {
     Value<int>? breakMinutes,
     Value<int>? breaksPerDay,
     Value<String?>? periodMinutesCsv,
+    Value<String>? timetableColorBy,
     Value<DateTime>? createdAt,
   }) {
     return SchoolsCompanion(
@@ -1173,6 +1225,7 @@ class SchoolsCompanion extends UpdateCompanion<School> {
       breakMinutes: breakMinutes ?? this.breakMinutes,
       breaksPerDay: breaksPerDay ?? this.breaksPerDay,
       periodMinutesCsv: periodMinutesCsv ?? this.periodMinutesCsv,
+      timetableColorBy: timetableColorBy ?? this.timetableColorBy,
       createdAt: createdAt ?? this.createdAt,
     );
   }
@@ -1246,6 +1299,9 @@ class SchoolsCompanion extends UpdateCompanion<School> {
     if (periodMinutesCsv.present) {
       map['period_minutes_csv'] = Variable<String>(periodMinutesCsv.value);
     }
+    if (timetableColorBy.present) {
+      map['timetable_color_by'] = Variable<String>(timetableColorBy.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -1277,6 +1333,7 @@ class SchoolsCompanion extends UpdateCompanion<School> {
           ..write('breakMinutes: $breakMinutes, ')
           ..write('breaksPerDay: $breaksPerDay, ')
           ..write('periodMinutesCsv: $periodMinutesCsv, ')
+          ..write('timetableColorBy: $timetableColorBy, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -23370,6 +23427,7 @@ typedef $$SchoolsTableCreateCompanionBuilder =
       Value<int> breakMinutes,
       Value<int> breaksPerDay,
       Value<String?> periodMinutesCsv,
+      Value<String> timetableColorBy,
       Value<DateTime> createdAt,
     });
 typedef $$SchoolsTableUpdateCompanionBuilder =
@@ -23396,6 +23454,7 @@ typedef $$SchoolsTableUpdateCompanionBuilder =
       Value<int> breakMinutes,
       Value<int> breaksPerDay,
       Value<String?> periodMinutesCsv,
+      Value<String> timetableColorBy,
       Value<DateTime> createdAt,
     });
 
@@ -23515,6 +23574,11 @@ class $$SchoolsTableFilterComposer
 
   ColumnFilters<String> get periodMinutesCsv => $composableBuilder(
     column: $table.periodMinutesCsv,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get timetableColorBy => $composableBuilder(
+    column: $table.timetableColorBy,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -23643,6 +23707,11 @@ class $$SchoolsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get timetableColorBy => $composableBuilder(
+    column: $table.timetableColorBy,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -23748,6 +23817,11 @@ class $$SchoolsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get timetableColorBy => $composableBuilder(
+    column: $table.timetableColorBy,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 }
@@ -23802,6 +23876,7 @@ class $$SchoolsTableTableManager
                 Value<int> breakMinutes = const Value.absent(),
                 Value<int> breaksPerDay = const Value.absent(),
                 Value<String?> periodMinutesCsv = const Value.absent(),
+                Value<String> timetableColorBy = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
               }) => SchoolsCompanion(
                 id: id,
@@ -23826,6 +23901,7 @@ class $$SchoolsTableTableManager
                 breakMinutes: breakMinutes,
                 breaksPerDay: breaksPerDay,
                 periodMinutesCsv: periodMinutesCsv,
+                timetableColorBy: timetableColorBy,
                 createdAt: createdAt,
               ),
           createCompanionCallback:
@@ -23852,6 +23928,7 @@ class $$SchoolsTableTableManager
                 Value<int> breakMinutes = const Value.absent(),
                 Value<int> breaksPerDay = const Value.absent(),
                 Value<String?> periodMinutesCsv = const Value.absent(),
+                Value<String> timetableColorBy = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
               }) => SchoolsCompanion.insert(
                 id: id,
@@ -23876,6 +23953,7 @@ class $$SchoolsTableTableManager
                 breakMinutes: breakMinutes,
                 breaksPerDay: breaksPerDay,
                 periodMinutesCsv: periodMinutesCsv,
+                timetableColorBy: timetableColorBy,
                 createdAt: createdAt,
               ),
           withReferenceMapper: (p0) => p0

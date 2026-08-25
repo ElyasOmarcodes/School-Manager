@@ -1805,6 +1805,89 @@ void main() {
     );
   });
 
+  testWidgets('73 — د مهالویش تنظیمات: ډول او رنګ', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await _seedMadrasa(db);
+    await TimetableRepository(db).seedDefaultSlots();
+
+    await _shoot(
+      tester,
+      name: '73-timetable-settings-view',
+      settle: const Duration(milliseconds: 700),
+      child: Scaffold(
+        body: TimetableSettingsPage(
+          timetable: TimetableRepository(db),
+          academic: AcademicRepository(db),
+        ),
+      ),
+      after: (tester) async {
+        await tester.drag(find.text('د جدول بڼه'), const Offset(0, -240));
+        await tester.pumpAndSettle();
+      },
+    );
+  });
+
+  testWidgets('74 — د ځیرک ترتیب وړاندیزونه', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await _seedMadrasa(db);
+    await _seedTeachers(db);
+    await TimetableRepository(db).seedDefaultSlots();
+
+    await _shoot(
+      tester,
+      name: '74-smart-proposals',
+      settle: const Duration(milliseconds: 900),
+      child: Scaffold(
+        body: TimetablePage(
+          timetable: TimetableRepository(db),
+          academic: AcademicRepository(db),
+          teachers: TeacherRepository(db),
+        ),
+      ),
+      after: (tester) async {
+        await tester.tap(find.text('ځیرک ترتیب').first);
+        await tester.pumpAndSettle(const Duration(seconds: 3));
+      },
+    );
+  });
+
+  testWidgets('75 — د رخصتۍ ورځ: حاضري بنده ده', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await _seedSchool(db);
+    await db
+        .into(db.schools)
+        .insert(SchoolsCompanion.insert(name: 'د نور لیسه'));
+
+    final sessions = AttendanceSessionRepository(db);
+    await sessions.seedDefault();
+    final holidays = HolidayRepository(db);
+    await holidays.add(
+      name: 'د کوچني اختر رخصتي',
+      fromDate: DateTime(2026, 5, 12),
+      toDate: DateTime(2026, 5, 15),
+      kind: 'religious',
+    );
+
+    await _shoot(
+      tester,
+      name: '75-attendance-holiday',
+      settle: const Duration(milliseconds: 800),
+      child: Scaffold(
+        body: AttendancePage(
+          attendance: AttendanceRepository(db),
+          academic: AcademicRepository(db),
+          session: _session,
+          sessions: sessions,
+          holidays: holidays,
+          clock: () => DateTime(2026, 5, 12, 7, 30),
+        ),
+      ),
+    );
+  });
+
   testWidgets('71 — د رخصتیو کلیز', (tester) async {
     final db = AppDatabase.memory();
     addTearDown(db.close);

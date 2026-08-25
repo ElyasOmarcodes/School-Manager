@@ -6,6 +6,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_motion.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/numerals.dart';
+import '../../core/utils/calendars.dart';
 import '../../data/db/database.dart';
 import '../../data/repositories/academic_repository.dart';
 import '../../data/repositories/fee_repository.dart';
@@ -905,8 +906,7 @@ class _GenerateDialogState extends State<_GenerateDialog> {
               },
               icon: const Icon(Icons.event_rounded, size: 17),
               label: Text(
-                'د ورکړې وروستۍ نېټه: '
-                '${locale.num(_due.toIso8601String().substring(0, 10))}',
+                'د ورکړې وروستۍ نېټه: ${context.cal.short(_due)}',
               ),
               style: OutlinedButton.styleFrom(
                 minimumSize: const Size.fromHeight(46),

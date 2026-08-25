@@ -6,6 +6,7 @@ import '../../core/theme/app_motion.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/csv.dart';
 import '../../core/utils/numerals.dart';
+import '../../core/utils/calendars.dart';
 import '../../core/widgets/panel.dart';
 import '../../data/repositories/academic_repository.dart';
 import '../../data/repositories/report_repository.dart';
@@ -398,10 +399,10 @@ class _PeopleReportPageState extends State<PeopleReportPage> {
 
   String _spanLabel(AppLocale locale) {
     String d(DateTime x) =>
-        '${locale.num(x.year)}-${locale.num(x.month)}-${locale.num(x.day)}';
+        context.cal.short(x);
     if (_filter.range == ReportRange.day) return d(_filter.from);
     if (_filter.range == ReportRange.month) {
-      return '${locale.num(_filter.from.month)}/${locale.num(_filter.from.year)}';
+      return context.cal.monthYear(_filter.from);
     }
     return '${d(_filter.from)} → ${d(_filter.to)}';
   }

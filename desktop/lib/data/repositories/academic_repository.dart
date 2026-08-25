@@ -13,6 +13,9 @@ class SectionOption {
   final int capacity;
   final int enrolledCount;
 
+  /// د دې جز سرپرست استاد — اختیاري.
+  final int? headTeacherId;
+
   const SectionOption({
     required this.sectionId,
     required this.gradeId,
@@ -21,6 +24,7 @@ class SectionOption {
     required this.sectionName,
     required this.capacity,
     required this.enrolledCount,
+    this.headTeacherId,
   });
 
   /// **یوه درجه چې اجزا نه لري، خپل نوم لري — بس.**
@@ -85,6 +89,7 @@ SELECT
   sec.id            AS section_id,
   sec.name          AS section_name,
   sec.capacity      AS capacity,
+  sec.head_teacher_id AS head_teacher_id,
   g.id              AS grade_id,
   g.name            AS grade_name,
   g.level           AS level,
@@ -110,6 +115,7 @@ ORDER BY g.level, sec.name
             sectionName: r.read<String>('section_name'),
             capacity: r.read<int>('capacity'),
             enrolledCount: r.read<int>('enrolled'),
+            headTeacherId: r.data['head_teacher_id'] as int?,
           ),
         )
         .toList();
@@ -574,6 +580,11 @@ ORDER BY g.level, sec.name
   Future<void> setDefaultCapacity(int capacity) => db
       .update(db.schools)
       .write(SchoolsCompanion(defaultCapacity: Value(capacity)));
+
+  /// د مهالویش د رنګ تنظیم — یو ځل ټاکل کېږي، تل پاتې کېږي.
+  Future<void> setTimetableColorBy(String value) => db
+      .update(db.schools)
+      .write(SchoolsCompanion(timetableColorBy: Value(value)));
 
   Future<void> setTimetableMode(String mode) =>
       db.update(db.schools).write(SchoolsCompanion(timetableMode: Value(mode)));

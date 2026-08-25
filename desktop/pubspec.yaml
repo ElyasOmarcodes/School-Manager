@@ -57,6 +57,7 @@ dependencies:
   camera_platform_interface: ^2.13.1
   zxing2: ^0.2.4
   image: ^4.9.1
+  hijri: ^3.0.1
 
 dev_dependencies:
   flutter_test:

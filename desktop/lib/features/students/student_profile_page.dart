@@ -9,6 +9,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_motion.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/numerals.dart';
+import '../../core/utils/calendars.dart';
 import '../../core/utils/photo_store.dart';
 import '../../core/widgets/panel.dart';
 import '../../core/widgets/typeahead_field.dart';
@@ -993,7 +994,7 @@ class _AttendanceCard extends StatelessWidget {
     return Panel(
       title: _yearly
           ? 'حاضري — د ${locale.num(month.year)} کال'
-          : 'حاضري — ${locale.num(month.year)}/${locale.num(month.month)}',
+          : 'حاضري — ${context.cal.monthYear(month)}',
       subtitle: _yearly
           ? 'میاشت‌په‌میاشت لنډیز. پر یوه میاشت کېکاږئ چې ورځې يې وګورئ.'
           : (canEdit
@@ -1389,12 +1390,10 @@ class _DayStatusDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = S.of(context);
-    final locale = s.locale;
 
     return AlertDialog(
       title: Text(
-        '${locale.num(date.year)}/${locale.num(date.month)}/'
-        '${locale.num(date.day)}',
+        context.cal.full(date),
         style: const TextStyle(fontSize: 15.5, fontWeight: FontWeight.w700),
       ),
       content: SizedBox(

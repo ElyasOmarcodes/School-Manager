@@ -252,10 +252,16 @@ class _StudentsPageState extends State<StudentsPage> {
                 label: 'پروفایل',
                 allLabel: 'ټول پروفایلونه',
                 icon: Icons.badge_rounded,
-                value: _filter.onlyIncomplete ? true : null,
-                options: [(value: true, label: s.incompleteProfile)],
-                onChanged: (v) =>
-                    _setFilter(_filter.copyWith(onlyIncomplete: v ?? false)),
+                value: _filter.profileComplete,
+                options: [
+                  (value: true, label: 'تکمیل شوي پروفایلونه'),
+                  (value: false, label: s.incompleteProfile),
+                ],
+                onChanged: (v) => _setFilter(
+                  v == null
+                      ? _filter.copyWith(clearProfile: true)
+                      : _filter.copyWith(profileComplete: v),
+                ),
               ),
             ],
           ),

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 
@@ -10,6 +11,7 @@ import '../../core/widgets/panel.dart';
 import '../../data/db/database.dart';
 import '../../data/repositories/academic_repository.dart';
 import '../../data/repositories/timetable_repository.dart';
+import 'timetable_page.dart' show CellColorMode, colorModeKey, colorModeOptions;
 
 /// **د مهالویش تنظیمات** — د ورځې جوړښت.
 ///
@@ -56,6 +58,21 @@ class _TimetableSettingsPageState extends State<TimetableSettingsPage> {
   List<int> _perPeriod = const [];
 
   List<TimeSlot> _slots = const [];
+
+  /// `weekly` (مکتب) | `daily` (مدرسه) — دلته ټاکل کېږي، نه پر
+  /// کاري پاڼه.
+  String _mode = 'weekly';
+
+  /// د خانو رنګ څه ښیي.
+  String _colorBy = 'difficulty';
+
+  /// **اتومات ساتل** — کارن باید «ساته» ونه غواړي.
+  ///
+  /// یو کوچنی ځنډ ورسره دی: که هر ټک سمدستي ساتل کېده، د «۶ → ۸»
+  /// لیکل به درې ځله ډیټابیس ته تللي وای او درې ځله به يې ساعتونه
+  /// له سره جوړ کړي وای.
+  Timer? _autosave;
+  bool _saving = false;
 
   /// هغه څه چې په ډیټابیس کې دي — د «ونه ساتل شو» د پېژندلو لپاره.
   String? _savedSignature;
@@ -116,17 +133,72 @@ class _TimetableSettingsPageState extends State<TimetableSettingsPage> {
         _uniform = parsed.isEmpty;
         _perPeriod = parsed;
       }
+      if (school != null) {
+        _mode = school.timetableMode;
+        _colorBy = school.timetableColorBy;
+      }
       _savedSignature = _signature;
       _loading = false;
     });
   }
 
+  /// د یوې رنګ‌بڼې کیلي — کوچنۍ رنګینې نښې.
+  List<({Color color, String label})> _legendFor(CellColorMode m) =>
+      switch (m) {
+        CellColorMode.difficulty => const [
+          (color: AppColors.danger, label: 'سخت'),
+          (color: AppColors.warning, label: 'منځنی'),
+          (color: AppColors.success, label: 'اسان'),
+        ],
+        CellColorMode.kind => const [
+          (color: AppColors.modHifz, label: 'دیني'),
+          (color: AppColors.modTimetable, label: 'عصري'),
+        ],
+        // فن او استاد ثابته کیلي نه لري: رنګ يې د نامه/شمېرې له
+        // مخې دی. یوه دروغجنه کیلي به له هېڅ کیلي بدتره وه.
+        _ => const [],
+      };
+
+  /// هر بدلون یو ځنډېدلی ساتل پیلوي.
+  void _touch() {
+    _autosave?.cancel();
+    _autosave = Timer(const Duration(milliseconds: 700), () {
+      if (mounted && _dirty && !_saving) _save();
+    });
+  }
+
+  /// **د ډول او رنګ ټاکنې سمدستي ساتل کېږي** — هغوی ساعتونه له
+  /// سره نه جوړوي، نو هېڅ خطر نه لري.
+  Future<void> _saveView() async {
+    final school = _school;
+    if (school == null) return;
+    await (widget.academic.db.update(
+      widget.academic.db.schools,
+    )..where((x) => x.id.equals(school.id))).write(
+      SchoolsCompanion(
+        timetableMode: Value(_mode),
+        timetableColorBy: Value(_colorBy),
+      ),
+    );
+    widget.onChanged?.call();
+  }
+
+  @override
+  void dispose() {
+    _autosave?.cancel();
+    super.dispose();
+  }
+
   /// **ساتل د ساعتونو له سره جوړولو معنا لري** — نو مخکې پوښتنه.
   Future<void> _save() async {
+    if (_saving) return;
     final dropped = await _confirmIfLossy();
     if (dropped == null || !mounted) return;
 
-    setState(() => _busy = true);
+    setState(() {
+      _busy = true;
+      _saving = true;
+    });
     final lost = await widget.timetable.rebuildSlots(
       dayStart: _dayStart,
       periodsPerDay: _periods,
@@ -156,7 +228,10 @@ class _TimetableSettingsPageState extends State<TimetableSettingsPage> {
     }
 
     if (!mounted) return;
-    setState(() => _busy = false);
+    setState(() {
+      _busy = false;
+      _saving = false;
+    });
     await _load();
     widget.onChanged?.call();
     if (!mounted) return;
@@ -218,6 +293,7 @@ class _TimetableSettingsPageState extends State<TimetableSettingsPage> {
       ),
     );
     if (picked == null || !mounted) return;
+    _touch();
     setState(
       () => _dayStart =
           '${picked.hour.toString().padLeft(2, '0')}:'
@@ -269,7 +345,10 @@ class _TimetableSettingsPageState extends State<TimetableSettingsPage> {
                         min: 1,
                         max: 12,
                         enabled: widget.canEdit,
-                        onChanged: (v) => setState(() => _periods = v),
+                        onChanged: (v) {
+                          setState(() => _periods = v);
+                          _touch();
+                        },
                       ),
                     ),
                     _Field(
@@ -285,15 +364,18 @@ class _TimetableSettingsPageState extends State<TimetableSettingsPage> {
                           (value: false, label: 'هر یو خپل', icon: null),
                         ],
                         onChanged: widget.canEdit
-                            ? (v) => setState(() {
-                                // له «خپل» ته تګ اوسنۍ ګډه اندازه
-                                // د پیل ټکي په توګه اخلي — نه صفر،
-                                // چې کارن يې له سره ولیکي.
-                                if (!v && _perPeriod.length != _periods) {
-                                  _perPeriod = _padded;
-                                }
-                                _uniform = v;
-                              })
+                            ? (v) {
+                                setState(() {
+                                  // له «خپل» ته تګ اوسنۍ ګډه اندازه
+                                  // د پیل ټکي په توګه اخلي — نه صفر،
+                                  // چې کارن يې له سره ولیکي.
+                                  if (!v && _perPeriod.length != _periods) {
+                                    _perPeriod = _padded;
+                                  }
+                                  _uniform = v;
+                                });
+                                _touch();
+                              }
                             : (_) {},
                       ),
                     ),
@@ -306,18 +388,106 @@ class _TimetableSettingsPageState extends State<TimetableSettingsPage> {
                           max: 90,
                           step: 5,
                           enabled: widget.canEdit,
-                          onChanged: (v) => setState(() => _minutes = v),
+                          onChanged: (v) {
+                          setState(() => _minutes = v);
+                          _touch();
+                        },
                         ),
                       )
                     else
                       _PerPeriodEditor(
                         lengths: _padded,
                         enabled: widget.canEdit,
-                        onChanged: (i, v) => setState(() {
-                          final next = _padded;
-                          next[i] = v;
-                          _perPeriod = next;
-                        }),
+                        onChanged: (i, v) {
+                          setState(() {
+                            final next = _padded;
+                            next[i] = v;
+                            _perPeriod = next;
+                          });
+                          _touch();
+                        },
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // ═══════════════════════════════════════════════
+            //  د ښودنې بڼه — ډول او رنګ
+            // ═══════════════════════════════════════════════
+            FadeSlideIn.staggered(
+              index: 1,
+              child: Panel(
+                title: 'د جدول بڼه',
+                icon: Icons.palette_rounded,
+                color: AppColors.modTimetable,
+                subtitle: 'دا دواړه سمدستي ساتل کېږي.',
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _Field(
+                      label: 'د مهالویش ډول',
+                      hint: _mode == 'daily'
+                          ? 'یو جدول، ټولې درجې — هره ورځ هماغه.'
+                          : 'هره ورځ خپل جدول لري.',
+                      child: SegmentedChoice<String>(
+                        value: _mode,
+                        color: AppColors.modTimetable,
+                        options: const [
+                          (
+                            value: 'weekly',
+                            label: 'اونیز (مکتب)',
+                            icon: Icons.calendar_view_week_rounded,
+                          ),
+                          (
+                            value: 'daily',
+                            label: 'درجې (مدرسه)',
+                            icon: Icons.table_rows_rounded,
+                          ),
+                        ],
+                        onChanged: widget.canEdit
+                            ? (v) {
+                                setState(() => _mode = v);
+                                _saveView();
+                              }
+                            : (_) {},
+                      ),
+                    ),
+                    const Divider(height: 26),
+                    Text(
+                      'رنګ څه ښیي',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: p.ink,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      // **دا هغه پوښتنې ته ځواب دی چې کارن يې وکړه:**
+                      // «د رنګونو اهمیت څه دی؟». پخوا هېڅ نه و — یو
+                      // hash و. اوس رنګ یوه پوښتنه ځوابوي، او دا کرښه
+                      // وايي کومه.
+                      'د خانو رنګ پخپله معنا لري. لاندې يې وټاکئ چې '
+                      'کومه پوښتنه ځواب کړي.',
+                      style: TextStyle(fontSize: 11.5, color: p.muted),
+                    ),
+                    const SizedBox(height: 10),
+                    for (final o in colorModeOptions)
+                      _ColorModeRow(
+                        label: o.label,
+                        hint: o.hint,
+                        selected: _colorBy == colorModeKey(o.value),
+                        legend: _legendFor(o.value),
+                        onTap: !widget.canEdit
+                            ? null
+                            : () {
+                                setState(
+                                  () => _colorBy = colorModeKey(o.value),
+                                );
+                                _saveView();
+                              },
                       ),
                   ],
                 ),
@@ -326,7 +496,7 @@ class _TimetableSettingsPageState extends State<TimetableSettingsPage> {
             const SizedBox(height: 16),
 
             FadeSlideIn.staggered(
-              index: 1,
+              index: 2,
               child: Panel(
                 title: 'تفریح',
                 icon: Icons.free_breakfast_rounded,
@@ -342,7 +512,10 @@ class _TimetableSettingsPageState extends State<TimetableSettingsPage> {
                         min: 1,
                         max: 8,
                         enabled: widget.canEdit,
-                        onChanged: (v) => setState(() => _breakAfter = v),
+                        onChanged: (v) {
+                          setState(() => _breakAfter = v);
+                          _touch();
+                        },
                       ),
                     ),
                     _Field(
@@ -353,7 +526,10 @@ class _TimetableSettingsPageState extends State<TimetableSettingsPage> {
                         max: 60,
                         step: 5,
                         enabled: widget.canEdit,
-                        onChanged: (v) => setState(() => _breakMinutes = v),
+                        onChanged: (v) {
+                          setState(() => _breakMinutes = v);
+                          _touch();
+                        },
                       ),
                     ),
                     _Field(
@@ -366,7 +542,10 @@ class _TimetableSettingsPageState extends State<TimetableSettingsPage> {
                         min: 0,
                         max: 4,
                         enabled: widget.canEdit,
-                        onChanged: (v) => setState(() => _breaksPerDay = v),
+                        onChanged: (v) {
+                          setState(() => _breaksPerDay = v);
+                          _touch();
+                        },
                       ),
                     ),
                   ],
@@ -377,7 +556,7 @@ class _TimetableSettingsPageState extends State<TimetableSettingsPage> {
 
             // **مخکتنه** — د ساتلو دمخه ښکاري چې څه به جوړ شي.
             FadeSlideIn.staggered(
-              index: 2,
+              index: 3,
               child: Panel(
                 title: 'مخکتنه',
                 icon: Icons.visibility_rounded,
@@ -398,8 +577,17 @@ class _TimetableSettingsPageState extends State<TimetableSettingsPage> {
           ],
         ),
 
-        // **د ساتلو کرښه یوازې کله ښکاري چې څه بدل شوي وي.**
-        // یوه تل-ښکاره تڼۍ کارن ته نه وايي چې څه بدل شوي دي.
+        // **ساتل پخپله کېږي — کارن يې نه غواړي.**
+        //
+        // مخکې دلته یوه «ساته» تڼۍ وه. خو یو تنظیم چې کارن يې بدل
+        // کړ او بیا يې پرېښود، په ډیټابیس کې نه و — او د پاڼې له
+        // پرېښودو وروسته يې خبر هم نه و. اوس هر بدلون د اوه‌سلمې
+        // ثانیې په ځنډ سره پخپله ساتل کېږي؛ دا کرښه یوازې حال
+        // وايي.
+        //
+        // **یوه استثنا پاتې ده:** که یو بدلون درسونه ړنګ کړي (لکه
+        // د ساعتونو کمول)، پوښتنه بیا هم کېږي. یو خاموش زیان له
+        // یوې پوښتنې بدتر دی.
         Positioned(
           left: 0,
           right: 0,
@@ -407,23 +595,30 @@ class _TimetableSettingsPageState extends State<TimetableSettingsPage> {
           child: AnimatedSlide(
             duration: AppMotion.normal,
             curve: AppMotion.emphasized,
-            offset: _dirty ? Offset.zero : const Offset(0, 1.4),
+            offset: (_dirty || _saving) ? Offset.zero : const Offset(0, 1.4),
             child: Container(
-              padding: const EdgeInsets.fromLTRB(24, 14, 24, 18),
+              padding: const EdgeInsets.fromLTRB(24, 12, 24, 14),
               decoration: BoxDecoration(
                 color: p.surface,
                 border: Border(top: BorderSide(color: p.line)),
               ),
               child: Row(
                 children: [
-                  const Icon(
-                    Icons.edit_note_rounded,
-                    size: 19,
-                    color: AppColors.warning,
-                  ),
+                  if (_saving)
+                    const SizedBox(
+                      width: 15,
+                      height: 15,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  else
+                    const Icon(
+                      Icons.cloud_upload_rounded,
+                      size: 18,
+                      color: AppColors.warning,
+                    ),
                   const SizedBox(width: 10),
                   Text(
-                    'بدلونونه لا نه دي ساتل شوي',
+                    _saving ? 'ساتل کېږي…' : 'پخپله ساتل کېږي…',
                     style: TextStyle(
                       fontSize: 12.5,
                       fontWeight: FontWeight.w600,
@@ -431,19 +626,9 @@ class _TimetableSettingsPageState extends State<TimetableSettingsPage> {
                     ),
                   ),
                   const Spacer(),
-                  OutlinedButton(
+                  TextButton(
                     onPressed: _busy ? null : _load,
-                    child: const Text('بېرته'),
-                  ),
-                  const SizedBox(width: 10),
-                  FilledButton.icon(
-                    onPressed: _busy || !widget.canEdit ? null : _save,
-                    icon: const Icon(Icons.check_rounded, size: 17),
-                    label: Text(s.save),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.modTimetable,
-                      minimumSize: const Size(0, 42),
-                    ),
+                    child: const Text('بدلونونه لغوه کړه'),
                   ),
                 ],
               ),
@@ -774,6 +959,119 @@ class _Preview extends StatelessWidget {
             ),
           ),
       ],
+    );
+  }
+}
+
+
+/// د رنګ‌بڼې یوه ټاکنه — نوم، تشریح او (که وي) کیلي.
+class _ColorModeRow extends StatefulWidget {
+  final String label;
+  final String hint;
+  final bool selected;
+  final List<({Color color, String label})> legend;
+  final VoidCallback? onTap;
+
+  const _ColorModeRow({
+    required this.label,
+    required this.hint,
+    required this.selected,
+    required this.legend,
+    this.onTap,
+  });
+
+  @override
+  State<_ColorModeRow> createState() => _ColorModeRowState();
+}
+
+class _ColorModeRowState extends State<_ColorModeRow> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    const c = AppColors.modTimetable;
+
+    return MouseRegion(
+      cursor: widget.onTap == null
+          ? MouseCursor.defer
+          : SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        behavior: HitTestBehavior.opaque,
+        child: AnimatedContainer(
+          duration: AppMotion.fast,
+          margin: const EdgeInsets.only(bottom: 7),
+          padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+          decoration: BoxDecoration(
+            color: widget.selected
+                ? c.withValues(alpha: 0.09)
+                : (_hover ? p.surfaceAlt : Colors.transparent),
+            borderRadius: BorderRadius.circular(AppTheme.radius),
+            border: Border.all(
+              color: widget.selected ? c.withValues(alpha: 0.45) : p.line,
+              width: widget.selected ? 1.5 : 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                widget.selected
+                    ? Icons.radio_button_checked_rounded
+                    : Icons.radio_button_unchecked_rounded,
+                size: 17,
+                color: widget.selected ? c : p.faint,
+              ),
+              const SizedBox(width: 11),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      widget.label,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: p.ink,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      widget.hint,
+                      style: TextStyle(fontSize: 11.5, color: p.muted),
+                    ),
+                  ],
+                ),
+              ),
+              for (final l in widget.legend)
+                Padding(
+                  padding: const EdgeInsetsDirectional.only(start: 10),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 9,
+                        height: 9,
+                        decoration: BoxDecoration(
+                          color: l.color.withValues(alpha: 0.85),
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        l.label,
+                        style: TextStyle(fontSize: 11, color: p.muted),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

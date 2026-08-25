@@ -5,6 +5,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_motion.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/numerals.dart';
+import '../../core/utils/calendars.dart';
 import '../../core/widgets/panel.dart';
 import '../../data/db/database.dart';
 import '../../data/repositories/academic_repository.dart';
@@ -309,12 +310,7 @@ class _SettingRow extends StatelessWidget {
                   [
                     '${locale.num(row.subjectCount)} مضامین',
                     if (!madrasa) 'ربع ${locale.num(e.term)}',
-                    '${locale.num(e.startsOn.year)}/'
-                        '${locale.num(e.startsOn.month)}/'
-                        '${locale.num(e.startsOn.day)} — '
-                        '${locale.num(e.endsOn.year)}/'
-                        '${locale.num(e.endsOn.month)}/'
-                        '${locale.num(e.endsOn.day)}',
+                    context.cal.range(e.startsOn, e.endsOn),
                   ].join('  ·  '),
                   style: TextStyle(fontSize: 11.5, color: p.muted),
                 ),

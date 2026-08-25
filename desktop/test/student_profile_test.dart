@@ -201,7 +201,7 @@ void main() {
     test('**ډله‌ییز ثبت شوی شاګرد نیمګړی دی**', () async {
       await plain('1405', 'احمد');
       final page = await students.list(
-        filter: const StudentFilter(onlyIncomplete: true),
+        filter: const StudentFilter(profileComplete: false),
       );
       expect(page.total, 1);
     });
@@ -229,7 +229,7 @@ void main() {
       );
 
       final page = await students.list(
-        filter: const StudentFilter(onlyIncomplete: true),
+        filter: const StudentFilter(profileComplete: false),
       );
       expect(page.total, 0);
 
@@ -262,7 +262,7 @@ void main() {
       );
 
       final page = await students.list(
-        filter: const StudentFilter(onlyIncomplete: true),
+        filter: const StudentFilter(profileComplete: false),
       );
       expect(page.total, 1);
       expect(

@@ -6,6 +6,7 @@ import 'core/widgets/paper_press.dart';
 import 'core/l10n/strings.dart';
 import 'core/theme/app_colors.dart';
 import 'core/theme/app_theme.dart';
+import 'core/utils/calendars.dart';
 import 'data/db/database.dart';
 import 'data/repositories/academic_repository.dart';
 import 'data/repositories/attendance_repository.dart';
@@ -309,9 +310,16 @@ class _SchoolManagerAppState extends State<SchoolManagerApp> {
         // ټول اورلې يې هم پکې دي، ځکه چې `builder` د Navigator له
         // پاسه دی. که یوازې د پاڼې شاوخوا وای، یو دیالوګ به «سخت»
         // احساس شوی و.
-        builder: (context, child) => Directionality(
-          textDirection: _locale.direction,
-          child: PaperSurface(child: child!),
+        // **تقویم د ونې پر سر ولاړ دی** — نو هره پاڼه يې پرته له
+        // دې چې ورکړل شي، پېژني. یو تنظیم چې باید هرځای پلې شي،
+        // باید هرځای پخپله ولاړ وي — نه دا چې هره پاڼه يې بیا
+        // بیا واخلي او یو ځای يې هېر شي.
+        builder: (context, child) => CalendarScope(
+          system: calendarOf(_config.calendar),
+          child: Directionality(
+            textDirection: _locale.direction,
+            child: PaperSurface(child: child!),
+          ),
         ),
         home: Builder(builder: (context) => _buildStage()),
       ),

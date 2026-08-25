@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 
 import '../../core/utils/numerals.dart';
 import '../../core/utils/qr_token.dart';
+import '../../core/data/afghanistan.dart';
 import '../db/database.dart';
 
 /// د یوې کرښې لپاره هغه څه چې جدول ښیي — د شاګرد له ټولګي سره یوځای.
@@ -53,7 +54,12 @@ class StudentFilter {
   /// **دا ولې پکار دی؟** ځکه چې د ډله‌ییزې نوم‌لیکنې پر مهال یوازې
   /// نوم، د پلار نوم او درجه ثبتېږي. مدیر باید وروسته پیدا کړي چې
   /// کوم پروفایلونه لا تشې لري — که نه، هغه به تل نیمګړي پاتې و.
-  final bool onlyIncomplete;
+  /// `null` = ټول، `true` = یوازې نیمګړي، `false` = یوازې بشپړ.
+  ///
+  /// **درې حالته، نه دوه.** «بشپړ پروفایلونه» یوه ریښتینې پوښتنه
+  /// ده — «څوک د کارت جوړولو لپاره چمتو دي؟» — او پرته له دې
+  /// حالته يې ځواب نه و.
+  final bool? profileComplete;
 
   const StudentFilter({
     this.query = '',
@@ -64,7 +70,7 @@ class StudentFilter {
     this.province,
     this.district,
     this.residency,
-    this.onlyIncomplete = false,
+    this.profileComplete,
   });
 
   StudentFilter copyWith({
@@ -76,7 +82,8 @@ class StudentFilter {
     String? province,
     String? district,
     String? residency,
-    bool? onlyIncomplete,
+    bool? profileComplete,
+    bool clearProfile = false,
     bool clearSection = false,
     bool clearGrade = false,
     bool clearStatus = false,
@@ -105,7 +112,9 @@ class StudentFilter {
           ? district
           : (district ?? this.district),
       residency: clearResidency ? null : (residency ?? this.residency),
-      onlyIncomplete: onlyIncomplete ?? this.onlyIncomplete,
+      profileComplete: clearProfile
+          ? null
+          : (profileComplete ?? this.profileComplete),
     );
   }
 
@@ -119,7 +128,7 @@ class StudentFilter {
     province != null,
     district != null,
     residency != null,
-    onlyIncomplete,
+    profileComplete != null,
     status != 'active',
   ].where((v) => v).length;
 
@@ -131,7 +140,7 @@ class StudentFilter {
     province != null,
     district != null,
     residency != null,
-    onlyIncomplete,
+    profileComplete != null,
     status != 'active',
   ].where((v) => v).length;
 }
@@ -196,20 +205,30 @@ class StudentRepository {
       where.add('sec.grade_id = ?');
       args.add(Variable<int>(filter.gradeId!));
     }
+    // **د ځای‌نومونو پرتله نرمه ده، نه حرف‌په‌حرف.**
+    //
+    // «محمدآغه» او «محمد آغه» یو ځای دی؛ «لوګر» او «لوگر» یو
+    // ولایت. یوه دقیقه پرتله به یوې ډکې ډیټابیس ته «هېڅ پایله
+    // نشته» ویلې وای — هماغه ستونزه چې د لوګر د محمدآغې شاګردان
+    // يې پټ کړي وو.
     if (filter.province != null) {
-      where.add('s.province = ?');
-      args.add(Variable<String>(filter.province!));
+      where.add('${placeKeySql('s.province')} = ?');
+      args.add(Variable<String>(placeKey(filter.province!)));
     }
     if (filter.district != null) {
-      where.add('s.district = ?');
-      args.add(Variable<String>(filter.district!));
+      where.add('${placeKeySql('s.district')} = ?');
+      args.add(Variable<String>(placeKey(filter.district!)));
     }
     if (filter.residency != null) {
       where.add('s.residency = ?');
       args.add(Variable<String>(filter.residency!));
     }
-    if (filter.onlyIncomplete) {
-      where.add(incompleteProfileSql);
+    if (filter.profileComplete != null) {
+      where.add(
+        filter.profileComplete!
+            ? 'NOT ($incompleteProfileSql)'
+            : incompleteProfileSql,
+      );
     }
 
     final q = filter.query.trim();

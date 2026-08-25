@@ -72,59 +72,114 @@ class FilterBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.palette;
 
-    return Row(
-      children: [
-        SizedBox(
-          width: searchWidth,
-          child: TextField(
-            controller: searchController,
-            onChanged: onSearchChanged,
-            decoration: InputDecoration(
-              hintText: searchHint,
-              prefixIcon: const Icon(Icons.search_rounded, size: 19),
-              // د لټون پاکولو تڼۍ یوازې هغه وخت چې څه لیکل شوي وي.
-              suffixIcon: searchController.text.isEmpty
-                  ? null
-                  : IconButton(
-                      tooltip: '',
-                      icon: const Icon(Icons.close_rounded, size: 16),
-                      onPressed: () {
-                        searchController.clear();
-                        onSearchChanged('');
-                      },
-                    ),
-              isDense: true,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 14,
-                vertical: 13,
+    // **د پردې له پلنوالي سره ځان جوړوي.**
+    //
+    // یوه ثابته کرښه دوه ستونزې لري: پر تنګه پرده توکي یو پر بل
+    // ورختل کېږي یا پټېږي، او پر پراخه پرده بې‌ځایه دوه کرښې نیسي.
+    // نو دلته لومړی حساب کوو چې څومره ځای شته — او یوازې هغه وخت
+    // دوهمې کرښې ته ځو چې ریښتیا پکار وي.
+    return LayoutBuilder(
+      builder: (context, c) {
+        // د یوه بنسټیز فلټر اټکلي پلنوالی + فاصله.
+        const primaryWidth = 190.0 + 8;
+        const advancedWidth = 190.0 + 8;
+        const actionWidth = 150.0 + 9;
+
+        final needed =
+            searchWidth +
+            primary.length * primaryWidth +
+            (onToggle == null ? 0 : advancedWidth) +
+            (countLabel == null ? 0 : 130) +
+            actions.length * actionWidth;
+
+        final tight = needed > c.maxWidth;
+
+        // لټون هم راټولېږي، خو له یوې کچې ښکته نه — یو تنګ لټون
+        // له هېڅ لټونه بدتر دی.
+        final searchW = tight
+            ? (searchWidth * 0.62).clamp(190.0, searchWidth)
+            : searchWidth;
+
+        final head = <Widget>[
+          SizedBox(width: searchW, child: _search(context)),
+          for (final w in primary) ...[const SizedBox(width: 8), w],
+          if (onToggle != null) ...[
+            const SizedBox(width: 8),
+            AdvancedFiltersButton(
+              open: open,
+              count: activeCount,
+              onTap: onToggle!,
+            ),
+          ],
+        ];
+
+        final tail = <Widget>[
+          if (countLabel != null) ...[
+            Flexible(
+              child: Text(
+                countLabel!,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.end,
+                style: TextStyle(fontSize: 12.5, color: p.muted),
               ),
             ),
-          ),
-        ),
-        for (final w in primary) ...[const SizedBox(width: 8), w],
-        if (onToggle != null) ...[
-          const SizedBox(width: 8),
-          AdvancedFiltersButton(
-            open: open,
-            count: activeCount,
-            onTap: onToggle!,
-          ),
-        ],
-        const Spacer(),
-        if (countLabel != null) ...[
-          Text(
-            countLabel!,
-            style: TextStyle(fontSize: 12.5, color: p.muted),
-          ),
-          const SizedBox(width: 14),
-        ],
-        for (var i = 0; i < actions.length; i++) ...[
-          if (i > 0) const SizedBox(width: 9),
-          actions[i],
-        ],
-      ],
+            const SizedBox(width: 14),
+          ],
+          for (var i = 0; i < actions.length; i++) ...[
+            if (i > 0) const SizedBox(width: 9),
+            actions[i],
+          ],
+        ];
+
+        // **دوهمه کرښه یوازې کله چې ریښتیا پکار وي.**
+        final twoLines = needed > c.maxWidth * 1.18;
+
+        if (!twoLines) {
+          return Row(
+            children: [...head, const Spacer(), ...tail],
+          );
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(children: [...head, const Spacer()]),
+            const SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: tail,
+            ),
+          ],
+        );
+      },
     );
   }
+
+  Widget _search(BuildContext context) => TextField(
+    controller: searchController,
+    onChanged: onSearchChanged,
+    decoration: InputDecoration(
+      hintText: searchHint,
+      prefixIcon: const Icon(Icons.search_rounded, size: 19),
+      // د لټون پاکولو تڼۍ یوازې هغه وخت چې څه لیکل شوي وي.
+      suffixIcon: searchController.text.isEmpty
+          ? null
+          : IconButton(
+              tooltip: '',
+              icon: const Icon(Icons.close_rounded, size: 16),
+              onPressed: () {
+                searchController.clear();
+                onSearchChanged('');
+              },
+            ),
+      isDense: true,
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: 14,
+        vertical: 13,
+      ),
+    ),
+  );
 }
 
 /// **«پرمختللي فلټرونه» تڼۍ.**
@@ -338,6 +393,10 @@ class FilterField extends StatelessWidget {
   }
 }
 
+/// د «ټول» ځانګړې نښه — `null` نه کارېږي، ځکه چې `PopupMenuButton`
+/// یوه `null` پایله له «بنده شوه» سره یو شان ګڼي.
+const Object _clearAll = Object();
+
 /// **یو بنسټیز فلټر چې پر پورتنۍ کرښه ولاړ وي** — یوه وړه منو.
 ///
 /// یوازې د هغو فلټرونو لپاره چې د لیست بنسټیز ویش دی (ټولګی،
@@ -382,7 +441,14 @@ class QuickFilter<T> extends StatelessWidget {
 
     if (dimmed) return _shell(context, current, dim: true);
 
-    return PopupMenuButton<T?>(
+    // **«ټول» یوه ځانګړې نښه ده، نه `null`.**
+    //
+    // دا یوه ریښتینې ګټله وه: `PopupMenuButton` د `null` پایله له
+    // «کارن منو بنده کړه» سره یو شان ګڼي، نو `onSelected` هېڅکله
+    // د «ټول» لپاره نه بلل کېده — او فلټر به یو ځل چې ټاکل شو،
+    // بېرته نه پاکېده. اوس «ټول» خپله نښه لري، او یوازې د حقیقي
+    // بندېدو پر مهال `null` راځي.
+    return PopupMenuButton<Object>(
       tooltip: '',
       position: PopupMenuPosition.under,
       color: p.surface,
@@ -394,13 +460,36 @@ class QuickFilter<T> extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         side: BorderSide(color: p.line),
       ),
-      onSelected: onChanged,
+      onSelected: (picked) =>
+          onChanged(picked == _clearAll ? null : picked as T),
       itemBuilder: (_) => [
-        PopupMenuItem<T?>(value: null, height: 38, child: Text(label)),
+        PopupMenuItem<Object>(
+          value: _clearAll,
+          height: 38,
+          child: Row(
+            children: [
+              Icon(
+                Icons.clear_all_rounded,
+                size: 15,
+                color: value == null ? AppColors.primary : p.muted,
+              ),
+              const SizedBox(width: 9),
+              Text(
+                label,
+                style: TextStyle(
+                  fontWeight: value == null
+                      ? FontWeight.w700
+                      : FontWeight.w500,
+                  color: value == null ? AppColors.primary : p.inkSoft,
+                ),
+              ),
+            ],
+          ),
+        ),
         const PopupMenuDivider(),
         for (final o in options)
-          PopupMenuItem<T?>(
-            value: o.value,
+          PopupMenuItem<Object>(
+            value: o.value as Object,
             height: 38,
             child: Text(
               o.label,

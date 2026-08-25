@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:drift/drift.dart' show TableUpdateQuery;
 import 'package:flutter/material.dart';
 
 import '../../core/l10n/strings.dart';
@@ -10,6 +13,7 @@ import '../../data/db/database.dart';
 import '../../data/repositories/academic_repository.dart';
 import '../../data/repositories/teacher_repository.dart';
 import '../../data/repositories/timetable_repository.dart';
+import 'timetable_pdf.dart';
 
 /// د مهالویش پاڼه — د یوه بخش اونیز جدول.
 ///
@@ -34,7 +38,47 @@ import '../../data/repositories/timetable_repository.dart';
 ///     یوه درجه څو ځله «صرف» لري او څو ځله «فقه».
 ///   • **دیني/عصري** — د مدرسې لپاره: ورځ څومره دیني او څومره
 ///     عصري ده.
-enum CellColorMode { difficulty, fan, kind }
+enum CellColorMode { difficulty, fan, kind, teacher }
+
+/// د تنظیم د متن او د ګڼې تر منځ اړونه.
+CellColorMode colorModeOf(String? key) => switch (key) {
+  'fan' => CellColorMode.fan,
+  'kind' => CellColorMode.kind,
+  'teacher' => CellColorMode.teacher,
+  _ => CellColorMode.difficulty,
+};
+
+String colorModeKey(CellColorMode m) => switch (m) {
+  CellColorMode.fan => 'fan',
+  CellColorMode.kind => 'kind',
+  CellColorMode.teacher => 'teacher',
+  CellColorMode.difficulty => 'difficulty',
+};
+
+const List<({CellColorMode value, String label, String hint})>
+colorModeOptions = [
+  (
+    value: CellColorMode.difficulty,
+    label: 'سختوالی',
+    hint: 'سور = سخت، نارنجي = منځنی، شنه = اسان. '
+        'ښیي چې ځیرک ترتیب سم کار کړی که نه.',
+  ),
+  (
+    value: CellColorMode.fan,
+    label: 'فن',
+    hint: 'د یوه فن ټول کتابونه یو رنګ — د تکرار لیدو لپاره.',
+  ),
+  (
+    value: CellColorMode.kind,
+    label: 'دیني/عصري',
+    hint: 'ورځ څومره دیني او څومره عصري ده.',
+  ),
+  (
+    value: CellColorMode.teacher,
+    label: 'استاد',
+    hint: 'د یوه استاد ټول درسونه یو رنګ — د بار د لیدو لپاره.',
+  ),
+];
 
 /// د فن رنګونه — د نامه له مخې ثابت. **د فن، نه د کتاب**: نو د
 /// «صرف» ټول کتابونه یو رنګ اخلي.
@@ -60,6 +104,12 @@ Color cellColor(TimetableCell c, CellColorMode mode) => switch (mode) {
   CellColorMode.kind => c.isReligious
       ? AppColors.modHifz
       : AppColors.modTimetable,
+  // **د استاد رنګ** — د هغه د id له مخې ثابت. یو استاد چې ډېر
+  // ساعتونه لري، رنګ يې پر جدول ښکاره ډله جوړوي — دا هغه څه دي
+  // چې «څوک ډېر بوخت دی؟» ژر ځوابوي.
+  CellColorMode.teacher => c.entry.teacherId == null
+      ? AppColors.warning
+      : _fanPalette[c.entry.teacherId!.abs() % _fanPalette.length],
 };
 
 class TimetablePage extends StatefulWidget {
@@ -67,11 +117,15 @@ class TimetablePage extends StatefulWidget {
   final AcademicRepository academic;
   final TeacherRepository teachers;
 
+  /// د تنظیماتو پاڼې ته لار — د ډول او رنګ ټاکنه هلته ده.
+  final VoidCallback? onOpenSettings;
+
   const TimetablePage({
     super.key,
     required this.timetable,
     required this.academic,
     required this.teachers,
+    this.onOpenSettings,
   });
 
   @override
@@ -88,8 +142,21 @@ class _TimetablePageState extends State<TimetablePage> {
   List<Teacher> _teachers = const [];
   List<TimetableConflict> _conflicts = const [];
 
-  /// رنګ کومه پوښتنه ځوابوي — کارن يې ټاکي.
+  /// رنګ کومه پوښتنه ځوابوي — له تنظیماتو راځي.
   CellColorMode _colorMode = CellColorMode.difficulty;
+
+  bool _exporting = false;
+  String _schoolName = '';
+
+  /// **ژوندی تازه کول.**
+  ///
+  /// یو مهالویش د استادانو، کتابونو او ساعتونو پر سر ولاړ دی. که
+  /// یو استاد نوم بدل کړي یا یو کتاب ړنګ شي، جدول باید پخپله سم
+  /// شي — نه دا چې کارن يې د پاڼې له بیا پرانیستلو وروسته وویني.
+  ///
+  /// drift پخپله د اړوندو جدولونو بدلونونه خبروي، نو دلته یوازې
+  /// غوږ نیسو.
+  StreamSubscription<void>? _watch;
 
   /// **د ټکر خانې — د چټکې کتنې لپاره یوه ټولګه.**
   ///
@@ -135,6 +202,12 @@ class _TimetablePageState extends State<TimetablePage> {
   static const int _historyLimit = 20;
 
   @override
+  void dispose() {
+    _watch?.cancel();
+    super.dispose();
+  }
+
+  @override
   void initState() {
     super.initState();
     _boot();
@@ -151,32 +224,12 @@ class _TimetablePageState extends State<TimetablePage> {
       _sections = sections;
       _section = sections.isEmpty ? null : sections.first;
       _mode = school?.timetableMode ?? 'weekly';
+      _colorMode = colorModeOf(school?.timetableColorBy);
+      _schoolName = school?.name ?? '';
     });
+    _listen();
     await _load();
   }
-
-  /// د رنګ کیلي — یوازې هغه بڼه چې ثابت رنګونه لري.
-  ///
-  /// «فن» کیلي نه لري: رنګونه يې د نامه له مخې دي او شمېر يې د
-  /// ښوونځي په نصاب پورې اړه لري. هلته رنګ یوازې **یوشانوالی**
-  /// ښیي، نه یو ټاکلی معنا — نو یوه دروغجنه کیلي به بدتره وه.
-  List<Widget> _legendFor(CellColorMode mode) => switch (mode) {
-    CellColorMode.difficulty => const [
-      _LegendDot(color: AppColors.danger, label: 'سخت'),
-      _LegendDot(color: AppColors.warning, label: 'منځنی'),
-      _LegendDot(color: AppColors.success, label: 'اسان'),
-    ],
-    CellColorMode.kind => const [
-      _LegendDot(color: AppColors.modHifz, label: 'دیني'),
-      _LegendDot(color: AppColors.modTimetable, label: 'عصري'),
-    ],
-    CellColorMode.fan => [
-      Text(
-        'هر فن خپل رنګ لري — یو شان رنګ یعنې یو شان فن.',
-        style: TextStyle(fontSize: 11.5, color: context.palette.faint),
-      ),
-    ],
-  };
 
   /// د ټکرونو بشپړ لیست — څوک، کومه ورځ، کوم ساعت، کومې درجې.
   Future<void> _showConflicts() async {
@@ -273,10 +326,47 @@ class _TimetablePageState extends State<TimetablePage> {
     );
   }
 
-  Future<void> _setMode(String v) async {
-    setState(() => _mode = v);
-    await widget.academic.setTimetableMode(v);
-    await _load();
+  /// د اړوندو جدولونو پر هر بدلون، جدول له سره لوستل کېږي.
+  void _listen() {
+    _watch?.cancel();
+    final db = widget.academic.db;
+    _watch = db
+        .tableUpdates(
+          TableUpdateQuery.onAllTables([
+            db.timetableEntries,
+            db.timeSlots,
+            db.subjects,
+            db.teachers,
+            db.sections,
+            db.grades,
+          ]),
+        )
+        .listen((_) {
+          if (mounted && !_arranging) _load();
+        });
+  }
+
+  Future<void> _exportPdf() async {
+    setState(() => _exporting = true);
+    try {
+      final locale = S.of(context).locale;
+      final bytes = _isDaily
+          ? await buildDailyTimetablePdf(
+              grid: _daily!,
+              schoolName: _schoolName,
+              locale: locale,
+            )
+          : await buildWeeklyTimetablePdf(
+              grid: _grid!,
+              schoolName: _schoolName,
+              sectionLabel: _section?.label ?? '',
+              locale: locale,
+              dayName: weekdayNamePs,
+            );
+      await printTimetable(bytes);
+    } finally {
+      if (mounted) setState(() => _exporting = false);
+    }
   }
 
   Future<void> _load() async {
@@ -472,45 +562,63 @@ class _TimetablePageState extends State<TimetablePage> {
   /// د جدول دویمه بڼه ده — کارن به يې له ریښتیني سره پرتله کوله.
   /// دلته ریښتینی جدول بدلېږي او انډو تل لاس‌رسي دی، نو د لیدلو
   /// او د بېرته تګ ترمنځ یوه تڼۍ فاصله ده.
+  /// **ځیرک ترتیب — وړاندیزونه، نه یو حکم.**
+  ///
+  /// پروګرام ډېر بدیلونه ازمویي، ټول يې پاک (بې‌ټکره) جوړوي، بیا
+  /// يې د کیفیت له مخې ترتیبوي او **غوره څو** کارن ته ښیي. پرېکړه
+  /// د کارن ده — ځکه چې «غوره» یوازې ریاضي نه ده: ښايي دوه پلانونه
+  /// دواړه پاک وي، خو یو يې د مدرسې له عادت سره سم وي.
   Future<void> _smartArrange(int variant) async {
     if (_arranging) return;
     setState(() => _arranging = true);
-    await _remember();
 
-    final plan = await widget.timetable.arrange(
+    final list = await widget.timetable.proposals(
       daily: _isDaily,
       sectionId: _isDaily ? null : _section?.sectionId,
-      variant: variant,
     );
-    await widget.timetable.applyPlan(plan);
 
+    if (!mounted) {
+      return;
+    }
+    setState(() => _arranging = false);
+
+    if (list.isEmpty) {
+      _toast('هېڅ ترتیب ونه شو — لومړی کتابونه ثبت کړئ.', AppColors.warning);
+      return;
+    }
+
+    final picked = await showDialog<ArrangementPlan>(
+      context: context,
+      builder: (_) => _ProposalDialog(plans: list),
+    );
+    if (picked == null) return;
+
+    await _remember();
+    await widget.timetable.applyPlan(picked);
     if (!mounted) return;
     setState(() {
-      _variant = variant;
-      _clashes = plan.teacherClashes;
-      _arranging = false;
+      _variant = picked.variant;
+      _clashes = picked.teacherClashes;
     });
     await _load();
     if (!mounted) return;
 
     final locale = S.of(context).locale;
+    _toast(
+      '${locale.num(picked.placed)} خانې ډکې شوې · '
+      '${locale.num(picked.difficultyScore.round())}٪ د سختوالي ترتیب · '
+      '${picked.teacherClashes == 0 ? 'هېڅ ټکر نشته' : '${locale.num(picked.teacherClashes)} ټکرونه'}',
+      picked.isClean ? AppColors.success : AppColors.warning,
+    );
+  }
+
+  void _toast(String text, Color color) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         behavior: SnackBarBehavior.floating,
         width: 560,
-        backgroundColor: plan.teacherClashes > 0
-            ? AppColors.warning
-            : AppColors.success,
-        content: Text(
-          plan.teacherClashes > 0
-              ? 'ترتیب ${locale.num(variant + 1)} — '
-                    '${locale.num(plan.placed)} خانې ډکې شوې، خو '
-                    '${locale.num(plan.teacherClashes)} د استاد ټکرونه '
-                    'پاتې دي. ‹ › ووهئ چې بل بدیل وګورئ.'
-              : 'ترتیب ${locale.num(variant + 1)} — '
-                    '${locale.num(plan.placed)} خانې ډکې شوې، هېڅ ټکر '
-                    'نشته.',
-        ),
+        backgroundColor: color,
+        content: Text(text),
       ),
     );
   }
@@ -606,22 +714,15 @@ class _TimetablePageState extends State<TimetablePage> {
                     style: TextStyle(fontSize: 12.5, color: p.muted),
                   ),
                 const SizedBox(width: 14),
-                SegmentedChoice<String>(
-                  value: _mode,
-                  color: AppColors.modTimetable,
-                  options: const [
-                    (
-                      value: 'weekly',
-                      label: 'اونیز (مکتب)',
-                      icon: Icons.calendar_view_week_rounded,
-                    ),
-                    (
-                      value: 'daily',
-                      label: 'درجې (مدرسه)',
-                      icon: Icons.table_rows_rounded,
-                    ),
-                  ],
-                  onChanged: _setMode,
+                // **د ډول او د رنګ ټاکنه تنظیماتو ته ولاړه.**
+                //
+                // دا دواړه هره ورځ نه بدلېږي — یو ښوونځی یو ځل
+                // ټاکي چې «مدرسه» دی او رنګ يې څه ښیي. یو تنظیم چې
+                // پر کاري پاڼه ولاړ وي، هره ورځ ځای نیسي او یوازې
+                // د غلطې کېکاږنې خطر زیاتوي.
+                _SettingsHint(
+                  text: _isDaily ? 'درجې (مدرسه)' : 'اونیز (مکتب)',
+                  onTap: widget.onOpenSettings,
                 ),
                 const Spacer(),
                 _SmartBar(
@@ -631,12 +732,8 @@ class _TimetablePageState extends State<TimetablePage> {
                   canRedo: _redo.isNotEmpty,
                   clashes: _clashes,
                   onArrange: () => _smartArrange(_variant ?? 0),
-                  onPrev: _variant == null || _variant == 0
-                      ? null
-                      : () => _smartArrange(_variant! - 1),
-                  onNext: _variant == null
-                      ? null
-                      : () => _smartArrange(_variant! + 1),
+                  onPrev: null,
+                  onNext: null,
                   onUndo: _undo.isEmpty ? null : _undoLast,
                   onRedo: _redo.isEmpty ? null : _redoLast,
                 ),
@@ -651,43 +748,26 @@ class _TimetablePageState extends State<TimetablePage> {
                   conflicts: _conflicts,
                   onTap: _conflicts.isEmpty ? null : _showConflicts,
                 ),
+                const SizedBox(width: 10),
+                OutlinedButton.icon(
+                  onPressed: _exporting ? null : _exportPdf,
+                  icon: _exporting
+                      ? const SizedBox(
+                          width: 15,
+                          height: 15,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.picture_as_pdf_rounded, size: 16),
+                  label: const Text('PDF'),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(0, 42),
+                  ),
+                ),
               ],
             ),
           ),
 
-          // **د رنګ کیلي.** پرته له دې، رنګونه یوازې ښکلا وه.
-          Padding(
-            padding: const EdgeInsets.fromLTRB(24, 0, 24, 10),
-            child: Row(
-              children: [
-                Text(
-                  'رنګ ښیي:',
-                  style: TextStyle(fontSize: 11.5, color: p.muted),
-                ),
-                const SizedBox(width: 9),
-                SegmentedChoice<CellColorMode>(
-                  value: _colorMode,
-                  color: AppColors.modTimetable,
-                  options: const [
-                    (
-                      value: CellColorMode.difficulty,
-                      label: 'سختوالی',
-                      icon: null,
-                    ),
-                    (value: CellColorMode.fan, label: 'فن', icon: null),
-                    (
-                      value: CellColorMode.kind,
-                      label: 'دیني/عصري',
-                      icon: null,
-                    ),
-                  ],
-                  onChanged: (v) => setState(() => _colorMode = v),
-                ),
-                const SizedBox(width: 16),
-                ..._legendFor(_colorMode),
-              ],
-            ),
-          ),
+
           const SizedBox(height: 18),
           Expanded(
             child: _loading
@@ -1340,40 +1420,6 @@ class _CellState extends State<_Cell>
 }
 
 /// هغه کارت چې د کش کولو پر مهال د موږک تر لاندې راځي.
-class _LegendDot extends StatelessWidget {
-  final Color color;
-  final String label;
-  const _LegendDot({required this.color, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsetsDirectional.only(end: 14),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 9,
-            height: 9,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.85),
-              borderRadius: BorderRadius.circular(3),
-            ),
-          ),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11.5,
-              color: context.palette.muted,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 /// **د ټکرونو ژوندۍ نښه.**
 ///
 /// شنه = پاک جدول. سره = دومره ټکرونه، او پر کلیک يې لیست راځي.
@@ -1834,6 +1880,287 @@ class _SectionPicker extends StatelessWidget {
             const SizedBox(width: 8),
             Icon(Icons.expand_more_rounded, size: 17, color: p.muted),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+
+// ═══════════════════════════════════════════════════════════
+//  د ځیرک ترتیب وړاندیزونه
+// ═══════════════════════════════════════════════════════════
+
+/// **پروګرام حساب کوي، کارن ټاکي.**
+///
+/// هر وړاندیز خپلې شمېرې پر ځان وړي، نو انتخاب یو اټکل نه دی:
+/// څو خانې ډکې شوې، د سختوالي ترتیب څومره سم دی، څو خانې لا
+/// استاد نه لري، او — تر ټولو مهم — څو ټکرونه پکې دي.
+class _ProposalDialog extends StatefulWidget {
+  final List<ArrangementPlan> plans;
+  const _ProposalDialog({required this.plans});
+
+  @override
+  State<_ProposalDialog> createState() => _ProposalDialogState();
+}
+
+class _ProposalDialogState extends State<_ProposalDialog> {
+  int _picked = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = S.of(context);
+    final locale = s.locale;
+    final p = context.palette;
+    final allClean = widget.plans.every((x) => x.isClean);
+
+    return AlertDialog(
+      title: Row(
+        children: [
+          const Icon(
+            Icons.auto_fix_high_rounded,
+            size: 19,
+            color: AppColors.modTimetable,
+          ),
+          const SizedBox(width: 9),
+          const Text(
+            'ځیرک ترتیب',
+            style: TextStyle(fontSize: 15.5, fontWeight: FontWeight.w700),
+          ),
+          const Spacer(),
+          Text(
+            '${locale.num(widget.plans.length)} وړاندیزونه',
+            style: TextStyle(fontSize: 12, color: p.muted),
+          ),
+        ],
+      ),
+      content: SizedBox(
+        width: 560,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                allClean
+                    ? 'ټول لاندې وړاندیزونه بې‌ټکره دي — یو استاد په '
+                          'هېڅ یوه کې دوه ځایه نه دی. یو غوره کړئ.'
+                    : 'هېڅ بشپړ پاک ترتیب ونه موندل شو — د استادانو '
+                          'شمېر لږ دی. غوره پاتې دا دي.',
+                style: TextStyle(fontSize: 12, color: p.muted),
+              ),
+              const SizedBox(height: 14),
+              for (var i = 0; i < widget.plans.length; i++)
+                _ProposalRow(
+                  index: i,
+                  plan: widget.plans[i],
+                  selected: _picked == i,
+                  onTap: () => setState(() => _picked = i),
+                ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(s.cancel),
+        ),
+        FilledButton.icon(
+          onPressed: () => Navigator.pop(context, widget.plans[_picked]),
+          icon: const Icon(Icons.check_rounded, size: 17),
+          label: const Text('دا ترتیب پلی کړه'),
+          style: FilledButton.styleFrom(
+            backgroundColor: AppColors.modTimetable,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ProposalRow extends StatelessWidget {
+  final int index;
+  final ArrangementPlan plan;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _ProposalRow({
+    required this.index,
+    required this.plan,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final locale = S.of(context).locale;
+    final p = context.palette;
+    const c = AppColors.modTimetable;
+
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: AppMotion.fast,
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.fromLTRB(13, 11, 13, 11),
+        decoration: BoxDecoration(
+          color: selected ? c.withValues(alpha: 0.09) : p.surfaceAlt,
+          borderRadius: BorderRadius.circular(AppTheme.radius),
+          border: Border.all(
+            color: selected ? c.withValues(alpha: 0.5) : p.line,
+            width: selected ? 1.5 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              selected
+                  ? Icons.radio_button_checked_rounded
+                  : Icons.radio_button_unchecked_rounded,
+              size: 18,
+              color: selected ? c : p.faint,
+            ),
+            const SizedBox(width: 11),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        'وړاندیز ${locale.num(index + 1)}',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: p.ink,
+                        ),
+                      ),
+                      if (index == 0) ...[
+                        const SizedBox(width: 8),
+                        const Pill(color: AppColors.success, text: 'غوره'),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 4,
+                    children: [
+                      _Metric(
+                        icon: plan.teacherClashes == 0
+                            ? Icons.check_circle_rounded
+                            : Icons.warning_amber_rounded,
+                        color: plan.teacherClashes == 0
+                            ? AppColors.success
+                            : AppColors.danger,
+                        text: plan.teacherClashes == 0
+                            ? 'بې ټکره'
+                            : '${locale.num(plan.teacherClashes)} ټکرونه',
+                      ),
+                      _Metric(
+                        icon: Icons.trending_up_rounded,
+                        color: plan.difficultyScore >= 75
+                            ? AppColors.success
+                            : AppColors.warning,
+                        text: 'سخت→سهار '
+                            '${locale.num(plan.difficultyScore.round())}٪',
+                      ),
+                      _Metric(
+                        icon: Icons.grid_on_rounded,
+                        color: p.muted,
+                        text: '${locale.num(plan.placed)} خانې '
+                            '(${locale.num(plan.fillPercent.round())}٪)',
+                      ),
+                      if (plan.unstaffed > 0)
+                        _Metric(
+                          icon: Icons.person_off_rounded,
+                          color: AppColors.warning,
+                          text: '${locale.num(plan.unstaffed)} بې‌استاده',
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _Metric extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final String text;
+  const _Metric({
+    required this.icon,
+    required this.color,
+    required this.text,
+  });
+
+  @override
+  Widget build(BuildContext context) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Icon(icon, size: 13, color: color),
+      const SizedBox(width: 5),
+      Text(
+        text,
+        style: TextStyle(
+          fontSize: 11.5,
+          fontWeight: FontWeight.w600,
+          color: color,
+        ),
+      ),
+    ],
+  );
+}
+
+
+/// یوه وړه نښه چې تنظیماتو ته بیایي — هغه تنظیم چې دلته اغېز
+/// کوي، خو دلته نه ټاکل کېږي.
+class _SettingsHint extends StatelessWidget {
+  final String text;
+  final VoidCallback? onTap;
+  const _SettingsHint({required this.text, this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    return MouseRegion(
+      cursor: onTap == null ? MouseCursor.defer : SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+          decoration: BoxDecoration(
+            color: p.surfaceAlt,
+            borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+            border: Border.all(color: p.line),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.table_rows_rounded, size: 15, color: p.muted),
+              const SizedBox(width: 7),
+              Text(
+                text,
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
+                  color: p.inkSoft,
+                ),
+              ),
+              if (onTap != null) ...[
+                const SizedBox(width: 7),
+                Icon(Icons.tune_rounded, size: 14, color: p.faint),
+              ],
+            ],
+          ),
         ),
       ),
     );

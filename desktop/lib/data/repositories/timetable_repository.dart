@@ -219,15 +219,51 @@ class ArrangementPlan {
   /// مدیر پرېکړه کوي چې کوم بدیل غوره دی.
   final int teacherClashes;
 
+  /// **د ترتیب کیفیت — ۰ تر ۱۰۰.**
+  ///
+  /// څومره چې سخت کتابونه سهار ته او اسان د ورځې پای ته نږدې وي،
+  /// دومره لوړ. د هرې خانې لپاره:
+  ///
+  ///   `۱ − |د سختوالي ایډیال ځای − ریښتینی ځای|`
+  ///
+  /// چې ایډیال ځای: سخت = ۰٫۰ (لومړی ساعت)، منځنی = ۰٫۵،
+  /// اسان = ۱٫۰ (وروستی ساعت). بیا اوسط × ۱۰۰.
+  final double difficultyScore;
+
+  /// څو ځله یو کتاب په یوه ورځ کې دوه ځله راغی — باید صفر وي.
+  final int sameDayRepeats;
+
+  /// څو خانې بې‌استاده پاتې شوې.
+  final int unstaffed;
+
   const ArrangementPlan({
     required this.cells,
     required this.variant,
     required this.placed,
     required this.capacity,
     required this.teacherClashes,
+    this.difficultyScore = 0,
+    this.sameDayRepeats = 0,
+    this.unstaffed = 0,
   });
 
   bool get isEmpty => cells.isEmpty;
+
+  /// څومره خانې ډکې شوې — ۰ تر ۱۰۰.
+  double get fillPercent => capacity == 0 ? 0 : placed / capacity * 100;
+
+  /// **پاک دی؟** — هېڅ ټکر او هېڅ تکرار.
+  bool get isClean => teacherClashes == 0 && sameDayRepeats == 0;
+
+  /// د ترتیبولو لپاره یوه شمېره. **ټکر تر هر څه دروند دی** — یو
+  /// پلان له یوه ټکر سره، له هر پاک پلان څخه بد دی، که څه هم
+  /// نور يې ښه وي.
+  double get rank =>
+      teacherClashes * -1000.0 +
+      sameDayRepeats * -60.0 +
+      unstaffed * -1.5 +
+      fillPercent * 1.0 +
+      difficultyScore * 2.0;
 }
 
 /// د یوه مضمون د سختۍ درجه → د ورځې غوره ځای (۰ = لومړی ساعت).
@@ -634,7 +670,11 @@ WHERE t.day_of_week = ?
     final preferred = await _preferredTeachers();
 
     final cells = <PlannedCell>[];
-    var clashes = 0;
+    const clashes = 0;
+    var repeats = 0;
+    var unstaffed = 0;
+    var scoreSum = 0.0;
+    var scoreCount = 0;
     final rng = _Lcg(variant + 1);
 
     for (final target in targets) {
@@ -689,13 +729,42 @@ WHERE t.day_of_week = ?
         if (pick == -1) continue;
 
         final sub = demand.removeAt(pick);
-        final teacher = preferred[sub.id];
+        var teacher = preferred[sub.id];
         final busyKey = '${cell.day}/${cell.slot.id}/$teacher';
-        final clashed = teacher != null && busy.containsKey(busyKey);
-        if (clashed) clashes++;
-        if (teacher != null) busy[busyKey] = target.sectionId;
 
+        // **ټکر هېڅکله نه جوړېږي.**
+        //
+        // مخکې دلته ټکر منل کېده او یوازې شمېرل کېده. خو یو استاد
+        // چې په یوه وخت کې دوه ټولګیو کې وي، یو ناشونی مهالویش
+        // دی — نه یو «لږ ښه» مهالویش. یوه بې‌استاده خانه له هغې
+        // ډېره ښه ده: هغه یوه پرېکړه ده چې مدیر يې وروسته کوي،
+        // نه یوه دروغجنه ژمنه.
+        if (teacher != null && busy.containsKey(busyKey)) {
+          teacher = null;
+          unstaffed++;
+        } else if (teacher != null) {
+          busy[busyKey] = target.sectionId;
+        } else {
+          unstaffed++;
+        }
+
+        // د یوې ورځې تکرار — باید صفر وي، خو که خانې له کتابونو
+        // ډېرې وي، ناچاره کېږي.
+        if (usedPerDay[cell.day]?.contains(sub.id) ?? false) repeats++;
         usedPerDay.putIfAbsent(cell.day, () => {}).add(sub.id);
+
+        // د ترتیب کیفیت — د دې خانې ونډه.
+        final ideal = switch (difficultyRank(sub.difficulty)) {
+          0 => 0.0,
+          2 => 1.0,
+          _ => 0.5,
+        };
+        final actual = teaching.length <= 1
+            ? 0.0
+            : cell.index / (teaching.length - 1);
+        scoreSum += 1 - (ideal - actual).abs();
+        scoreCount++;
+
         cells.add(
           PlannedCell(
             sectionId: target.sectionId,
@@ -714,7 +783,69 @@ WHERE t.day_of_week = ?
       placed: cells.length,
       capacity: targets.length * dayList.length * teaching.length,
       teacherClashes: clashes,
+      difficultyScore: scoreCount == 0 ? 0 : scoreSum / scoreCount * 100,
+      sameDayRepeats: repeats,
+      unstaffed: unstaffed,
     );
+  }
+
+  /// ═══════════════════════════════════════════════════════
+  ///  **ځیرک ترتیب — څو وړاندیزونه، ټول پاک.**
+  ///
+  ///  **ولې څو، نه یو؟** ځکه چې «غوره ترتیب» یوه پرېکړه نه ده چې
+  ///  ریاضي يې یوازې وکړي. دوه ترتیبونه ښايي دواړه پاک وي — خو
+  ///  یو يې د مدیر خوښ وي ځکه چې قرآن سهار دی. نو ریاضي هغه کار
+  ///  کوي چې ریاضي يې کولی شي (ټکرونه صفر، سخت کتابونه سهار)، او
+  ///  پاتې انتخاب کارن ته پرېږدي.
+  ///
+  ///  **څنګه کار کوي:**
+  ///
+  ///    ۱. **ډېر بدیلونه ازمویي** — هر یو له خپل ثابت تصادفي
+  ///       تخم سره، نو پایله يې تکراري ده.
+  ///    ۲. هر بدیل **پخپله ټکر نه جوړوي** (پورته وګوره)، نو ټول
+  ///       نوماندان پاک راځي.
+  ///    ۳. هر یو په څلورو معیارونو **شمېرل کېږي**: ټکر، د یوې
+  ///       ورځې تکرار، بې‌استاده خانې، ډکوالی او د سختوالي ترتیب.
+  ///    ۴. یو شان پایلې لرې کېږي — دوه ورته وړاندیزونه کارن ته
+  ///       انتخاب نه دی، شور دی.
+  ///
+  ///  ترتیب شوی لیست راګرځوي، غوره يې لومړی.
+  Future<List<ArrangementPlan>> proposals({
+    required bool daily,
+    int? sectionId,
+    List<int>? days,
+    int tries = 28,
+    int keep = 5,
+  }) async {
+    final found = <ArrangementPlan>[];
+    final seen = <String>{};
+
+    for (var v = 0; v < tries; v++) {
+      final plan = await arrange(
+        daily: daily,
+        sectionId: sectionId,
+        variant: v,
+        days: days,
+      );
+      if (plan.isEmpty) continue;
+
+      // د یوه پلان نښه — که دوه ورته وي، دویم بې‌ګټې دی.
+      final key = plan.cells
+          .map((c) => '${c.sectionId}.${c.dayOfWeek}.${c.slotId}.${c.subjectId}')
+          .join('|');
+      if (!seen.add(key)) continue;
+
+      found.add(plan);
+    }
+
+    found.sort((a, b) => b.rank.compareTo(a.rank));
+
+    // **یوازې پاک وړاندیزونه** — که پاک شته. که نه (لکه دوه
+    // استادان او پنځه ټولګي)، غوره پاتې راځي، خو کارن ته يې
+    // ټکرونه ښکاره ښودل کېږي.
+    final clean = found.where((p) => p.isClean).toList();
+    final pool = clean.isEmpty ? found : clean;
+    return pool.take(keep).toList();
   }
 
   /// د یوې درجې مضمونونه — او یوازې د هغې.

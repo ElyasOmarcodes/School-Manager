@@ -66,6 +66,14 @@ class Schools extends Table {
   /// یوازې دوه لارې لرلې: یا ټول اوږد، یا ټول لنډ.
   TextColumn get periodMinutesCsv => text().nullable()();
 
+  /// **د مهالویش د خانو رنګ څه ښیي** —
+  /// `difficulty` | `fan` | `kind` | `teacher`.
+  ///
+  /// دا یو **تنظیم** دی، نه د پاڼې یوه شېبه‌یي ټاکنه: مدیر يې یو
+  /// ځل ټاکي او هر ځل چې مهالویش پرانیزي، هماغه ویني.
+  TextColumn get timetableColorBy =>
+      text().withDefault(const Constant('difficulty'))();
+
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
 

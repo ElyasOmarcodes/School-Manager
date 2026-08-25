@@ -5,6 +5,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_motion.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/numerals.dart';
+import '../../core/utils/calendars.dart';
 import '../../core/widgets/panel.dart';
 import '../../data/db/database.dart';
 import '../../data/repositories/academic_repository.dart';
@@ -166,8 +167,7 @@ class _HolidaysPageState extends State<HolidaysPage> {
                 ),
                 const SizedBox(width: 14),
                 _MonthNav(
-                  label: '${locale.num(_month.month)}/'
-                      '${locale.num(_month.year)}',
+                  label: context.cal.monthYear(_month),
                   onPrev: () => _shift(-1),
                   onNext: () => _shift(1),
                   onToday: () => setState(() {
@@ -540,8 +540,8 @@ class _HolidayRowState extends State<_HolidayRow> {
     final c = holidayColor(h.kind);
     final days = h.toDate.difference(h.fromDate).inDays + 1;
 
-    String d(DateTime x) =>
-        '${locale.num(x.month)}/${locale.num(x.day)}';
+    final cal = context.cal;
+    String d(DateTime x) => cal.dayMonth(x);
 
     return MouseRegion(
       cursor: widget.canEdit ? SystemMouseCursors.click : MouseCursor.defer,
@@ -775,8 +775,8 @@ class _HolidayDialogState extends State<_HolidayDialog> {
     final p = context.palette;
     final days = _to.difference(_from).inDays + 1;
 
-    String d(DateTime x) => '${locale.num(x.year)}/'
-        '${locale.num(x.month)}/${locale.num(x.day)}';
+    final cal = context.cal;
+    String d(DateTime x) => cal.long(x);
 
     return AlertDialog(
       title: Text(
@@ -884,6 +884,12 @@ class _HolidayDialogState extends State<_HolidayDialog> {
           ),
         ),
       ),
+      // **`actions` یو `OverflowBar` دی، نه یو `Row`.**
+      //
+      // یو `Spacer` هلته د `Flex` مور غواړي — او نه يې مومي. پایله
+      // يې یوه استثنا وه چې ټول ډیالوګ يې تش پرېښود: کارن به یوه
+      // سپینه پاڼه لیدله او فکر يې کاوه چې پروګرام مات دی.
+      actionsAlignment: MainAxisAlignment.spaceBetween,
       actions: [
         if (widget.existing != null)
           TextButton.icon(
@@ -902,15 +908,22 @@ class _HolidayDialogState extends State<_HolidayDialog> {
             icon: const Icon(Icons.delete_outline_rounded, size: 17),
             label: Text(s.delete),
           ),
-        const Spacer(),
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(s.cancel),
-        ),
-        FilledButton(
-          onPressed: _submit,
-          style: FilledButton.styleFrom(backgroundColor: AppColors.modLeave),
-          child: Text(s.save),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(s.cancel),
+            ),
+            const SizedBox(width: 8),
+            FilledButton(
+              onPressed: _submit,
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.modLeave,
+              ),
+              child: Text(s.save),
+            ),
+          ],
         ),
       ],
     );

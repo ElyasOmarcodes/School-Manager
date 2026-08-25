@@ -102,6 +102,7 @@ class _ClassesPageState extends State<ClassesPage> {
       builder: (_) => _GradeDialog(
         madrasa: _madrasa,
         initialCapacity: _defaultCapacity,
+        teachers: _teacherList,
       ),
     );
     if (r == null) return;
@@ -116,6 +117,7 @@ class _ClassesPageState extends State<ClassesPage> {
         gradeId: gradeId,
         name: '',
         capacity: r.capacity,
+        headTeacherId: r.headTeacherId,
       );
     } else {
       for (final part in r.parts) {
@@ -123,21 +125,64 @@ class _ClassesPageState extends State<ClassesPage> {
           gradeId: gradeId,
           name: part,
           capacity: r.capacity,
+          headTeacherId: r.headTeacherId,
         );
       }
     }
     await _load();
   }
 
-  Future<void> _renameGrade(Grade g) async {
-    final name = await _promptText(
-      context,
-      title: 'نوم بدلول',
-      label: 'نوم',
-      initial: g.name,
+  /// **د ټولګي/درجې بشپړ سمون — نه یوازې نوم.**
+  ///
+  /// مخکې يې یوازې نوم غوښت. خو کله چې یو ټولګی جوړ شي، هغه درې
+  /// پرېکړې لري: نوم، ظرفیت او اجزا. که یوازې نوم د سمون وړ و،
+  /// نورې دوه به یوازې د جوړولو پر مهال یو ځل ټاکل کېدې — او یو
+  /// غلط ظرفیت به تل غلط پاتې و.
+  Future<void> _editGrade(GradeWithSections g) async {
+    final current = g.sections.isEmpty ? null : g.sections.first;
+    final r = await showDialog<_GradeDraft>(
+      context: context,
+      builder: (_) => _GradeDialog(
+        madrasa: _madrasa,
+        initialCapacity: current?.capacity ?? _defaultCapacity,
+        teachers: _teacherList,
+        existing: g,
+      ),
     );
-    if (name == null || name.trim().isEmpty) return;
-    await widget.academic.renameGrade(g.id, name.trim());
+    if (r == null) return;
+
+    if (r.name != g.grade.name) {
+      await widget.academic.renameGrade(g.grade.id, r.name);
+    }
+
+    // ظرفیت او سرپرست پر ټولو اجزاوو پلې کېږي.
+    for (final sec in g.sections) {
+      await widget.academic.updateSection(
+        id: sec.sectionId,
+        capacity: r.capacity,
+        headTeacherId: r.headTeacherId,
+        clearHeadTeacher: r.headTeacherId == null,
+      );
+    }
+
+    // **د اجزاوو شمېر بدلون.** یوازې زیاتول کېږي؛ کمول به هغه
+    // اجزا ړنګولې چې شاګردان پکې دي — او هغه پرېکړه باید په
+    // څرګنده وشي، نه د یوې شمېرې د بدلولو په څنګ کې.
+    final want = r.parts;
+    if (want.isNotEmpty) {
+      final have = {
+        for (final x in g.sections) x.isWhole ? 'الف' : x.sectionName,
+      };
+      for (final part in want) {
+        if (have.contains(part)) continue;
+        await widget.academic.addSection(
+          gradeId: g.grade.id,
+          name: part,
+          capacity: r.capacity,
+          headTeacherId: r.headTeacherId,
+        );
+      }
+    }
     await _load();
   }
 
@@ -330,7 +375,7 @@ class _ClassesPageState extends State<ClassesPage> {
                           locale: locale,
                           madrasa: _madrasa,
                           canEdit: widget.canEdit,
-                          onRename: _renameGrade,
+                          onRename: _editGrade,
                           onDeleteGrade: _deleteGrade,
                           onAddSection: _addSection,
                           onEditSection: _editSection,
@@ -343,7 +388,7 @@ class _ClassesPageState extends State<ClassesPage> {
                           homeroom: _homeroom,
                           canEdit: widget.canEdit,
                           onAssign: _assign,
-                          onRename: _renameGrade,
+                          onRename: _editGrade,
                           onDeleteGrade: _deleteGrade,
                           onAddSection: _addSection,
                           onEditSection: _editSection,
@@ -367,7 +412,7 @@ class _RowsView extends StatelessWidget {
   final Map<int, int?> homeroom;
   final bool canEdit;
   final void Function(int, int?) onAssign;
-  final ValueChanged<Grade> onRename;
+  final ValueChanged<GradeWithSections> onRename;
   final ValueChanged<GradeWithSections> onDeleteGrade;
   final ValueChanged<GradeWithSections> onAddSection;
   final ValueChanged<SectionOption> onEditSection;
@@ -426,7 +471,7 @@ class _RowsView extends StatelessWidget {
                         _MiniButton(
                           icon: Icons.edit_rounded,
                           tooltip: 'نوم بدلول',
-                          onTap: () => onRename(grades[i].grade),
+                          onTap: () => onRename(grades[i]),
                         ),
                         _MiniButton(
                           icon: Icons.add_rounded,
@@ -484,7 +529,7 @@ class _GridView extends StatelessWidget {
   final AppLocale locale;
   final bool madrasa;
   final bool canEdit;
-  final ValueChanged<Grade> onRename;
+  final ValueChanged<GradeWithSections> onRename;
   final ValueChanged<GradeWithSections> onDeleteGrade;
   final ValueChanged<GradeWithSections> onAddSection;
   final ValueChanged<SectionOption> onEditSection;
@@ -519,7 +564,7 @@ class _GridView extends StatelessWidget {
           locale: locale,
           madrasa: madrasa,
           canEdit: canEdit,
-          onRename: () => onRename(grades[i].grade),
+          onRename: () => onRename(grades[i]),
           onDelete: () => onDeleteGrade(grades[i]),
           onAddSection: () => onAddSection(grades[i]),
           onEditSection: onEditSection,
@@ -626,7 +671,13 @@ class _GradeTileState extends State<_GradeTile> {
               spacing: 5,
               runSpacing: 5,
               children: [
+                // **یوه بشپړه درجه د «جز» نښه نه ښیي.**
+                //
+                // یوه نښه چې تل یوازې یوه وي، څه نه وايي — یوازې
+                // پوښتنه راولي: «دا جز څه دی؟». نو کله چې درجه
+                // نه وي وېشل شوې، یوازې د «+» تڼۍ پاتې کېږي.
                 for (final sec in d.sections)
+                  if (!(d.sections.length == 1 && sec.isWhole))
                   Tooltip(
                     message:
                         '${sec.partLabel} — '
@@ -969,10 +1020,14 @@ class _GradeDraft {
   /// تش = یو بې‌نومه جز، یعنې ټوله درجه یوه ده.
   final List<String> parts;
 
+  /// اختیاري — د ټولګي سرپرست استاد.
+  final int? headTeacherId;
+
   const _GradeDraft({
     required this.name,
     required this.capacity,
     required this.parts,
+    this.headTeacherId,
   });
 }
 
@@ -985,8 +1040,17 @@ class _GradeDraft {
 class _GradeDialog extends StatefulWidget {
   final bool madrasa;
   final int initialCapacity;
+  final List<Teacher> teachers;
 
-  const _GradeDialog({required this.madrasa, required this.initialCapacity});
+  /// که ورکړل شي، ډیالوګ د سمون بڼه اخلي.
+  final GradeWithSections? existing;
+
+  const _GradeDialog({
+    required this.madrasa,
+    required this.initialCapacity,
+    this.teachers = const [],
+    this.existing,
+  });
 
   @override
   State<_GradeDialog> createState() => _GradeDialogState();
@@ -995,11 +1059,28 @@ class _GradeDialog extends StatefulWidget {
 class _GradeDialogState extends State<_GradeDialog> {
   static const _alphabet = ['الف', 'ب', 'ج', 'د', 'هـ', 'و'];
 
-  final _name = TextEditingController();
+  late final _name = TextEditingController(
+    text: widget.existing?.grade.name ?? '',
+  );
   late final _cap = TextEditingController(text: '${widget.initialCapacity}');
-  bool _split = false;
-  int _partCount = 2;
+
+  late bool _split = (widget.existing?.sections.length ?? 0) > 1;
+  late int _partCount = (widget.existing?.sections.length ?? 2).clamp(2, 6);
+  int? _headTeacherId;
   String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    final secs = widget.existing?.sections ?? const [];
+    for (final x in secs) {
+      final id = x.headTeacherId;
+      if (id != null) {
+        _headTeacherId = id;
+        break;
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -1024,7 +1105,12 @@ class _GradeDialogState extends State<_GradeDialog> {
     }
     Navigator.pop(
       context,
-      _GradeDraft(name: name, capacity: cap, parts: _parts),
+      _GradeDraft(
+        name: name,
+        capacity: cap,
+        parts: _parts,
+        headTeacherId: _headTeacherId,
+      ),
     );
   }
 
@@ -1037,7 +1123,9 @@ class _GradeDialogState extends State<_GradeDialog> {
 
     return AlertDialog(
       title: Text(
-        widget.madrasa ? 'نوې درجه' : 'نوی ټولګی',
+        widget.existing != null
+            ? 'د $unit سمون'
+            : (widget.madrasa ? 'نوې درجه' : 'نوی ټولګی'),
         style: const TextStyle(fontSize: 15.5, fontWeight: FontWeight.w700),
       ),
       content: SizedBox(
@@ -1065,6 +1153,28 @@ class _GradeDialogState extends State<_GradeDialog> {
               ),
               onSubmitted: (_) => _submit(),
             ),
+            if (widget.teachers.isNotEmpty) ...[
+              const SizedBox(height: 14),
+              DropdownButtonFormField<int?>(
+                initialValue: _headTeacherId,
+                isExpanded: true,
+                isDense: true,
+                decoration: const InputDecoration(
+                  labelText: 'سرپرست استاد (اختیاري)',
+                  isDense: true,
+                  prefixIcon: Icon(Icons.person_rounded, size: 18),
+                ),
+                items: [
+                  const DropdownMenuItem(
+                    value: null,
+                    child: Text('نه دی ټاکل شوی'),
+                  ),
+                  for (final t in widget.teachers)
+                    DropdownMenuItem(value: t.id, child: Text(t.fullName)),
+                ],
+                onChanged: (v) => setState(() => _headTeacherId = v),
+              ),
+            ],
             const SizedBox(height: 18),
             Text(
               'اجزا',
@@ -1123,7 +1233,10 @@ class _GradeDialogState extends State<_GradeDialog> {
             Text(
               _parts.isEmpty
                   ? 'یوه بشپړه $unit — بې اجزاوو.'
-                  : 'جوړېږي: ${_parts.join('، ')}',
+                  : (widget.existing == null
+                        ? 'جوړېږي: ${_parts.join('، ')}'
+                        : 'اجزا: ${_parts.join('، ')} — نوي يې '
+                              'زیاتېږي، زاړه نه ړنګېږي.'),
               style: TextStyle(fontSize: 11.5, color: p.muted),
             ),
           ],
@@ -1274,48 +1387,6 @@ class _SectionDialogState extends State<_SectionDialog> {
       ],
     );
   }
-}
-
-Future<String?> _promptText(
-  BuildContext context, {
-  required String title,
-  required String label,
-  String? initial,
-  String? helper,
-}) {
-  final c = TextEditingController(text: initial ?? '');
-  return showDialog<String>(
-    context: context,
-    builder: (ctx) => AlertDialog(
-      title: Text(
-        title,
-        style: const TextStyle(fontSize: 15.5, fontWeight: FontWeight.w700),
-      ),
-      content: SizedBox(
-        width: 360,
-        child: TextField(
-          controller: c,
-          autofocus: true,
-          decoration: InputDecoration(
-            labelText: label,
-            helperText: helper,
-            isDense: true,
-          ),
-          onSubmitted: (v) => Navigator.pop(ctx, v),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(ctx),
-          child: Text(S.of(ctx).cancel),
-        ),
-        FilledButton(
-          onPressed: () => Navigator.pop(ctx, c.text),
-          child: Text(S.of(ctx).save),
-        ),
-      ],
-    ),
-  );
 }
 
 Future<bool?> _confirm(

@@ -5,6 +5,7 @@ import 'package:school_manager/data/repositories/academic_repository.dart';
 import 'package:school_manager/data/repositories/timetable_repository.dart';
 
 void main() {
+  _proposalTests();
   late AppDatabase db;
   late TimetableRepository tt;
   late AcademicRepository academic;
@@ -719,6 +720,85 @@ void main() {
       expect(defaultTeachingDays, isNot(contains(4)));
       expect(defaultTeachingDays, isNot(contains(5)));
       expect(defaultTeachingDays, hasLength(5));
+    });
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+//  د ځیرک ترتیب وړاندیزونه
+// ═══════════════════════════════════════════════════════════
+
+void _proposalTests() {
+  late AppDatabase db;
+
+  setUp(() => db = AppDatabase.memory());
+  tearDown(() => db.close());
+
+  Future<void> seed() async {
+    await db
+        .into(db.schools)
+        .insert(SchoolsCompanion.insert(name: 'ازموینه'));
+    await AcademicRepository(db).seedDefaults(
+      yearLabel: '1405',
+      startsOn: DateTime(2026),
+      endsOn: DateTime(2026, 12, 31),
+      fromLevel: 1,
+      toLevel: 2,
+      sectionNames: const ['الف', 'ب'],
+    );
+    await AcademicRepository(db).seedDefaultSubjects();
+    await TimetableRepository(db).seedDefaultSlots();
+  }
+
+  group('ځیرک وړاندیزونه', () {
+    test('ټول وړاندیزونه بې‌ټکره دي', () async {
+      await seed();
+      final list = await TimetableRepository(db).proposals(daily: false);
+      expect(list, isNotEmpty);
+      for (final p in list) {
+        // **دا هغه ژمنه ده چې کارن وغوښته.** یو استاد هېڅکله په
+        // یوه وخت کې دوه ځایه نه شي.
+        expect(p.teacherClashes, 0, reason: 'وړاندیز ${p.variant}');
+        expect(p.sameDayRepeats, 0, reason: 'وړاندیز ${p.variant}');
+      }
+    });
+
+    test('غوره وړاندیز لومړی راځي', () async {
+      await seed();
+      final list = await TimetableRepository(db).proposals(daily: false);
+      for (var i = 1; i < list.length; i++) {
+        expect(list[i - 1].rank >= list[i].rank, isTrue);
+      }
+    });
+
+    test('وړاندیزونه یو له بله بېل دي', () async {
+      await seed();
+      final list = await TimetableRepository(db).proposals(daily: false);
+      final keys = list
+          .map(
+            (p) => p.cells
+                .map((c) => '${c.dayOfWeek}.${c.slotId}.${c.subjectId}')
+                .join('|'),
+          )
+          .toSet();
+      expect(keys, hasLength(list.length));
+    });
+
+    test('سخت کتابونه سهار ته ځي', () async {
+      await seed();
+      // درې کتابونه: یو سخت، یو منځنی، یو اسان.
+      final subs = await AcademicRepository(db).subjects();
+      await (db.update(db.subjects)
+            ..where((s) => s.id.equals(subs[0].id)))
+          .write(const SubjectsCompanion(difficulty: Value('hard')));
+      await (db.update(db.subjects)
+            ..where((s) => s.id.equals(subs.last.id)))
+          .write(const SubjectsCompanion(difficulty: Value('easy')));
+
+      final list = await TimetableRepository(db).proposals(daily: false);
+      // یو غوره ترتیب باید له نیمايي ښه وي — که نه، د سختوالي
+      // ویش يې هېڅ نه کاوه.
+      expect(list.first.difficultyScore, greaterThan(50));
     });
   });
 }

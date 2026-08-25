@@ -315,6 +315,57 @@ class AttendanceSessionRepository {
   }
 
   /// د یوې ناستې لیست — هدف شاګردان له خپل نننۍ حالت سره.
+  /// **د رخصتۍ ورځ — ټول نه‌نښه‌شوي «رخصت» ثبتوي.**
+  ///
+  /// **ولې پخپله، نه په لاس؟** ځکه چې د اختر ورځ درې سوه شاګردان
+  /// «غیرحاضر» نه دي — او یو مدیر چې درې سوه ځله «رخصت» ټاکي، یا
+  /// به يې پرېږدي یا به تېروتنه وکړي. کله چې ورځ پخپله رخصتي وي،
+  /// د هر شاګرد ځواب پخپله معلوم دی.
+  ///
+  /// **دوه شرطونه چې دا خوندي کوي:**
+  ///   • یوازې **نه‌نښه‌شوي** ډکېږي. که مدیر یو شاګرد په لاس
+  ///     «حاضر» نښه کړی وي (څوک ښايي راغلی وي)، هغه نه بدلېږي.
+  ///   • دوه ځله ځغلول هېڅ نوی څه نه لیکي.
+  ///
+  /// د ثبت شویو شمېر راګرځوي.
+  Future<int> markHolidayLeave({
+    required DateTime date,
+    AttendanceSession? session,
+    required int byUserId,
+  }) async {
+    final rows = await roster(session: session, date: date);
+    final unmarked = [
+      for (final r in rows)
+        if (r.status == null) r.student.id,
+    ];
+    if (unmarked.isEmpty) return 0;
+
+    final day = dateOnly(date);
+    final sid = session?.storageId ?? generalSessionId;
+
+    await db.batch(
+      (b) => b.insertAll(
+        db.attendances,
+        [
+          for (final id in unmarked)
+            AttendancesCompanion.insert(
+              studentId: id,
+              date: day,
+              status: 'leave',
+              sessionId: Value(sid),
+              // **خپله طریقه** — چې وروسته معلومه شي دا کرښه د
+              // رخصتۍ له امله ده، نه د مدیر د لاس.
+              method: const Value('holiday'),
+              recordedByUserId: Value(byUserId),
+              recordedAt: Value(DateTime.now()),
+            ),
+        ],
+        mode: InsertMode.insertOrIgnore,
+      ),
+    );
+    return unmarked.length;
+  }
+
   Future<List<SessionRosterEntry>> roster({
     AttendanceSession? session,
     required DateTime date,

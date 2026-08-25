@@ -6,6 +6,7 @@ import 'package:path/path.dart' as p;
 
 import '../../core/config/app_config.dart';
 import '../../core/l10n/strings.dart';
+import '../../core/utils/numerals.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_motion.dart';
 import '../../core/theme/app_theme.dart';
@@ -76,6 +77,14 @@ class _SetupWizardState extends State<SetupWizard> {
   bool _openExisting = false;
   String? _existingFile;
   bool _checking = false;
+
+  /// هغه څه چې موجود ډیټابیس پخپله راته وايي.
+  DatabasePeek? _peek;
+
+  /// **موجود ډیټابیس چې کاروونکي ولري، د مدیر ګام نه غواړي.**
+  bool get _skipAdmin => _openExisting && (_peek?.hasUsers ?? false);
+
+  int get _lastStepNow => _skipAdmin ? 2 : _lastStep;
 
   // ── ګام ۲: ښوونځی ───────────────────────────────────────
   final _schoolName = TextEditingController();
@@ -163,10 +172,26 @@ class _SetupWizardState extends State<SetupWizard> {
       return;
     }
 
+    // **ډیټابیس پخپله پوهېږي چې د چا دی.** نو له هغه يې اخلو، نه
+    // له کارنه — یو ځل لیکل شوی معلومات باید دوه ځله ونه غوښتل شي.
+    final peek = DatabaseFile.peek(file.path);
+
     setState(() {
       _existingFile = file.path;
       _folder = p.dirname(file.path);
       _pathError = null;
+      _peek = peek;
+
+      if (peek != null && peek.hasSchool) {
+        _schoolName.text = peek.schoolName!;
+        _kind = peek.schoolKind ?? _kind;
+        if ((peek.address ?? '').isNotEmpty) _address.text = peek.address!;
+        if ((peek.phone ?? '').isNotEmpty) _phone.text = peek.phone!;
+        _dayStart = peek.dayStart ?? _dayStart;
+        _dayEnd = peek.dayEnd ?? _dayEnd;
+        _lateAfter = peek.lateAfterMinutes ?? _lateAfter;
+      }
+      if (peek?.adminUsername != null) _adminUser.text = peek!.adminUsername!;
     });
   }
 
@@ -178,6 +203,9 @@ class _SetupWizardState extends State<SetupWizard> {
   };
 
   String? _validateAdmin() {
+    // موجود کاروونکي شته — نوی مدیر نه جوړېږي، نو هېڅ ازموینه هم
+    // نشته.
+    if (_skipAdmin) return null;
     final s = S.of(context);
     if (_adminName.text.trim().isEmpty) return s.fieldRequired;
     if (_adminUser.text.trim().length < 3) return s.fieldRequired;
@@ -240,7 +268,7 @@ class _SetupWizardState extends State<SetupWizard> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      _StepDots(current: _step, total: _lastStep + 1),
+                      _StepDots(current: _step, total: _lastStepNow + 1),
                       const SizedBox(height: 28),
                       Flexible(
                         child: SingleChildScrollView(
@@ -280,13 +308,13 @@ class _SetupWizardState extends State<SetupWizard> {
   Widget _buildStep() => switch (_step) {
     0 => _dbStep(),
     1 => _schoolStep(),
-    2 => _adminStep(),
+    2 when !_skipAdmin => _adminStep(),
     _ => _doneStep(),
   };
 
   Widget _buildButtons() {
     final s = S.of(context);
-    if (_step > _lastStep) return const SizedBox.shrink();
+    if (_step > _lastStepNow) return const SizedBox.shrink();
 
     return Row(
       children: [
@@ -300,7 +328,7 @@ class _SetupWizardState extends State<SetupWizard> {
           onPressed: (!_stepValid || _submitting)
               ? null
               : () {
-                  if (_step == 2) {
+                  if (_step >= _lastStepNow - 1) {
                     _finish();
                   } else {
                     setState(() => _step++);
@@ -315,7 +343,7 @@ class _SetupWizardState extends State<SetupWizard> {
                     color: Colors.white,
                   ),
                 )
-              : Text(_step == 2 ? s.finish : s.next),
+              : Text(_step >= _lastStepNow - 1 ? s.finish : s.next),
         ),
       ],
     );
@@ -437,6 +465,65 @@ class _SetupWizardState extends State<SetupWizard> {
                     ),
                   ),
                 ),
+                // **هغه څه چې ډیټابیس پخپله راوویل.**
+                //
+                // کارن باید وویني چې پروګرام يې ولوستل — پرته له
+                // دې به يې فکر کاوه چې فیلډونه پخپله ډک شوي دي او
+                // ښايي غلط وي.
+                if (_openExisting && _peek != null) ...[
+                  const SizedBox(height: 9),
+                  Container(height: 1, color: AppColors.success.withValues(
+                    alpha: 0.22,
+                  )),
+                  const SizedBox(height: 9),
+                  Text(
+                    'له ډیټابیسه ولوستل شول:',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: pal.muted,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    children: [
+                      if (_peek!.hasSchool)
+                        _PeekChip(
+                          icon: Icons.account_balance_rounded,
+                          text: _peek!.schoolName!,
+                        ),
+                      _PeekChip(
+                        icon: Icons.category_rounded,
+                        text: _peek!.schoolKind == 'madrasa'
+                            ? 'مدرسه'
+                            : 'ښوونځی',
+                      ),
+                      if (_peek!.studentCount > 0)
+                        _PeekChip(
+                          icon: Icons.school_rounded,
+                          text: '${s.locale.num(_peek!.studentCount)} شاګردان',
+                        ),
+                      if (_peek!.hasUsers)
+                        _PeekChip(
+                          icon: Icons.people_alt_rounded,
+                          text:
+                              '${s.locale.num(_peek!.userCount)} کاروونکي',
+                        ),
+                    ],
+                  ),
+                  if (_peek!.hasUsers) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      'د مدیر ګام پرېښودل کېږي — له خپل پخواني نوم '
+                      'او پټ‌نوم سره ننوځئ'
+                      '${_peek!.adminUsername == null ? '' : ' '
+                          '(«${_peek!.adminUsername}»)'}.',
+                      style: TextStyle(fontSize: 11.5, color: pal.inkSoft),
+                    ),
+                  ],
+                ],
                 if (_freeBytes != null) ...[
                   const SizedBox(height: 5),
                   Text(
@@ -882,4 +969,40 @@ Future<String> copyDatabase({
     throw const FileSystemException('د کاپي شوي ډیټابیس بشپړتیا سمه نه ده');
   }
   return target;
+}
+
+
+/// یوه وړه نښه — هغه څه چې له موجود ډیټابیسه ولوستل شول.
+class _PeekChip extends StatelessWidget {
+  final IconData icon;
+  final String text;
+  const _PeekChip({required this.icon, required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      decoration: BoxDecoration(
+        color: p.surface,
+        borderRadius: BorderRadius.circular(7),
+        border: Border.all(color: AppColors.success.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 13, color: AppColors.success),
+          const SizedBox(width: 6),
+          Text(
+            text,
+            style: TextStyle(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w600,
+              color: p.inkSoft,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

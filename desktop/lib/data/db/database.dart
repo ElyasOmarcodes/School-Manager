@@ -86,7 +86,7 @@ class AppDatabase extends _$AppDatabase {
   );
 
   @override
-  int get schemaVersion => 10;
+  int get schemaVersion => 11;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -212,6 +212,11 @@ class AppDatabase extends _$AppDatabase {
       // ── ۹ → ۱۰: د ښوونځي رخصتۍ ────────────────────────────
       if (from < 10) {
         await m.createTable(holidays);
+      }
+
+      // ── ۱۰ → ۱۱: د مهالویش د رنګ تنظیم ───────────────────
+      if (from < 11) {
+        await m.addColumn(schools, schools.timetableColorBy);
       }
       await _createIndexes();
     },
@@ -371,8 +376,115 @@ class AppDatabase extends _$AppDatabase {
 ///
 /// د ویزارډ لپاره پکار دی: مخکې له دې چې کارن «جوړ کړه» ووهي،
 /// باید وګورو چې دا فایل لا موجود دی که نه.
+/// هغه څه چې یو موجود ډیټابیس پخپله زموږ ته وايي.
+class DatabasePeek {
+  final String? schoolName;
+  final String? schoolKind;
+  final String? address;
+  final String? phone;
+  final String? dayStart;
+  final String? dayEnd;
+  final int? lateAfterMinutes;
+
+  /// څو فعال کاروونکي پکې شته. **له صفره ډېر یعنې: نوی مدیر مه
+  /// جوړوه** — کارن خپل پخوانی حساب لري.
+  final int userCount;
+  final String? adminUsername;
+  final int studentCount;
+
+  const DatabasePeek({
+    this.schoolName,
+    this.schoolKind,
+    this.address,
+    this.phone,
+    this.dayStart,
+    this.dayEnd,
+    this.lateAfterMinutes,
+    this.userCount = 0,
+    this.adminUsername,
+    this.studentCount = 0,
+  });
+
+  bool get hasSchool => (schoolName ?? '').trim().isNotEmpty;
+  bool get hasUsers => userCount > 0;
+}
+
 class DatabaseFile {
   static const fileName = 'school.db';
+
+  /// **د یوه موجود ډیټابیس لنډه کتنه — پرته له پرانیستلو.**
+  ///
+  /// **دا ولې پکار ده؟** ځکه چې یو موجود ډیټابیس **پخپله پوهېږي**
+  /// چې د کوم ښوونځي دی. که ویزارډ بیا هم نوم، نوعیت او د مدیر
+  /// حساب وغوښت، کارن ته يې دوه ستونزې ورکولې:
+  ///
+  ///   ۱. هغه به يې بیا لیکلو ته اړ و — او که يې یو توری بدل
+  ///      لیکه، پروګرام به يې «مدرسه» ښوونځی ګڼلی و.
+  ///   ۲. د مدیر حساب به يې دوه ځله جوړېده، یا بدتر: کارن به يې
+  ///      یو نوی پټ‌نوم ټاکه او فکر يې کاوه چې زوړ به يې بدل کړي —
+  ///      خو زوړ به لا هم کار کاوه.
+  ///
+  /// نو دلته یوازې **لولو**، هېڅ نه لیکو، او ویزارډ ته وایو چې څه
+  /// پکې شته.
+  static DatabasePeek? peek(String path) {
+    if (!isValidSqlite(path)) return null;
+    try {
+      final db = sqlite3.open(path, mode: OpenMode.readOnly);
+      try {
+        String? text(ResultSet r, String col) {
+          if (r.isEmpty) return null;
+          return r.first[col]?.toString();
+        }
+
+        var school = <String, Object?>{};
+        try {
+          final r = db.select('SELECT * FROM schools LIMIT 1');
+          if (r.isNotEmpty) school = Map.of(r.first);
+        } catch (_) {
+          // زوړ یا بل ډول ډیټابیس — تش پرېږده.
+        }
+
+        var users = 0;
+        String? firstAdmin;
+        try {
+          final r = db.select(
+            'SELECT COUNT(*) AS c FROM app_users WHERE is_active = 1',
+          );
+          users = int.tryParse(text(r, 'c') ?? '0') ?? 0;
+          final a = db.select(
+            "SELECT username FROM app_users WHERE role = 'admin' "
+            'ORDER BY id LIMIT 1',
+          );
+          firstAdmin = text(a, 'username');
+        } catch (_) {}
+
+        var students = 0;
+        try {
+          final r = db.select(
+            'SELECT COUNT(*) AS c FROM students WHERE deleted_at IS NULL',
+          );
+          students = int.tryParse(text(r, 'c') ?? '0') ?? 0;
+        } catch (_) {}
+
+        return DatabasePeek(
+          schoolName: school['name'] as String?,
+          schoolKind: school['kind'] as String?,
+          address: school['address'] as String?,
+          phone: school['phone'] as String?,
+          dayStart: school['day_start'] as String?,
+          dayEnd: school['day_end'] as String?,
+          lateAfterMinutes: (school['late_after_minutes'] as int?),
+          userCount: users,
+          adminUsername: firstAdmin,
+          studentCount: students,
+        );
+      } finally {
+        db.dispose();
+      }
+    } catch (_) {
+      return null;
+    }
+  }
 
   /// ازمويي چې دا فایل ریښتیا یو SQLite ډیټابیس دی —
   /// چې کارن تېروتنې سره کوم بل فایل ونه ټاکي.

@@ -693,6 +693,7 @@ class _AppShellState extends State<AppShell> {
         );
       }
       return TimetablePage(
+        onOpenSettings: () => _go('/timetable/settings'),
         timetable: widget.timetableRepo!,
         academic: academic,
         teachers: teachers,

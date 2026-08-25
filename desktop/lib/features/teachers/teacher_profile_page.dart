@@ -5,6 +5,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_motion.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/numerals.dart';
+import '../../core/utils/calendars.dart';
 import '../../core/widgets/panel.dart';
 import '../../data/repositories/staff_attendance_repository.dart';
 import '../../data/repositories/teacher_repository.dart';
@@ -176,7 +177,7 @@ class _TeacherProfilePageState extends State<TeacherProfilePage> {
                     icon: const Icon(Icons.chevron_right_rounded, size: 20),
                   ),
                   Text(
-                    '${locale.num(_month.month)}/${locale.num(_month.year)}',
+                    context.cal.monthYear(_month),
                     style: AppTheme.tabular(
                       TextStyle(
                         fontSize: 12.5,

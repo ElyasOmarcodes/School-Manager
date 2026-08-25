@@ -8,6 +8,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_motion.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/numerals.dart';
+import '../../core/utils/calendars.dart';
 import '../../core/utils/qr_token.dart';
 import '../../core/widgets/panel.dart';
 import '../../data/db/database.dart';
@@ -623,14 +624,11 @@ class _StatePill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final st = styleOf(state);
-    final locale = S.of(context).locale;
 
     return Tooltip(
       message: expiresOn == null
           ? 'لا نه دی چاپ شوی'
-          : 'تر ${locale.num(expiresOn!.year)}-'
-                '${locale.num(expiresOn!.month)}-'
-                '${locale.num(expiresOn!.day)} پورې',
+          : 'تر ${context.cal.short(expiresOn!)} پورې',
       child: Pill(color: st.color, icon: st.icon, text: st.label),
     );
   }

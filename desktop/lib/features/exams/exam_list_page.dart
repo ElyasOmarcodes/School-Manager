@@ -5,6 +5,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_motion.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/numerals.dart';
+import '../../core/utils/calendars.dart';
 import '../../core/widgets/panel.dart';
 import '../../data/db/database.dart';
 import '../../data/repositories/academic_repository.dart';
@@ -273,7 +274,8 @@ class _ExamCardState extends State<_ExamCard> {
                             '${locale.num(r.subjectCount)} مضامین',
                             if (!widget.madrasa) 'ربع ${locale.num(e.term)}',
                             '${locale.num(e.startsOn.year)}/'
-                                '${locale.num(e.startsOn.month)}/'
+                                '${context.cal.dayMonth(e.startsOn)}'
+                                ' — '
                                 '${locale.num(e.startsOn.day)}',
                           ].join('  ·  '),
                           style: TextStyle(fontSize: 12, color: p.muted),

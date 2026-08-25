@@ -123,13 +123,28 @@ class _AttendancePageState extends State<AttendancePage> {
   /// نن رسمي رخصتي ده؟ — که وي، هغه کرښه.
   Holiday? _holiday;
 
+  /// څو تنه د رخصتۍ له امله پخپله «رخصت» ثبت شول.
+  int _autoLeave = 0;
+
   Future<void> _boot() async {
     final rules = await widget.attendance.rules();
     final holiday = await widget.holidays?.on(widget.clock());
+
+    // **د رخصتۍ پر ورځ، ځواب پخپله معلوم دی.**
+    var auto = 0;
+    if (holiday != null && !_personnel && widget.sessions != null) {
+      auto = await widget.sessions!.markHolidayLeave(
+        date: widget.clock(),
+        session: widget.attendanceSession,
+        byUserId: widget.session.userId,
+      );
+    }
+
     if (!mounted) return;
     setState(() {
       _rules = rules;
       _holiday = holiday;
+      _autoLeave = auto;
     });
     await _refresh();
     if (mounted) _focus.requestFocus();
@@ -331,7 +346,8 @@ class _AttendancePageState extends State<AttendancePage> {
           // پرته له دې، مدیر به درې سوه نومونه ولیدل او فکر يې کاوه
           // چې څوک نه دي راغلي — بیا به یې ټول «غیرحاضر» نښه کړي
           // وای، او د میاشتې رپوټ به يې خراب شوی و.
-          if (_holiday != null) _HolidayBanner(holiday: _holiday!),
+          if (_holiday != null)
+            _HolidayBanner(holiday: _holiday!, autoMarked: _autoLeave),
           // ── د ناستې سرلیک ─────────────────────────────────
           Row(
             children: [
@@ -391,7 +407,28 @@ class _AttendancePageState extends State<AttendancePage> {
           ),
           const SizedBox(height: 18),
 
-          if (_tab == 'list')
+          // **د رخصتۍ پر ورځ سکینر بند دی.** یو سکین به یو
+          // «حاضر» ثبت کړ چې د ورځې له حقیقته سره ټکر لري — او
+          // بیا به د میاشتې رپوټ خراب شوی و. لیست خلاص پاتې کېږي،
+          // ځکه چې استثنا شونې ده.
+          if (_holiday != null && _tab != 'list')
+            Expanded(
+              child: EmptyState(
+                icon: Icons.event_busy_rounded,
+                text: 'نن رخصتي ده — سکینر بند دی',
+                hint: 'که یو څوک راغلی وي، «لیست» ټب کې يې په لاس '
+                    'بدل کړئ.',
+                action: FilledButton.icon(
+                  onPressed: () => setState(() => _tab = 'list'),
+                  icon: const Icon(Icons.checklist_rounded, size: 17),
+                  label: const Text('لیست ته لاړ شه'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.modLeave,
+                  ),
+                ),
+              ),
+            )
+          else if (_tab == 'list')
             Expanded(
               child: _personnel
                   ? PersonnelRoster(
@@ -802,7 +839,8 @@ class _RecentRow extends StatelessWidget {
 /// **د رسمي رخصتۍ کرښه** — د حاضرۍ پر سر.
 class _HolidayBanner extends StatelessWidget {
   final Holiday holiday;
-  const _HolidayBanner({required this.holiday});
+  final int autoMarked;
+  const _HolidayBanner({required this.holiday, this.autoMarked = 0});
 
   @override
   Widget build(BuildContext context) {
@@ -841,9 +879,15 @@ class _HolidayBanner extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  days == 1
-                      ? 'حاضري اړینه نه ده. که بیا هم ثبتوئ، ثبتېږي.'
-                      : '${locale.num(days)} ورځې رخصتي. حاضري اړینه نه ده.',
+                  [
+                    if (days > 1) '${locale.num(days)} ورځې رخصتي.',
+                    if (autoMarked > 0)
+                      '${locale.num(autoMarked)} شاګردان پخپله «رخصت» '
+                          'ثبت شول.'
+                    else
+                      'ټول شاګردان رخصت ګڼل کېږي.',
+                    'که څوک راغلی وي، په لیست کې يې بدل کړئ.',
+                  ].join(' '),
                   style: TextStyle(fontSize: 11.5, color: p.muted),
                 ),
               ],
