@@ -306,19 +306,16 @@ class _SubjectsPageState extends State<SubjectsPage> {
                       ],
                       onChanged: (v) => setState(() => _teacherFilter = v),
                     ),
-                  FilterField(
+                  FilterDropdown<bool>(
                     label: 'ډول',
-                    width: 258,
-                    child: SegmentedChoice<bool?>(
-                      value: _religiousFilter,
-                      color: AppColors.modHifz,
-                      options: [
-                        (value: null, label: s.all, icon: null),
-                        (value: true, label: 'دیني', icon: null),
-                        (value: false, label: 'عصري', icon: null),
-                      ],
-                      onChanged: (v) => setState(() => _religiousFilter = v),
-                    ),
+                    allLabel: 'دیني او عصري',
+                    icon: Icons.auto_stories_rounded,
+                    value: _religiousFilter,
+                    options: const [
+                      (value: true, label: 'دیني'),
+                      (value: false, label: 'عصري'),
+                    ],
+                    onChanged: (v) => setState(() => _religiousFilter = v),
                   ),
                 ],
               ),
@@ -527,13 +524,6 @@ class _SubjectRowState extends State<_SubjectRow> {
               const SizedBox(width: 12),
             ],
             Pill(color: diff.color, text: diff.label),
-            const SizedBox(width: 10),
-            Text(
-              '${s.locale.num(sub.passMark)} / ${s.locale.num(sub.fullMark)}',
-              style: AppTheme.tabular(
-                TextStyle(fontSize: 12, color: p.muted),
-              ),
-            ),
             const SizedBox(width: 6),
             // تڼۍ یوازې د موږک تر لاندې راځي — چې لیست ساده پاتې شي.
             AnimatedOpacity(
@@ -602,13 +592,6 @@ class _SubjectDialogState extends State<_SubjectDialog> {
   );
   int? _teacherId;
   late final _code = TextEditingController(text: widget.existing?.code ?? '');
-  late final _full = TextEditingController(
-    text: '${widget.existing?.fullMark ?? 100}',
-  );
-  late final _pass = TextEditingController(
-    text: '${widget.existing?.passMark ?? 40}',
-  );
-
   late int? _gradeId = widget.existing?.gradeId ?? widget.presetGrade;
   late String _difficulty = widget.existing?.difficulty ?? 'medium';
   late bool _religious = widget.existing?.isReligious ?? widget.madrasa;
@@ -629,8 +612,6 @@ class _SubjectDialogState extends State<_SubjectDialog> {
     _book.dispose();
     _pages.dispose();
     _code.dispose();
-    _full.dispose();
-    _pass.dispose();
     super.dispose();
   }
 
@@ -654,8 +635,6 @@ class _SubjectDialogState extends State<_SubjectDialog> {
     final fan = _fan.text.trim();
     final name = fan.isEmpty ? book : fan;
 
-    final full = int.tryParse(Numerals.toLatin(_full.text)) ?? 100;
-    final pass = int.tryParse(Numerals.toLatin(_pass.text)) ?? 40;
     final code = _code.text.trim();
     final pages = int.tryParse(Numerals.toLatin(_pages.text));
 
@@ -666,8 +645,6 @@ class _SubjectDialogState extends State<_SubjectDialog> {
         book: book,
         code: code.isEmpty ? null : code,
         difficulty: _difficulty,
-        fullMark: full,
-        passMark: pass,
         isReligious: _religious,
         teacherId: _teacherId,
         pages: pages,
@@ -681,8 +658,6 @@ class _SubjectDialogState extends State<_SubjectDialog> {
         book: book,
         code: code.isEmpty ? '' : code,
         difficulty: _difficulty,
-        fullMark: full,
-        passMark: pass,
         isReligious: _religious,
         teacherId: _teacherId,
         clearTeacher: _teacherId == null,
@@ -861,30 +836,13 @@ class _SubjectDialogState extends State<_SubjectDialog> {
                 ),
               ),
 
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _full,
-                      decoration: const InputDecoration(
-                        labelText: 'بشپړه نمره',
-                        isDense: true,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: TextField(
-                      controller: _pass,
-                      decoration: const InputDecoration(
-                        labelText: 'د بریا نمره',
-                        isDense: true,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+              // **نمرې دلته نشته — او دا په قصد دی.**
+              //
+              // یو کتاب په څلورنیمې میاشتنۍ ازموینه کې ۵۰ نمرې لري
+              // او په کلنۍ کې ۱۰۰. یوه ثابته نمره چې د کتاب سره
+              // وتړل شي، په هره ازموینه کې غلطه ده — نو هغه ځای
+              // ټاکل کېږي چې ریښتیا پکې معنا لري: **د ازموینې
+              // تنظیمات**، د هرې ازموینې لپاره جلا.
               const SizedBox(height: 6),
               CheckboxListTile(
                 value: _religious,

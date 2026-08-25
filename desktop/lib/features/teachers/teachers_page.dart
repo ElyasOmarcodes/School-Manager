@@ -8,8 +8,6 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_motion.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/numerals.dart';
-import '../../core/widgets/panel.dart';
-import '../../core/widgets/typeahead_field.dart';
 import '../../data/db/database.dart';
 import '../../data/repositories/academic_repository.dart';
 import '../../data/repositories/student_repository.dart' show Paged;
@@ -333,18 +331,18 @@ class _TeachersPageState extends State<TeachersPage> {
                       : _filter.copyWith(status: v),
                 ),
               ),
-              FilterField(
+              FilterDropdown<String>(
                 label: 'تحصیل',
-                child: TypeAheadField(
-                  label: 'تحصیل',
-                  icon: Icons.school_rounded,
-                  value: _filter.qualification,
-                  options: _qualifications,
-                  onChanged: (v) => _setFilter(
-                    v == null
-                        ? _filter.copyWith(clearQualification: true)
-                        : _filter.copyWith(qualification: v),
-                  ),
+                allLabel: 'ټول تحصیلونه',
+                icon: Icons.school_rounded,
+                value: _filter.qualification,
+                options: [
+                  for (final x in _qualifications) (value: x, label: x),
+                ],
+                onChanged: (v) => _setFilter(
+                  v == null
+                      ? _filter.copyWith(clearQualification: true)
+                      : _filter.copyWith(qualification: v),
                 ),
               ),
               if (_subjects.isNotEmpty)
@@ -361,42 +359,40 @@ class _TeachersPageState extends State<TeachersPage> {
                         : _filter.copyWith(subjectId: v),
                   ),
                 ),
-              FilterField(
+              FilterDropdown<bool>(
                 label: 'مشري',
-                width: 250,
-                child: SegmentedChoice<bool?>(
-                  value: _filter.homeroom,
-                  options: [
-                    (value: null, label: s.all, icon: null),
-                    (
-                      value: true,
-                      label: 'مشر استاد',
-                      icon: Icons.meeting_room_rounded,
-                    ),
-                    (value: false, label: 'بې‌مشرۍ', icon: null),
-                  ],
-                  onChanged: (v) => _setFilter(
-                    v == null
-                        ? _filter.copyWith(clearHomeroom: true)
-                        : _filter.copyWith(homeroom: v),
-                  ),
+                allLabel: 'مشر او بې‌مشرۍ',
+                icon: Icons.meeting_room_rounded,
+                value: _filter.homeroom,
+                options: const [
+                  (value: true, label: 'مشر استاد'),
+                  (value: false, label: 'بې‌مشرۍ'),
+                ],
+                onChanged: (v) => _setFilter(
+                  v == null
+                      ? _filter.copyWith(clearHomeroom: true)
+                      : _filter.copyWith(homeroom: v),
                 ),
               ),
               FilterField(
                 label: 'ترتیب',
-                width: 300,
+                width: 258,
                 child: Row(
                   children: [
                     Expanded(
-                      child: SegmentedChoice<String>(
+                      child: QuickFilter<String>(
+                        label: 'په نوم',
+                        icon: Icons.sort_rounded,
+                        expand: true,
+                        maxWidth: 210,
                         value: _filter.sort,
-                        color: AppColors.modTeachers,
                         options: const [
-                          (value: 'name', label: 'په نوم', icon: null),
-                          (value: 'salary', label: 'په معاش', icon: null),
-                          (value: 'hired', label: 'د دندې پیل', icon: null),
+                          (value: 'name', label: 'په نوم'),
+                          (value: 'salary', label: 'په معاش'),
+                          (value: 'hired', label: 'د دندې پیل'),
                         ],
-                        onChanged: (v) => _setFilter(_filter.copyWith(sort: v)),
+                        onChanged: (v) =>
+                            _setFilter(_filter.copyWith(sort: v ?? 'name')),
                       ),
                     ),
                     IconButton(

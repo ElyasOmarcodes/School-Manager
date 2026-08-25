@@ -101,6 +101,7 @@ String _lblStudentList(S s) => s.students;
 String _lblNewEnrolment(S s) => s.newEnrolment;
 String _lblTakeAttendance(S s) => s.attendanceTaking;
 String _lblSessionSettings(S s) => s.sessionSettings;
+String _lblHolidays(S s) => 'رخصتۍ (کلیز)';
 String _lblLeaveList(S s) => s.leaveRequests;
 String _lblNewLeave(S s) => s.newLeave;
 String _lblExamList(S s) => s.exams;
@@ -154,6 +155,11 @@ List<NavGroup> buildNav() => [
           route: '/attendance',
           icon: Icons.how_to_reg_rounded,
           label: _lblTakeAttendance,
+        ),
+        NavSubItem(
+          route: '/attendance/holidays',
+          icon: Icons.event_busy_rounded,
+          label: _lblHolidays,
         ),
         NavSubItem(
           route: '/attendance/settings',

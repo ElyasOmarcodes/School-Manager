@@ -17,6 +17,51 @@ import '../../data/repositories/timetable_repository.dart';
 /// په یوه نظر وویني چې «د شنبې دویم ساعت ریاضي دی». که ټولې خانې
 /// یو رنګ وای، هغه به يې لوستلو ته اړ و — او د اتو ساعتونو په پنځو
 /// ورځو کې څلوېښت خانې دي.
+/// **د خانو رنګونه څه معنا لري؟**
+///
+/// دا پوښتنه پخپله یوه نیوکه وه: پخوانی رنګ د کتاب د نامه له
+/// `hashCode` څخه راته — یعنې **هېڅ معنا يې نه لرله**. یوازې دومره
+/// چې «یو شان کتاب تل یو شان رنګ». دا د ښکلا لپاره بس وه، خو
+/// سترګې يې څه نه ورزده کول.
+///
+/// اوس رنګ **یوه پوښتنه ځوابوي**، او کارن ټاکي چې کومه:
+///
+///   • **سختوالی** (تلواله) — سور = سخت، نارنجي = منځنی،
+///     شنه = اسان. دا هغه څه ښیي چې «ځیرک ترتیب» يې کوي: سخت
+///     کتابونه سهار. که سره پر ښي (سهار) ډله شوي وي، ترتیب سم دی؛
+///     که ګډوډ وي، څه خطا ده.
+///   • **فن** — د یوه فن ټول کتابونه یو رنګ. په یوه نظر ښیي چې
+///     یوه درجه څو ځله «صرف» لري او څو ځله «فقه».
+///   • **دیني/عصري** — د مدرسې لپاره: ورځ څومره دیني او څومره
+///     عصري ده.
+enum CellColorMode { difficulty, fan, kind }
+
+/// د فن رنګونه — د نامه له مخې ثابت. **د فن، نه د کتاب**: نو د
+/// «صرف» ټول کتابونه یو رنګ اخلي.
+const List<Color> _fanPalette = [
+  AppColors.modStudents,
+  AppColors.modAttendance,
+  AppColors.modLeave,
+  AppColors.modClasses,
+  AppColors.modExams,
+  AppColors.modTeachers,
+  AppColors.modIdCards,
+  AppColors.modReports,
+];
+
+Color cellColor(TimetableCell c, CellColorMode mode) => switch (mode) {
+  CellColorMode.difficulty => switch (c.difficulty) {
+    'hard' => AppColors.danger,
+    'easy' => AppColors.success,
+    _ => AppColors.warning,
+  },
+  CellColorMode.fan =>
+    _fanPalette[c.subjectName.hashCode.abs() % _fanPalette.length],
+  CellColorMode.kind => c.isReligious
+      ? AppColors.modHifz
+      : AppColors.modTimetable,
+};
+
 class TimetablePage extends StatefulWidget {
   final TimetableRepository timetable;
   final AcademicRepository academic;
@@ -42,6 +87,9 @@ class _TimetablePageState extends State<TimetablePage> {
   List<Subject> _subjects = const [];
   List<Teacher> _teachers = const [];
   List<TimetableConflict> _conflicts = const [];
+
+  /// رنګ کومه پوښتنه ځوابوي — کارن يې ټاکي.
+  CellColorMode _colorMode = CellColorMode.difficulty;
 
   /// **د ټکر خانې — د چټکې کتنې لپاره یوه ټولګه.**
   ///
@@ -105,6 +153,124 @@ class _TimetablePageState extends State<TimetablePage> {
       _mode = school?.timetableMode ?? 'weekly';
     });
     await _load();
+  }
+
+  /// د رنګ کیلي — یوازې هغه بڼه چې ثابت رنګونه لري.
+  ///
+  /// «فن» کیلي نه لري: رنګونه يې د نامه له مخې دي او شمېر يې د
+  /// ښوونځي په نصاب پورې اړه لري. هلته رنګ یوازې **یوشانوالی**
+  /// ښیي، نه یو ټاکلی معنا — نو یوه دروغجنه کیلي به بدتره وه.
+  List<Widget> _legendFor(CellColorMode mode) => switch (mode) {
+    CellColorMode.difficulty => const [
+      _LegendDot(color: AppColors.danger, label: 'سخت'),
+      _LegendDot(color: AppColors.warning, label: 'منځنی'),
+      _LegendDot(color: AppColors.success, label: 'اسان'),
+    ],
+    CellColorMode.kind => const [
+      _LegendDot(color: AppColors.modHifz, label: 'دیني'),
+      _LegendDot(color: AppColors.modTimetable, label: 'عصري'),
+    ],
+    CellColorMode.fan => [
+      Text(
+        'هر فن خپل رنګ لري — یو شان رنګ یعنې یو شان فن.',
+        style: TextStyle(fontSize: 11.5, color: context.palette.faint),
+      ),
+    ],
+  };
+
+  /// د ټکرونو بشپړ لیست — څوک، کومه ورځ، کوم ساعت، کومې درجې.
+  Future<void> _showConflicts() async {
+    final locale = S.of(context).locale;
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Row(
+          children: [
+            const Icon(
+              Icons.warning_amber_rounded,
+              size: 19,
+              color: AppColors.danger,
+            ),
+            const SizedBox(width: 9),
+            Text(
+              '${locale.num(_conflicts.length)} ټکرونه',
+              style: const TextStyle(
+                fontSize: 15.5,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+        content: SizedBox(
+          width: 460,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'هر کرښه یو استاد دی چې په یوه وخت کې دوه ځایه '
+                  'ټاکل شوی دی.',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: ctx.palette.muted,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                for (final c in _conflicts)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: 7,
+                          height: 7,
+                          margin: const EdgeInsets.only(top: 6),
+                          decoration: const BoxDecoration(
+                            color: AppColors.danger,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                c.teacherName,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              Text(
+                                '${locale.num(c.slotName)} · '
+                                '${c.sections.join('  ↔  ')}',
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  color: ctx.palette.muted,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(S.of(ctx).close),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _setMode(String v) async {
@@ -475,36 +641,50 @@ class _TimetablePageState extends State<TimetablePage> {
                   onRedo: _redo.isEmpty ? null : _redoLast,
                 ),
                 const SizedBox(width: 12),
-                if (_conflicts.isNotEmpty)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 13,
-                      vertical: 9,
+                // **د ټکرونو ژوندۍ شمېره — تل ښکاره.**
+                //
+                // مخکې یوازې هغه وخت راتله چې ټکر شتون درلود. خو
+                // «هېڅ نه ښکاري» دوه شیان معنا کولی شي: یا ټکر نشته،
+                // یا پروګرام يې نه ګوري. کارن باید دا دوه سره وپېژني
+                // — نو زیری هم لیکل کېږي، نه یوازې خبرداری.
+                _ClashBadge(
+                  conflicts: _conflicts,
+                  onTap: _conflicts.isEmpty ? null : _showConflicts,
+                ),
+              ],
+            ),
+          ),
+
+          // **د رنګ کیلي.** پرته له دې، رنګونه یوازې ښکلا وه.
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 10),
+            child: Row(
+              children: [
+                Text(
+                  'رنګ ښیي:',
+                  style: TextStyle(fontSize: 11.5, color: p.muted),
+                ),
+                const SizedBox(width: 9),
+                SegmentedChoice<CellColorMode>(
+                  value: _colorMode,
+                  color: AppColors.modTimetable,
+                  options: const [
+                    (
+                      value: CellColorMode.difficulty,
+                      label: 'سختوالی',
+                      icon: null,
                     ),
-                    decoration: BoxDecoration(
-                      color: AppColors.danger.withValues(alpha: 0.11),
-                      borderRadius: BorderRadius.circular(9),
+                    (value: CellColorMode.fan, label: 'فن', icon: null),
+                    (
+                      value: CellColorMode.kind,
+                      label: 'دیني/عصري',
+                      icon: null,
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.warning_amber_rounded,
-                          size: 16,
-                          color: AppColors.danger,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          '${locale.num(_conflicts.length)} ټکرونه',
-                          style: const TextStyle(
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.danger,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  ],
+                  onChanged: (v) => setState(() => _colorMode = v),
+                ),
+                const SizedBox(width: 16),
+                ..._legendFor(_colorMode),
               ],
             ),
           ),
@@ -580,6 +760,7 @@ class _TimetablePageState extends State<TimetablePage> {
                 days: grid.days,
                 grid: grid,
                 clashes: _clashKeys,
+                colorMode: _colorMode,
                 sectionId: _section?.sectionId,
                 onTap: slot.isBreak ? null : _editCell,
                 onDrop: slot.isBreak
@@ -728,6 +909,7 @@ class _TimetablePageState extends State<TimetablePage> {
                                   )
                                 : _Cell(
                                     cell: daily.at(row.sectionId, slot.id),
+                                    colorMode: _colorMode,
                                     conflict: _dailyClash(
                                       daily.at(row.sectionId, slot.id),
                                     ),
@@ -783,6 +965,8 @@ class _SlotRow extends StatelessWidget {
   /// «استاد-ورځ-ساعت» کلي چې ټکر لري.
   final Set<String> clashes;
 
+  final CellColorMode colorMode;
+
   const _SlotRow({
     required this.slot,
     required this.days,
@@ -791,6 +975,7 @@ class _SlotRow extends StatelessWidget {
     this.onTap,
     this.onDrop,
     this.clashes = const {},
+    this.colorMode = CellColorMode.difficulty,
   });
 
   bool _hasClash(TimetableCell? c) =>
@@ -864,6 +1049,7 @@ class _SlotRow extends StatelessWidget {
               Expanded(
                 child: _Cell(
                   cell: grid.at(day, slot.id),
+                  colorMode: colorMode,
                   conflict: _hasClash(grid.at(day, slot.id)),
                   onTap: onTap == null ? null : () => onTap!(day, slot),
                   drag: sectionId == null || grid.at(day, slot.id) == null
@@ -910,12 +1096,16 @@ class _Cell extends StatefulWidget {
   /// ځایه دی.
   final bool conflict;
 
+  /// رنګ څه ښیي.
+  final CellColorMode colorMode;
+
   const _Cell({
     this.cell,
     this.onTap,
     this.drag,
     this.onDrop,
     this.conflict = false,
+    this.colorMode = CellColorMode.difficulty,
   });
 
   @override
@@ -960,23 +1150,6 @@ class _CellState extends State<_Cell>
     _pulse.dispose();
     super.dispose();
   }
-
-  /// **د مضمون رنګ د نامه له مخې.** یو ثابت نقشه به هر ښوونځي ته
-  /// نه برابرېده — ځینې «فزیک» لري، ځینې «حدیث». نو د نامه له
-  /// hash څخه رنګ اخلو: هماغه مضمون تل هماغه رنګ لري.
-  static const List<Color> _palette = [
-    AppColors.modStudents,
-    AppColors.modAttendance,
-    AppColors.modLeave,
-    AppColors.modClasses,
-    AppColors.modExams,
-    AppColors.modTeachers,
-    AppColors.modIdCards,
-    AppColors.modReports,
-  ];
-
-  Color _colorFor(String name) =>
-      _palette[name.hashCode.abs() % _palette.length];
 
   @override
   Widget build(BuildContext context) {
@@ -1084,9 +1257,10 @@ class _CellState extends State<_Cell>
                 ? AppColors.modTimetable.withValues(alpha: 0.22)
                 : cell == null
                 ? (_hover ? p.surfaceAlt : Colors.transparent)
-                : _colorFor(
-                    cell.title,
-                  ).withValues(alpha: _hover ? 0.18 : 0.11),
+                : cellColor(
+                    cell,
+                    widget.colorMode,
+                  ).withValues(alpha: _hover ? 0.20 : 0.13),
             border: Border(
               right: BorderSide(color: p.line),
             ),
@@ -1120,7 +1294,7 @@ class _CellState extends State<_Cell>
                       style: TextStyle(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w700,
-                        color: _colorFor(cell.title),
+                        color: cellColor(cell, widget.colorMode),
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -1158,7 +1332,7 @@ class _CellState extends State<_Cell>
     return Draggable<CellDrag>(
       data: drag,
       dragAnchorStrategy: pointerDragAnchorStrategy,
-      feedback: _Ghost(cell: cell!, color: _colorFor(cell.subjectName)),
+      feedback: _Ghost(cell: cell!, color: cellColor(cell, widget.colorMode)),
       childWhenDragging: Opacity(opacity: 0.3, child: inner),
       child: inner,
     );
@@ -1166,6 +1340,101 @@ class _CellState extends State<_Cell>
 }
 
 /// هغه کارت چې د کش کولو پر مهال د موږک تر لاندې راځي.
+class _LegendDot extends StatelessWidget {
+  final Color color;
+  final String label;
+  const _LegendDot({required this.color, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(end: 14),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 9,
+            height: 9,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.85),
+              borderRadius: BorderRadius.circular(3),
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11.5,
+              color: context.palette.muted,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// **د ټکرونو ژوندۍ نښه.**
+///
+/// شنه = پاک جدول. سره = دومره ټکرونه، او پر کلیک يې لیست راځي.
+class _ClashBadge extends StatelessWidget {
+  final List<TimetableConflict> conflicts;
+  final VoidCallback? onTap;
+
+  const _ClashBadge({required this.conflicts, this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final locale = S.of(context).locale;
+    final clean = conflicts.isEmpty;
+    final c = clean ? AppColors.success : AppColors.danger;
+
+    return MouseRegion(
+      cursor: onTap == null ? MouseCursor.defer : SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: AppMotion.normal,
+          curve: AppMotion.standard,
+          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 9),
+          decoration: BoxDecoration(
+            color: c.withValues(alpha: 0.11),
+            borderRadius: BorderRadius.circular(9),
+            border: Border.all(color: c.withValues(alpha: 0.28)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                clean
+                    ? Icons.check_circle_rounded
+                    : Icons.warning_amber_rounded,
+                size: 16,
+                color: c,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                clean
+                    ? 'هېڅ ټکر نشته'
+                    : '${locale.num(conflicts.length)} ټکرونه',
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w700,
+                  color: c,
+                ),
+              ),
+              if (!clean) ...[
+                const SizedBox(width: 6),
+                Icon(Icons.chevron_left_rounded, size: 16, color: c),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _Ghost extends StatelessWidget {
   final TimetableCell cell;
   final Color color;

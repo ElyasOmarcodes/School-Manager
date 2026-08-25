@@ -8,8 +8,6 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_motion.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/numerals.dart';
-import '../../core/widgets/panel.dart';
-import '../../core/widgets/typeahead_field.dart';
 import '../../data/db/database.dart';
 import '../../data/repositories/academic_repository.dart';
 import '../../data/repositories/student_repository.dart';
@@ -202,79 +200,62 @@ class _StudentsPageState extends State<StudentsPage> {
                       : _filter.copyWith(status: v),
                 ),
               ),
-              FilterField(
+              FilterDropdown<String>(
                 label: s.province,
-                child: TypeAheadField(
-                  label: s.province,
-                  icon: Icons.map_rounded,
-                  value: _filter.province,
-                  options: provinceNames,
-                  onChanged: (v) => _setFilter(
-                    v == null
-                        ? _filter.copyWith(clearProvince: true)
-                        : _filter.copyWith(province: v, clearDistrict: true),
-                  ),
+                allLabel: 'ټول ولایتونه',
+                icon: Icons.map_rounded,
+                value: _filter.province,
+                options: [
+                  for (final x in provinceNames) (value: x, label: x),
+                ],
+                onChanged: (v) => _setFilter(
+                  v == null
+                      ? _filter.copyWith(clearProvince: true)
+                      : _filter.copyWith(province: v, clearDistrict: true),
                 ),
               ),
-              FilterField(
+              FilterDropdown<String>(
                 label: s.district,
-                child: TypeAheadField(
-                  label: s.district,
-                  icon: Icons.place_rounded,
-                  // ولسوالۍ د ولایت پرته معنا نه لري — نو تر هغې بنده ده.
-                  enabled: _filter.province != null,
-                  hint: _filter.province == null ? 'لومړی ولایت وټاکئ' : null,
-                  value: _filter.district,
-                  options: districtsOf(_filter.province),
-                  onChanged: (v) => _setFilter(
-                    v == null
-                        ? _filter.copyWith(clearDistrict: true)
-                        : _filter.copyWith(district: v),
-                  ),
+                // ولسوالۍ د ولایت پرته معنا نه لري — نو تر هغې بنده ده.
+                allLabel: _filter.province == null
+                    ? 'لومړی ولایت وټاکئ'
+                    : 'ټولې ولسوالۍ',
+                icon: Icons.place_rounded,
+                enabled: _filter.province != null,
+                value: _filter.district,
+                options: [
+                  for (final x in districtsOf(_filter.province))
+                    (value: x, label: x),
+                ],
+                onChanged: (v) => _setFilter(
+                  v == null
+                      ? _filter.copyWith(clearDistrict: true)
+                      : _filter.copyWith(district: v),
                 ),
               ),
-              FilterField(
+              FilterDropdown<String>(
                 label: 'سکونت',
-                width: 250,
-                child: SegmentedChoice<String?>(
-                  value: _filter.residency,
-                  options: [
-                    (value: null, label: s.all, icon: null),
-                    (
-                      value: 'day',
-                      label: s.dayScholar,
-                      icon: Icons.wb_sunny_rounded,
-                    ),
-                    (
-                      value: 'boarding',
-                      label: s.boarder,
-                      icon: Icons.night_shelter_rounded,
-                    ),
-                  ],
-                  onChanged: (v) => _setFilter(
-                    v == null
-                        ? _filter.copyWith(clearResidency: true)
-                        : _filter.copyWith(residency: v),
-                  ),
+                allLabel: 'ورځني او لیلیه',
+                icon: Icons.night_shelter_rounded,
+                value: _filter.residency,
+                options: [
+                  (value: 'day', label: s.dayScholar),
+                  (value: 'boarding', label: s.boarder),
+                ],
+                onChanged: (v) => _setFilter(
+                  v == null
+                      ? _filter.copyWith(clearResidency: true)
+                      : _filter.copyWith(residency: v),
                 ),
               ),
-              FilterField(
+              FilterDropdown<bool>(
                 label: 'پروفایل',
-                width: 250,
-                child: SegmentedChoice<bool>(
-                  value: _filter.onlyIncomplete,
-                  color: AppColors.warning,
-                  options: [
-                    (value: false, label: 'ټول', icon: null),
-                    (
-                      value: true,
-                      label: s.incompleteProfile,
-                      icon: Icons.report_problem_rounded,
-                    ),
-                  ],
-                  onChanged: (v) =>
-                      _setFilter(_filter.copyWith(onlyIncomplete: v)),
-                ),
+                allLabel: 'ټول پروفایلونه',
+                icon: Icons.badge_rounded,
+                value: _filter.onlyIncomplete ? true : null,
+                options: [(value: true, label: s.incompleteProfile)],
+                onChanged: (v) =>
+                    _setFilter(_filter.copyWith(onlyIncomplete: v ?? false)),
               ),
             ],
           ),

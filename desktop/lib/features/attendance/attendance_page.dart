@@ -12,6 +12,7 @@ import '../../data/db/database.dart';
 import '../../data/repositories/academic_repository.dart';
 import '../../data/repositories/attendance_repository.dart';
 import '../../data/repositories/attendance_session_repository.dart';
+import '../../data/repositories/holiday_repository.dart';
 import '../../data/repositories/staff_attendance_repository.dart';
 import '../auth/auth_service.dart';
 import 'camera_scan.dart';
@@ -52,6 +53,9 @@ class AttendancePage extends StatefulWidget {
   /// لیست له کوم حالت سره پیل شي — `present` | `absent` | `late`.
   final String? initialRosterStatus;
 
+  /// **د رخصتیو کلیز** — که نن رسمي رخصتي وي، پاڼه يې لومړی وايي.
+  final HolidayRepository? holidays;
+
   const AttendancePage({
     super.key,
     required this.attendance,
@@ -64,6 +68,7 @@ class AttendancePage extends StatefulWidget {
     this.clock = DateTime.now,
     this.initialTab = 'scan',
     this.initialRosterStatus,
+    this.holidays,
   });
 
   @override
@@ -115,10 +120,17 @@ class _AttendancePageState extends State<AttendancePage> {
     super.dispose();
   }
 
+  /// نن رسمي رخصتي ده؟ — که وي، هغه کرښه.
+  Holiday? _holiday;
+
   Future<void> _boot() async {
     final rules = await widget.attendance.rules();
+    final holiday = await widget.holidays?.on(widget.clock());
     if (!mounted) return;
-    setState(() => _rules = rules);
+    setState(() {
+      _rules = rules;
+      _holiday = holiday;
+    });
     await _refresh();
     if (mounted) _focus.requestFocus();
   }
@@ -314,6 +326,12 @@ class _AttendancePageState extends State<AttendancePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // **که نن رسمي رخصتي وي، لومړۍ خبره همدا ده.**
+          //
+          // پرته له دې، مدیر به درې سوه نومونه ولیدل او فکر يې کاوه
+          // چې څوک نه دي راغلي — بیا به یې ټول «غیرحاضر» نښه کړي
+          // وای، او د میاشتې رپوټ به يې خراب شوی و.
+          if (_holiday != null) _HolidayBanner(holiday: _holiday!),
           // ── د ناستې سرلیک ─────────────────────────────────
           Row(
             children: [
@@ -776,6 +794,63 @@ class _RecentRow extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+
+/// **د رسمي رخصتۍ کرښه** — د حاضرۍ پر سر.
+class _HolidayBanner extends StatelessWidget {
+  final Holiday holiday;
+  const _HolidayBanner({required this.holiday});
+
+  @override
+  Widget build(BuildContext context) {
+    final locale = S.of(context).locale;
+    final p = context.palette;
+    final days = holiday.toDate.difference(holiday.fromDate).inDays + 1;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.fromLTRB(16, 13, 16, 13),
+      decoration: BoxDecoration(
+        color: AppColors.modLeave.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+        border: Border.all(color: AppColors.modLeave.withValues(alpha: 0.32)),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.event_busy_rounded,
+            size: 19,
+            color: AppColors.modLeave,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'نن رسمي رخصتي ده — ${holiday.name}',
+                  style: const TextStyle(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.modLeave,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  days == 1
+                      ? 'حاضري اړینه نه ده. که بیا هم ثبتوئ، ثبتېږي.'
+                      : '${locale.num(days)} ورځې رخصتي. حاضري اړینه نه ده.',
+                  style: TextStyle(fontSize: 11.5, color: p.muted),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -15,6 +15,7 @@ import '../../data/repositories/attendance_session_repository.dart';
 import '../../data/repositories/device_repository.dart';
 import '../../data/repositories/exam_repository.dart';
 import '../../data/repositories/fee_repository.dart';
+import '../../data/repositories/holiday_repository.dart';
 import '../../data/repositories/leave_repository.dart';
 import '../../data/repositories/message_repository.dart';
 import '../../data/repositories/notification_repository.dart';
@@ -31,6 +32,7 @@ import '../../server/local_server.dart';
 import '../auth/auth_service.dart';
 import '../dashboard/dashboard_page.dart';
 import '../attendance/attendance_page.dart';
+import '../attendance/holidays_page.dart';
 import '../attendance/live_attendance.dart';
 import '../attendance/live_badge.dart';
 import '../attendance/session_settings_page.dart';
@@ -566,6 +568,7 @@ class _AppShellState extends State<AppShell> {
         session: widget.session,
         sessions: sessions,
         staff: widget.staffAttendanceRepo,
+        holidays: widget.db == null ? null : HolidayRepository(widget.db!),
         initialTab: 'list',
         initialRosterStatus: _rosterStatus,
         onBack: () => _go('/attendance'),
@@ -589,6 +592,7 @@ class _AppShellState extends State<AppShell> {
           session: widget.session,
           sessions: sessions,
           staff: widget.staffAttendanceRepo,
+          holidays: widget.db == null ? null : HolidayRepository(widget.db!),
           attendanceSession: _openSession,
           onBack: () => setState(() => _openSession = null),
         );
@@ -599,6 +603,17 @@ class _AppShellState extends State<AppShell> {
         onCreate: widget.session.permissions.can('attendance', Perm.create)
             ? () => _go('/attendance/new')
             : null,
+      );
+    }
+
+    if (_route == '/attendance/holidays' &&
+        widget.db != null &&
+        academic != null) {
+      return HolidaysPage(
+        holidays: HolidayRepository(widget.db!),
+        academic: academic,
+        byUserId: widget.session.userId,
+        canEdit: widget.session.permissions.can('attendance', Perm.edit),
       );
     }
 

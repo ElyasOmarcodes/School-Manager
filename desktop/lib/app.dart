@@ -13,6 +13,7 @@ import 'data/repositories/attendance_session_repository.dart';
 import 'data/repositories/device_repository.dart';
 import 'data/repositories/exam_repository.dart';
 import 'data/repositories/fee_repository.dart';
+import 'data/repositories/holiday_repository.dart';
 import 'data/repositories/leave_repository.dart';
 import 'data/repositories/message_repository.dart';
 import 'data/repositories/notification_repository.dart';
@@ -126,6 +127,8 @@ class _SchoolManagerAppState extends State<SchoolManagerApp> {
     await FeeRepository(db).seedDefaultTypes();
     // لږ تر لږه یوه د حاضرۍ ناسته — «د ورځې حاضري».
     await AttendanceSessionRepository(db).seedDefault();
+    // د افغانستان عام رخصتۍ — یو وړاندیز، چې کلیز تش نه وي.
+    await HolidayRepository(db).seedDefaults();
     _server = LocalServer(
       ApiDeps.of(db, schoolName: () => _schoolName),
     );

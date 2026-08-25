@@ -27,6 +27,7 @@ import 'package:school_manager/data/repositories/attendance_session_repository.d
 import 'package:school_manager/data/repositories/card_repository.dart';
 import 'package:school_manager/data/repositories/exam_repository.dart';
 import 'package:school_manager/data/repositories/fee_repository.dart';
+import 'package:school_manager/data/repositories/holiday_repository.dart';
 import 'package:school_manager/data/repositories/leave_repository.dart';
 import 'package:school_manager/data/repositories/message_repository.dart';
 import 'package:school_manager/data/repositories/notification_repository.dart';
@@ -70,6 +71,7 @@ void main() {
     await _payroll(db, teachers, staff);
     await _comms(db, students);
     await _cards(db, teachers, staff, students);
+    await _holidays(db);
 
     // WAL بېرته په اصلي فایل کې ننباسو — که نه، `school.db` به نیمه
     // تشه وه او `-wal` فایل به ورسره وړل کېده.
@@ -1233,7 +1235,58 @@ Future<void> _cards(
 }
 
 // ═══════════════════════════════════════════════════════════
-//  ۱۷ — لنډیز
+//  ۱۷ — د رخصتیو کلیز
+// ═══════════════════════════════════════════════════════════
+
+Future<void> _holidays(AppDatabase db) async {
+  final h = HolidayRepository(db);
+
+  // کلنۍ — کال يې نه شمېرل کېږي.
+  await h.add(
+    name: 'د کوچني اختر رخصتي',
+    fromDate: DateTime(2026, 3, 20),
+    toDate: DateTime(2026, 3, 23),
+    kind: 'religious',
+    isAnnual: true,
+    byUserId: 1,
+  );
+  await h.add(
+    name: 'د لوی اختر رخصتي',
+    fromDate: DateTime(2026, 5, 27),
+    toDate: DateTime(2026, 5, 31),
+    kind: 'religious',
+    isAnnual: true,
+    byUserId: 1,
+  );
+  await h.add(
+    name: 'د استقلال ورځ',
+    fromDate: DateTime(2026, 8, 19),
+    toDate: DateTime(2026, 8, 19),
+    kind: 'official',
+    isAnnual: true,
+    byUserId: 1,
+  );
+
+  // یو ځلي — د ټاکلي کال لپاره.
+  await h.add(
+    name: 'د واورې له امله رخصتي',
+    fromDate: DateTime(2026, 5, 18),
+    toDate: DateTime(2026, 5, 19),
+    kind: 'weather',
+    note: 'لارې بندې وې',
+    byUserId: 1,
+  );
+  await h.add(
+    name: 'د ازموینو د چمتووالي رخصتي',
+    fromDate: DateTime(2026, 6, 17),
+    toDate: DateTime(2026, 6, 19),
+    kind: 'exam',
+    byUserId: 1,
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
+//  ۱۸ — لنډیز
 // ═══════════════════════════════════════════════════════════
 
 void _report(String path) {
@@ -1306,6 +1359,9 @@ const _readme = '''
      ۷ کینډۍ، ۴ خبرتیاوې، ۲ وسیلې.
    • ۱۸ د کارت کینډۍ (هرې ډلې ته ۶) او صادر شوي کارتونه —
      ځینې يې نېټه تېره ده.
+   • **۵ رسمي رخصتۍ** په کلیز کې — درې کلنۍ (اخترونه، استقلال)
+     او دوه یو ځلي (واوره، د ازموینو چمتووالی).
+     وګورئ: حاضري ← رخصتۍ (کلیز)
 
 
 ۴. یادونه

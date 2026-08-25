@@ -28,6 +28,7 @@ part 'database.g.dart';
     Attendances,
     StaffAttendances,
     CardTemplates,
+    Holidays,
     LeaveRequests,
     AuditLogs,
     // ── څلورم پړاو: اړیکه ─────────────────────────────────
@@ -85,7 +86,7 @@ class AppDatabase extends _$AppDatabase {
   );
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -206,6 +207,11 @@ class AppDatabase extends _$AppDatabase {
       if (from < 9) {
         await m.addColumn(subjects, subjects.teacherId);
         await m.addColumn(subjects, subjects.pages);
+      }
+
+      // ── ۹ → ۱۰: د ښوونځي رخصتۍ ────────────────────────────
+      if (from < 10) {
+        await m.createTable(holidays);
       }
       await _createIndexes();
     },

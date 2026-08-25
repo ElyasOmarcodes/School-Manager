@@ -351,6 +351,12 @@ class QuickFilter<T> extends StatelessWidget {
   final IconData? icon;
   final double maxWidth;
 
+  /// ټوله شته پلنوالی ونیسي — د تختې دننه، چې کرښې برابرې شي.
+  final bool expand;
+
+  /// بند دی — لکه ولسوالۍ مخکې له دې چې ولایت وټاکل شي.
+  final bool dimmed;
+
   const QuickFilter({
     super.key,
     required this.label,
@@ -359,6 +365,8 @@ class QuickFilter<T> extends StatelessWidget {
     required this.onChanged,
     this.icon,
     this.maxWidth = 190,
+    this.expand = false,
+    this.dimmed = false,
   });
 
   @override
@@ -371,6 +379,8 @@ class QuickFilter<T> extends StatelessWidget {
               .map((o) => o.label)
               .firstOrNull
         : null;
+
+    if (dimmed) return _shell(context, current, dim: true);
 
     return PopupMenuButton<T?>(
       tooltip: '',
@@ -405,53 +415,69 @@ class QuickFilter<T> extends StatelessWidget {
             ),
           ),
       ],
-      child: Container(
-        constraints: BoxConstraints(maxWidth: maxWidth),
-        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
-        decoration: BoxDecoration(
-          color: active ? AppColors.primary.withValues(alpha: 0.09) : p.surface,
-          borderRadius: BorderRadius.circular(AppTheme.radiusSm),
-          border: Border.all(
-            color: active ? AppColors.primary.withValues(alpha: 0.4) : p.line,
-          ),
+      child: _shell(context, current),
+    );
+  }
+
+  Widget _shell(BuildContext context, String? current, {bool dim = false}) {
+    final p = context.palette;
+    final active = value != null && !dim;
+    final ink = dim
+        ? p.faint
+        : (active ? AppColors.primary : p.inkSoft);
+
+    return Container(
+      width: expand ? maxWidth : null,
+      constraints: expand ? null : BoxConstraints(maxWidth: maxWidth),
+      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
+      decoration: BoxDecoration(
+        color: active
+            ? AppColors.primary.withValues(alpha: 0.09)
+            : (dim ? p.surfaceAlt : p.surface),
+        borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+        border: Border.all(
+          color: active ? AppColors.primary.withValues(alpha: 0.4) : p.line,
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (icon != null) ...[
-              Icon(
-                icon,
-                size: 15,
-                color: active ? AppColors.primary : p.muted,
-              ),
-              const SizedBox(width: 6),
-            ],
-            Flexible(
-              child: Text(
-                current ?? label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 12.5,
-                  fontWeight: active ? FontWeight.w600 : FontWeight.w500,
-                  color: active ? AppColors.primary : p.inkSoft,
-                ),
-              ),
-            ),
-            const SizedBox(width: 5),
-            Icon(
-              Icons.expand_more_rounded,
-              size: 16,
-              color: active ? AppColors.primary : p.muted,
-            ),
+      ),
+      child: Row(
+        mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
+        children: [
+          if (icon != null) ...[
+            Icon(icon, size: 15, color: dim ? p.faint : (active ? AppColors.primary : p.muted)),
+            const SizedBox(width: 6),
           ],
-        ),
+          Flexible(
+            child: Text(
+              current ?? label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 12.5,
+                fontWeight: active ? FontWeight.w600 : FontWeight.w500,
+                color: ink,
+              ),
+            ),
+          ),
+          if (expand) const Spacer(),
+          const SizedBox(width: 5),
+          Icon(
+            Icons.expand_more_rounded,
+            size: 16,
+            color: dim ? p.faint : (active ? AppColors.primary : p.muted),
+          ),
+        ],
       ),
     );
   }
 }
 
-/// د تختې دننه یوه ډراپ‌ډاون — چې ټول یو شان ښکاري.
+/// **د تختې دننه یو فلټر — هماغه بڼه چې پورتنۍ کرښه يې لري.**
+///
+/// **ولې ټول یو شکل؟** ځکه چې مخکې درې بڼې ګډې وې: پر پورتنۍ کرښه
+/// منو-چیپونه، په تخته کې د فورمې ډراپ‌ډاونونه، او څنګ ته يې
+/// «سېګمنټ» تڼۍ. درې واړه یو کار کاوه — یو ارزښت ټاکل — خو درې
+/// بېلې بڼې يې لرلې. کارن چې یو ځل زده کړي، باید هرځای هماغه
+/// وپېژني. اوس **هر فلټر یو منو دی**، هر یو له خپل سرلیک سره.
 class FilterDropdown<T> extends StatelessWidget {
   final String label;
   final T? value;
@@ -460,6 +486,7 @@ class FilterDropdown<T> extends StatelessWidget {
   final String? allLabel;
   final bool enabled;
   final double width;
+  final IconData? icon;
 
   const FilterDropdown({
     super.key,
@@ -470,6 +497,7 @@ class FilterDropdown<T> extends StatelessWidget {
     this.allLabel,
     this.enabled = true,
     this.width = 208,
+    this.icon,
   });
 
   @override
@@ -479,20 +507,15 @@ class FilterDropdown<T> extends StatelessWidget {
     return FilterField(
       label: label,
       width: width,
-      child: DropdownButtonFormField<T?>(
-        initialValue: value,
-        isDense: true,
-        isExpanded: true,
-        decoration: const InputDecoration(isDense: true),
-        items: [
-          DropdownMenuItem<T?>(value: null, child: Text(allLabel ?? s.all)),
-          for (final o in options)
-            DropdownMenuItem<T?>(
-              value: o.value,
-              child: Text(o.label, overflow: TextOverflow.ellipsis),
-            ),
-        ],
-        onChanged: enabled ? onChanged : null,
+      child: QuickFilter<T>(
+        label: allLabel ?? s.all,
+        value: value,
+        options: options,
+        onChanged: enabled ? onChanged : (_) {},
+        icon: icon,
+        maxWidth: width,
+        expand: true,
+        dimmed: !enabled,
       ),
     );
   }

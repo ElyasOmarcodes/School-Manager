@@ -33,11 +33,19 @@ class TimetableCell {
   /// دی، نه فن. که یوازې فن ښودل کېده، درې درجې به یو شان ښکارېدې.
   final String? book;
 
+  /// `easy` | `medium` | `hard` — د خانې د رنګ لپاره.
+  final String difficulty;
+
+  /// دیني که عصري — د رنګ د بلې بڼې لپاره.
+  final bool isReligious;
+
   const TimetableCell({
     required this.entry,
     required this.subjectName,
     this.teacherName,
     this.book,
+    this.difficulty = 'medium',
+    this.isReligious = false,
   });
 
   /// **د خانې لومړۍ کرښه — د کتاب نوم.**
@@ -341,6 +349,7 @@ class TimetableRepository {
         .customSelect(
           '''
 SELECT t.*, sub.name AS subject_name, sub.book AS book,
+       sub.difficulty AS difficulty, sub.is_religious AS is_religious,
        tea.full_name AS teacher_name
 FROM timetable_entries t
 JOIN subjects sub ON sub.id = t.subject_id
@@ -368,6 +377,8 @@ WHERE t.section_id = ? AND t.day_of_week <> ?
               subjectName: r.read<String>('subject_name'),
               teacherName: r.data['teacher_name'] as String?,
               book: r.data['book'] as String?,
+              difficulty: (r.data['difficulty'] as String?) ?? 'medium',
+              isReligious: (r.data['is_religious'] as int? ?? 0) == 1,
             ),
           );
     }
@@ -426,6 +437,7 @@ ORDER BY g.sort_order, g.level, sec.name
         .customSelect(
           '''
 SELECT t.*, sub.name AS subject_name, sub.book AS book,
+       sub.difficulty AS difficulty, sub.is_religious AS is_religious,
        tea.full_name AS teacher_name
 FROM timetable_entries t
 JOIN subjects sub ON sub.id = t.subject_id
@@ -449,6 +461,8 @@ WHERE t.day_of_week = ?
               subjectName: r.read<String>('subject_name'),
               teacherName: r.data['teacher_name'] as String?,
               book: r.data['book'] as String?,
+              difficulty: (r.data['difficulty'] as String?) ?? 'medium',
+              isReligious: (r.data['is_religious'] as int? ?? 0) == 1,
             ),
           );
     }
@@ -796,20 +810,39 @@ GROUP BY sub.id
       counts[s] = n;
     }
 
-    // د سختۍ په ترتیب کې راټولول — لومړی د هر سخت مضمون یو، بیا
-    // دویم… چې د لومړي ساعت خانې د سختو ترمنځ ووېشل شي.
-    var round = 0;
-    while (demand.length < capacity) {
-      var added = false;
-      for (final s in ordered) {
-        if ((counts[s] ?? 0) > round) {
-          demand.add(s);
-          added = true;
-          if (demand.length >= capacity) break;
+    // **د سختۍ کمربندونه — نه ګډوډ.**
+    //
+    // مخکې يې یو ګډ راوند‌رابین کاوه: سخت، سخت، منځنی، منځنی،
+    // اسان… نو یو اسان کتاب به هم د لومړي ساعت خانه نیوله. دا هغه
+    // څه ماتوي چې ټول ترتیب ورته دی: **سهار ذهن تازه دی.**
+    //
+    // اوس لومړی **ټول** سخت کتابونه خپل ټول تکرارونه اخلي، بیا
+    // منځني، بیا اسان. ځکه چې خانې د ساعت په ترتیب مصرفېږي (لومړی
+    // د ټولو ورځو لومړی ساعت، بیا دویم…)، پایله یو پاک ویش دی:
+    // سخت → سهار، منځني → منځ، اسان → د ورځې پای.
+    //
+    // یوه ډلې **دننه** راوند‌رابین پاتې دی، چې دوه سخت کتابونه یو
+    // بل پسې پر یوه ساعت ونه لګېږي.
+    for (final rank in [0, 1, 2]) {
+      final band = ordered
+          .where((x) => difficultyRank(x.difficulty) == rank)
+          .toList();
+      if (band.isEmpty) continue;
+
+      var round = 0;
+      var guard = 0;
+      while (demand.length < capacity && guard++ < 10000) {
+        var added = false;
+        for (final x in band) {
+          if ((counts[x] ?? 0) > round) {
+            demand.add(x);
+            added = true;
+            if (demand.length >= capacity) break;
+          }
         }
+        if (!added) break;
+        round++;
       }
-      if (!added) break;
-      round++;
     }
     return demand;
   }

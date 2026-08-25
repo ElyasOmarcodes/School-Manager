@@ -384,6 +384,44 @@ class StaffAttendances extends Table {
 /// نه په کوډ کې. **ولې؟** ځکه چې د یوه ښوونځي کارت له بل سره توپیر
 /// لري — یو لوګو پورته غواړي، بل په څنګ کې؛ یو د پلار نوم ښیي، بل
 /// نه. که په کوډ کې وای، هر بدلون به نوې نسخې ته اړ و.
+/// **رسمي رخصتۍ — د ښوونځي کلیز.**
+///
+/// **دا ولې یو جلا جدول دی، نه د حاضرۍ یو حالت؟**
+///
+/// ځکه چې رخصتي **د ورځې** ځانګړتیا ده، نه **د شاګرد**. کله چې د
+/// اختر رخصتي وي، درې سوه شاګردان «غیرحاضر» نه دي — هغه ورځ پخپله
+/// درسي ورځ نه ده. که هر شاګرد ته یوه کرښه لیکل کېده، مدیر به درې
+/// سوه ځله هماغه کار کاوه، او هر رپوټ به يې سلنه خرابوله: «۸۵٪
+/// حاضري» چې پکې پنځه ورځې رخصتي وې، یوه دروغجنه شمېره ده.
+///
+/// نو یوه کرښه ټوله ورځ (یا څو ورځې) نښه کوي، او حاضري، رپوټونه او
+/// مهالویش درې واړه ترې خبرېږي.
+class Holidays extends Table {
+  IntColumn get id => integer().autoIncrement()();
+
+  /// «د کوچني اختر رخصتي»، «د استقلال ورځ».
+  TextColumn get name => text()();
+
+  /// یوه ورځ = `fromDate == toDate`. دواړه پکې شاملې دي.
+  DateTimeColumn get fromDate => dateTime()();
+  DateTimeColumn get toDate => dateTime()();
+
+  /// `official` | `religious` | `weather` | `exam` | `other`
+  ///
+  /// د رنګ او د رپوټ د ډله‌بندۍ لپاره — «د واورې څو ورځې تللې؟»
+  TextColumn get kind => text().withDefault(const Constant('official'))();
+
+  TextColumn get note => text().nullable()();
+
+  /// **هره کال تکرارېږي؟** لکه د استقلال ورځ. که سمه وي، یوازې
+  /// میاشت او ورځ حساب کېږي، نه کال.
+  BoolColumn get isAnnual => boolean().withDefault(const Constant(false))();
+
+  IntColumn get createdByUserId => integer().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+}
+
 class CardTemplates extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get name => text()();

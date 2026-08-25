@@ -35,6 +35,7 @@ import 'package:school_manager/features/id_cards/card_layout.dart';
 import 'package:school_manager/features/id_cards/cards_page.dart';
 import 'package:school_manager/data/repositories/card_repository.dart';
 import 'package:school_manager/data/repositories/exam_repository.dart';
+import 'package:school_manager/data/repositories/holiday_repository.dart';
 import 'package:school_manager/data/repositories/staff_repository.dart';
 import 'package:school_manager/data/repositories/timetable_repository.dart';
 import 'package:school_manager/data/repositories/fee_repository.dart';
@@ -72,6 +73,7 @@ import 'package:school_manager/data/repositories/staff_attendance_repository.dar
 import 'package:school_manager/features/attendance/sessions_page.dart';
 import 'package:school_manager/features/leave/leave_create_page.dart';
 import 'package:school_manager/data/repositories/attendance_session_repository.dart';
+import 'package:school_manager/features/attendance/holidays_page.dart';
 import 'package:school_manager/features/attendance/live_attendance.dart';
 
 /// د UI سکرین‌شاټونه — پرته له دې چې پروګرام په ویندوز کې وځغلوو.
@@ -1799,6 +1801,73 @@ void main() {
       child: LiveAttendanceScope(
         notifier: live,
         child: const Scaffold(body: DashboardPage(stats: _stats)),
+      ),
+    );
+  });
+
+  testWidgets('71 — د رخصتیو کلیز', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await _seedMadrasa(db);
+
+    final holidays = HolidayRepository(db);
+    await holidays.add(
+      name: 'د کوچني اختر رخصتي',
+      fromDate: DateTime(2026, 5, 6),
+      toDate: DateTime(2026, 5, 9),
+      kind: 'religious',
+      isAnnual: true,
+    );
+    await holidays.add(
+      name: 'د واورې ورځ',
+      fromDate: DateTime(2026, 5, 18),
+      toDate: DateTime(2026, 5, 18),
+      kind: 'weather',
+      note: 'لارې بندې وې',
+    );
+    await holidays.add(
+      name: 'د ازموینو چمتووالی',
+      fromDate: DateTime(2026, 5, 25),
+      toDate: DateTime(2026, 5, 27),
+      kind: 'exam',
+    );
+
+    await _shoot(
+      tester,
+      name: '71-holidays-calendar',
+      settle: const Duration(milliseconds: 700),
+      child: Scaffold(
+        body: HolidaysPage(
+          holidays: holidays,
+          academic: AcademicRepository(db),
+          clock: () => DateTime(2026, 5, 14),
+        ),
+      ),
+    );
+  });
+
+  testWidgets('72 — د مهالویش د رنګ کیلي', (tester) async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    await _seedMadrasa(db);
+    await _seedTeachers(db);
+
+    final timetable = TimetableRepository(db);
+    await timetable.seedDefaultSlots();
+    final academic = AcademicRepository(db);
+    final plan = await timetable.arrange(daily: true);
+    await timetable.applyPlan(plan);
+
+    await _shoot(
+      tester,
+      name: '72-timetable-colors',
+      settle: const Duration(milliseconds: 700),
+      child: Scaffold(
+        body: TimetablePage(
+          timetable: timetable,
+          academic: academic,
+          teachers: TeacherRepository(db),
+        ),
       ),
     );
   });

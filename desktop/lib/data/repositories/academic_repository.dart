@@ -305,6 +305,7 @@ ORDER BY g.level, sec.name
                   // **د مدرسې ټول فنون دیني ګڼل کېږي مګر څو یو.**
                   // حساب، خط او انګلیسي عصري دي؛ پاتې ټول دیني.
                   isReligious: Value(!_worldlyFans.contains(sub.name)),
+                  difficulty: Value(difficultyOfFan(sub.name)),
                   sortOrder: Value(order++),
                 ),
               );
@@ -321,6 +322,51 @@ ORDER BY g.level, sec.name
             ),
           );
     });
+  }
+
+  /// **د فن سختوالی — یو معقول وړاندیز، نه یو حکم.**
+  ///
+  /// **دا ولې پکار ده؟** ځکه چې «ځیرک ترتیب» سخت کتابونه سهار
+  /// ږدي — او که هر کتاب «منځنی» وي، هغه ټول ترتیب بې‌معنا دی.
+  /// یو تش ارزښت دلته «نه پوهېږم» معنا نه لري؛ «ټول یو شان» معنا
+  /// لري، چې غلطه ده.
+  ///
+  /// مدیر يې د هر کتاب لپاره سموي — دا یوازې د پیل ټکی دی.
+  static const _hardFans = {
+    'فقه',
+    'اصول فقه',
+    'حدیث',
+    'اصول حدیث',
+    'منطق',
+    'فلسفه',
+    'بلاغت',
+    'معاني',
+    'تفسیر',
+    'اصول تفسیر',
+    'فرائض',
+    'کلام',
+    'عقائد',
+  };
+
+  static const _easyFans = {
+    'خط',
+    'حساب',
+    'ریاضي',
+    'انګلیسي',
+    'کمپیوټر',
+    'ورزش',
+    'رسم',
+    'جغرافیه',
+    'ادب فارسي',
+    'پښتو',
+    'دري',
+    'املا',
+  };
+
+  static String difficultyOfFan(String fan) {
+    if (_hardFans.contains(fan)) return 'hard';
+    if (_easyFans.contains(fan)) return 'easy';
+    return 'medium';
   }
 
   static const _worldlyFans = {

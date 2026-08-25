@@ -11251,6 +11251,611 @@ class CardTemplatesCompanion extends UpdateCompanion<CardTemplate> {
   }
 }
 
+class $HolidaysTable extends Holidays with TableInfo<$HolidaysTable, Holiday> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $HolidaysTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _fromDateMeta = const VerificationMeta(
+    'fromDate',
+  );
+  @override
+  late final GeneratedColumn<DateTime> fromDate = GeneratedColumn<DateTime>(
+    'from_date',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _toDateMeta = const VerificationMeta('toDate');
+  @override
+  late final GeneratedColumn<DateTime> toDate = GeneratedColumn<DateTime>(
+    'to_date',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _kindMeta = const VerificationMeta('kind');
+  @override
+  late final GeneratedColumn<String> kind = GeneratedColumn<String>(
+    'kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('official'),
+  );
+  static const VerificationMeta _noteMeta = const VerificationMeta('note');
+  @override
+  late final GeneratedColumn<String> note = GeneratedColumn<String>(
+    'note',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _isAnnualMeta = const VerificationMeta(
+    'isAnnual',
+  );
+  @override
+  late final GeneratedColumn<bool> isAnnual = GeneratedColumn<bool>(
+    'is_annual',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_annual" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _createdByUserIdMeta = const VerificationMeta(
+    'createdByUserId',
+  );
+  @override
+  late final GeneratedColumn<int> createdByUserId = GeneratedColumn<int>(
+    'created_by_user_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    fromDate,
+    toDate,
+    kind,
+    note,
+    isAnnual,
+    createdByUserId,
+    createdAt,
+    deletedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'holidays';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Holiday> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('from_date')) {
+      context.handle(
+        _fromDateMeta,
+        fromDate.isAcceptableOrUnknown(data['from_date']!, _fromDateMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_fromDateMeta);
+    }
+    if (data.containsKey('to_date')) {
+      context.handle(
+        _toDateMeta,
+        toDate.isAcceptableOrUnknown(data['to_date']!, _toDateMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_toDateMeta);
+    }
+    if (data.containsKey('kind')) {
+      context.handle(
+        _kindMeta,
+        kind.isAcceptableOrUnknown(data['kind']!, _kindMeta),
+      );
+    }
+    if (data.containsKey('note')) {
+      context.handle(
+        _noteMeta,
+        note.isAcceptableOrUnknown(data['note']!, _noteMeta),
+      );
+    }
+    if (data.containsKey('is_annual')) {
+      context.handle(
+        _isAnnualMeta,
+        isAnnual.isAcceptableOrUnknown(data['is_annual']!, _isAnnualMeta),
+      );
+    }
+    if (data.containsKey('created_by_user_id')) {
+      context.handle(
+        _createdByUserIdMeta,
+        createdByUserId.isAcceptableOrUnknown(
+          data['created_by_user_id']!,
+          _createdByUserIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Holiday map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Holiday(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      fromDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}from_date'],
+      )!,
+      toDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}to_date'],
+      )!,
+      kind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}kind'],
+      )!,
+      note: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}note'],
+      ),
+      isAnnual: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_annual'],
+      )!,
+      createdByUserId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_by_user_id'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+    );
+  }
+
+  @override
+  $HolidaysTable createAlias(String alias) {
+    return $HolidaysTable(attachedDatabase, alias);
+  }
+}
+
+class Holiday extends DataClass implements Insertable<Holiday> {
+  final int id;
+
+  /// «د کوچني اختر رخصتي»، «د استقلال ورځ».
+  final String name;
+
+  /// یوه ورځ = `fromDate == toDate`. دواړه پکې شاملې دي.
+  final DateTime fromDate;
+  final DateTime toDate;
+
+  /// `official` | `religious` | `weather` | `exam` | `other`
+  ///
+  /// د رنګ او د رپوټ د ډله‌بندۍ لپاره — «د واورې څو ورځې تللې؟»
+  final String kind;
+  final String? note;
+
+  /// **هره کال تکرارېږي؟** لکه د استقلال ورځ. که سمه وي، یوازې
+  /// میاشت او ورځ حساب کېږي، نه کال.
+  final bool isAnnual;
+  final int? createdByUserId;
+  final DateTime createdAt;
+  final DateTime? deletedAt;
+  const Holiday({
+    required this.id,
+    required this.name,
+    required this.fromDate,
+    required this.toDate,
+    required this.kind,
+    this.note,
+    required this.isAnnual,
+    this.createdByUserId,
+    required this.createdAt,
+    this.deletedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['name'] = Variable<String>(name);
+    map['from_date'] = Variable<DateTime>(fromDate);
+    map['to_date'] = Variable<DateTime>(toDate);
+    map['kind'] = Variable<String>(kind);
+    if (!nullToAbsent || note != null) {
+      map['note'] = Variable<String>(note);
+    }
+    map['is_annual'] = Variable<bool>(isAnnual);
+    if (!nullToAbsent || createdByUserId != null) {
+      map['created_by_user_id'] = Variable<int>(createdByUserId);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    return map;
+  }
+
+  HolidaysCompanion toCompanion(bool nullToAbsent) {
+    return HolidaysCompanion(
+      id: Value(id),
+      name: Value(name),
+      fromDate: Value(fromDate),
+      toDate: Value(toDate),
+      kind: Value(kind),
+      note: note == null && nullToAbsent ? const Value.absent() : Value(note),
+      isAnnual: Value(isAnnual),
+      createdByUserId: createdByUserId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(createdByUserId),
+      createdAt: Value(createdAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+    );
+  }
+
+  factory Holiday.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Holiday(
+      id: serializer.fromJson<int>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      fromDate: serializer.fromJson<DateTime>(json['fromDate']),
+      toDate: serializer.fromJson<DateTime>(json['toDate']),
+      kind: serializer.fromJson<String>(json['kind']),
+      note: serializer.fromJson<String?>(json['note']),
+      isAnnual: serializer.fromJson<bool>(json['isAnnual']),
+      createdByUserId: serializer.fromJson<int?>(json['createdByUserId']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'name': serializer.toJson<String>(name),
+      'fromDate': serializer.toJson<DateTime>(fromDate),
+      'toDate': serializer.toJson<DateTime>(toDate),
+      'kind': serializer.toJson<String>(kind),
+      'note': serializer.toJson<String?>(note),
+      'isAnnual': serializer.toJson<bool>(isAnnual),
+      'createdByUserId': serializer.toJson<int?>(createdByUserId),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+    };
+  }
+
+  Holiday copyWith({
+    int? id,
+    String? name,
+    DateTime? fromDate,
+    DateTime? toDate,
+    String? kind,
+    Value<String?> note = const Value.absent(),
+    bool? isAnnual,
+    Value<int?> createdByUserId = const Value.absent(),
+    DateTime? createdAt,
+    Value<DateTime?> deletedAt = const Value.absent(),
+  }) => Holiday(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    fromDate: fromDate ?? this.fromDate,
+    toDate: toDate ?? this.toDate,
+    kind: kind ?? this.kind,
+    note: note.present ? note.value : this.note,
+    isAnnual: isAnnual ?? this.isAnnual,
+    createdByUserId: createdByUserId.present
+        ? createdByUserId.value
+        : this.createdByUserId,
+    createdAt: createdAt ?? this.createdAt,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+  );
+  Holiday copyWithCompanion(HolidaysCompanion data) {
+    return Holiday(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      fromDate: data.fromDate.present ? data.fromDate.value : this.fromDate,
+      toDate: data.toDate.present ? data.toDate.value : this.toDate,
+      kind: data.kind.present ? data.kind.value : this.kind,
+      note: data.note.present ? data.note.value : this.note,
+      isAnnual: data.isAnnual.present ? data.isAnnual.value : this.isAnnual,
+      createdByUserId: data.createdByUserId.present
+          ? data.createdByUserId.value
+          : this.createdByUserId,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Holiday(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('fromDate: $fromDate, ')
+          ..write('toDate: $toDate, ')
+          ..write('kind: $kind, ')
+          ..write('note: $note, ')
+          ..write('isAnnual: $isAnnual, ')
+          ..write('createdByUserId: $createdByUserId, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('deletedAt: $deletedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    name,
+    fromDate,
+    toDate,
+    kind,
+    note,
+    isAnnual,
+    createdByUserId,
+    createdAt,
+    deletedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Holiday &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.fromDate == this.fromDate &&
+          other.toDate == this.toDate &&
+          other.kind == this.kind &&
+          other.note == this.note &&
+          other.isAnnual == this.isAnnual &&
+          other.createdByUserId == this.createdByUserId &&
+          other.createdAt == this.createdAt &&
+          other.deletedAt == this.deletedAt);
+}
+
+class HolidaysCompanion extends UpdateCompanion<Holiday> {
+  final Value<int> id;
+  final Value<String> name;
+  final Value<DateTime> fromDate;
+  final Value<DateTime> toDate;
+  final Value<String> kind;
+  final Value<String?> note;
+  final Value<bool> isAnnual;
+  final Value<int?> createdByUserId;
+  final Value<DateTime> createdAt;
+  final Value<DateTime?> deletedAt;
+  const HolidaysCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.fromDate = const Value.absent(),
+    this.toDate = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.note = const Value.absent(),
+    this.isAnnual = const Value.absent(),
+    this.createdByUserId = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+  });
+  HolidaysCompanion.insert({
+    this.id = const Value.absent(),
+    required String name,
+    required DateTime fromDate,
+    required DateTime toDate,
+    this.kind = const Value.absent(),
+    this.note = const Value.absent(),
+    this.isAnnual = const Value.absent(),
+    this.createdByUserId = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+  }) : name = Value(name),
+       fromDate = Value(fromDate),
+       toDate = Value(toDate);
+  static Insertable<Holiday> custom({
+    Expression<int>? id,
+    Expression<String>? name,
+    Expression<DateTime>? fromDate,
+    Expression<DateTime>? toDate,
+    Expression<String>? kind,
+    Expression<String>? note,
+    Expression<bool>? isAnnual,
+    Expression<int>? createdByUserId,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? deletedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (fromDate != null) 'from_date': fromDate,
+      if (toDate != null) 'to_date': toDate,
+      if (kind != null) 'kind': kind,
+      if (note != null) 'note': note,
+      if (isAnnual != null) 'is_annual': isAnnual,
+      if (createdByUserId != null) 'created_by_user_id': createdByUserId,
+      if (createdAt != null) 'created_at': createdAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+    });
+  }
+
+  HolidaysCompanion copyWith({
+    Value<int>? id,
+    Value<String>? name,
+    Value<DateTime>? fromDate,
+    Value<DateTime>? toDate,
+    Value<String>? kind,
+    Value<String?>? note,
+    Value<bool>? isAnnual,
+    Value<int?>? createdByUserId,
+    Value<DateTime>? createdAt,
+    Value<DateTime?>? deletedAt,
+  }) {
+    return HolidaysCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      fromDate: fromDate ?? this.fromDate,
+      toDate: toDate ?? this.toDate,
+      kind: kind ?? this.kind,
+      note: note ?? this.note,
+      isAnnual: isAnnual ?? this.isAnnual,
+      createdByUserId: createdByUserId ?? this.createdByUserId,
+      createdAt: createdAt ?? this.createdAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (fromDate.present) {
+      map['from_date'] = Variable<DateTime>(fromDate.value);
+    }
+    if (toDate.present) {
+      map['to_date'] = Variable<DateTime>(toDate.value);
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(kind.value);
+    }
+    if (note.present) {
+      map['note'] = Variable<String>(note.value);
+    }
+    if (isAnnual.present) {
+      map['is_annual'] = Variable<bool>(isAnnual.value);
+    }
+    if (createdByUserId.present) {
+      map['created_by_user_id'] = Variable<int>(createdByUserId.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('HolidaysCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('fromDate: $fromDate, ')
+          ..write('toDate: $toDate, ')
+          ..write('kind: $kind, ')
+          ..write('note: $note, ')
+          ..write('isAnnual: $isAnnual, ')
+          ..write('createdByUserId: $createdByUserId, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('deletedAt: $deletedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $LeaveRequestsTable extends LeaveRequests
     with TableInfo<$LeaveRequestsTable, LeaveRequest> {
   @override
@@ -22673,6 +23278,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     this,
   );
   late final $CardTemplatesTable cardTemplates = $CardTemplatesTable(this);
+  late final $HolidaysTable holidays = $HolidaysTable(this);
   late final $LeaveRequestsTable leaveRequests = $LeaveRequestsTable(this);
   late final $AuditLogsTable auditLogs = $AuditLogsTable(this);
   late final $DevicesTable devices = $DevicesTable(this);
@@ -22718,6 +23324,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     attendances,
     staffAttendances,
     cardTemplates,
+    holidays,
     leaveRequests,
     auditLogs,
     devices,
@@ -31957,6 +32564,291 @@ typedef $$CardTemplatesTableProcessedTableManager =
       CardTemplate,
       PrefetchHooks Function()
     >;
+typedef $$HolidaysTableCreateCompanionBuilder =
+    HolidaysCompanion Function({
+      Value<int> id,
+      required String name,
+      required DateTime fromDate,
+      required DateTime toDate,
+      Value<String> kind,
+      Value<String?> note,
+      Value<bool> isAnnual,
+      Value<int?> createdByUserId,
+      Value<DateTime> createdAt,
+      Value<DateTime?> deletedAt,
+    });
+typedef $$HolidaysTableUpdateCompanionBuilder =
+    HolidaysCompanion Function({
+      Value<int> id,
+      Value<String> name,
+      Value<DateTime> fromDate,
+      Value<DateTime> toDate,
+      Value<String> kind,
+      Value<String?> note,
+      Value<bool> isAnnual,
+      Value<int?> createdByUserId,
+      Value<DateTime> createdAt,
+      Value<DateTime?> deletedAt,
+    });
+
+class $$HolidaysTableFilterComposer
+    extends Composer<_$AppDatabase, $HolidaysTable> {
+  $$HolidaysTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get fromDate => $composableBuilder(
+    column: $table.fromDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get toDate => $composableBuilder(
+    column: $table.toDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isAnnual => $composableBuilder(
+    column: $table.isAnnual,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdByUserId => $composableBuilder(
+    column: $table.createdByUserId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$HolidaysTableOrderingComposer
+    extends Composer<_$AppDatabase, $HolidaysTable> {
+  $$HolidaysTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get fromDate => $composableBuilder(
+    column: $table.fromDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get toDate => $composableBuilder(
+    column: $table.toDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isAnnual => $composableBuilder(
+    column: $table.isAnnual,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdByUserId => $composableBuilder(
+    column: $table.createdByUserId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$HolidaysTableAnnotationComposer
+    extends Composer<_$AppDatabase, $HolidaysTable> {
+  $$HolidaysTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get fromDate =>
+      $composableBuilder(column: $table.fromDate, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get toDate =>
+      $composableBuilder(column: $table.toDate, builder: (column) => column);
+
+  GeneratedColumn<String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumn<String> get note =>
+      $composableBuilder(column: $table.note, builder: (column) => column);
+
+  GeneratedColumn<bool> get isAnnual =>
+      $composableBuilder(column: $table.isAnnual, builder: (column) => column);
+
+  GeneratedColumn<int> get createdByUserId => $composableBuilder(
+    column: $table.createdByUserId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+}
+
+class $$HolidaysTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $HolidaysTable,
+          Holiday,
+          $$HolidaysTableFilterComposer,
+          $$HolidaysTableOrderingComposer,
+          $$HolidaysTableAnnotationComposer,
+          $$HolidaysTableCreateCompanionBuilder,
+          $$HolidaysTableUpdateCompanionBuilder,
+          (Holiday, BaseReferences<_$AppDatabase, $HolidaysTable, Holiday>),
+          Holiday,
+          PrefetchHooks Function()
+        > {
+  $$HolidaysTableTableManager(_$AppDatabase db, $HolidaysTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$HolidaysTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$HolidaysTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$HolidaysTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<DateTime> fromDate = const Value.absent(),
+                Value<DateTime> toDate = const Value.absent(),
+                Value<String> kind = const Value.absent(),
+                Value<String?> note = const Value.absent(),
+                Value<bool> isAnnual = const Value.absent(),
+                Value<int?> createdByUserId = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+              }) => HolidaysCompanion(
+                id: id,
+                name: name,
+                fromDate: fromDate,
+                toDate: toDate,
+                kind: kind,
+                note: note,
+                isAnnual: isAnnual,
+                createdByUserId: createdByUserId,
+                createdAt: createdAt,
+                deletedAt: deletedAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String name,
+                required DateTime fromDate,
+                required DateTime toDate,
+                Value<String> kind = const Value.absent(),
+                Value<String?> note = const Value.absent(),
+                Value<bool> isAnnual = const Value.absent(),
+                Value<int?> createdByUserId = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+              }) => HolidaysCompanion.insert(
+                id: id,
+                name: name,
+                fromDate: fromDate,
+                toDate: toDate,
+                kind: kind,
+                note: note,
+                isAnnual: isAnnual,
+                createdByUserId: createdByUserId,
+                createdAt: createdAt,
+                deletedAt: deletedAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$HolidaysTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $HolidaysTable,
+      Holiday,
+      $$HolidaysTableFilterComposer,
+      $$HolidaysTableOrderingComposer,
+      $$HolidaysTableAnnotationComposer,
+      $$HolidaysTableCreateCompanionBuilder,
+      $$HolidaysTableUpdateCompanionBuilder,
+      (Holiday, BaseReferences<_$AppDatabase, $HolidaysTable, Holiday>),
+      Holiday,
+      PrefetchHooks Function()
+    >;
 typedef $$LeaveRequestsTableCreateCompanionBuilder =
     LeaveRequestsCompanion Function({
       Value<int> id,
@@ -40612,6 +41504,8 @@ class $AppDatabaseManager {
       $$StaffAttendancesTableTableManager(_db, _db.staffAttendances);
   $$CardTemplatesTableTableManager get cardTemplates =>
       $$CardTemplatesTableTableManager(_db, _db.cardTemplates);
+  $$HolidaysTableTableManager get holidays =>
+      $$HolidaysTableTableManager(_db, _db.holidays);
   $$LeaveRequestsTableTableManager get leaveRequests =>
       $$LeaveRequestsTableTableManager(_db, _db.leaveRequests);
   $$AuditLogsTableTableManager get auditLogs =>
